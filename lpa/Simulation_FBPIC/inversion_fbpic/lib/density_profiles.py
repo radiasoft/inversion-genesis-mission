@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import ClassVar
+from collections.abc import Mapping
+from typing import ClassVar, Iterator
 
 import attrs
 import numpy as np
@@ -10,6 +11,10 @@ from inversion_fbpic.lib.density_core import _DensityProfile, DensityCallable
 
 from ._density_implementations.interpolate_from_h5_profile import (
     InterpolateFromH5Profile as InterpolateFromH5Profile,
+)
+from ._density_implementations.generic_conical_target import (
+    GenericConicalTarget as GenericConicalTarget,
+    PowerLawFlattop as PowerLawFlattop,
 )
 
 
@@ -340,4 +345,126 @@ class GeneralizedGaussianPlusTriangle(_DensityProfile):
             ramp_left_tau=self.tri_left_width,
             ramp_right_width=self.tri_right_width,
             ramp_height=self.tri_height,
+        )
+
+
+@attrs.define(slots=False, frozen=True)
+class GeneralizedLorentzianParameters(Mapping[str, float]):
+    """Parameters for a generalized Lorentzian term:
+    A[1+|(s-c)/w|^b]^{-m}
+
+    Args:
+        A: (float) [m^-3] amplitude
+        c: (float) [m] center
+        w: (float) [m] width
+        b: (float) inner exponent
+        m: (float) outer exponent
+    """
+
+    A: float = attrs.field(converter=float)
+    c: float = attrs.field(converter=float)
+    w: float = attrs.field(converter=float, validator=attrs.validators.gt(0.0))
+    b: float = attrs.field(converter=float, validator=attrs.validators.gt(0.0))
+    m: float = attrs.field(converter=float, validator=attrs.validators.gt(0.0))
+
+    _FIELD_NAMES: ClassVar[tuple[str, ...]] = ("A", "c", "w", "b", "m")
+
+    @classmethod
+    def from_mapping(
+        cls, parameters: "GeneralizedLorentzianParameters | Mapping[str, float]"
+    ) -> "GeneralizedLorentzianParameters":
+        if isinstance(parameters, cls):
+            return parameters
+        return cls(**parameters)
+
+    @classmethod
+    def normalize(
+        cls,
+        parameters: (
+            "GeneralizedLorentzianParameters"
+            " | Mapping[str, float]"
+            " | list[GeneralizedLorentzianParameters | Mapping[str, float]]"
+        ),
+    ) -> list["GeneralizedLorentzianParameters"]:
+        if isinstance(parameters, (list, tuple)):
+            return [cls.from_mapping(parameter) for parameter in parameters]
+        return [cls.from_mapping(parameters)]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._FIELD_NAMES)
+
+    def __len__(self) -> int:
+        return len(self._FIELD_NAMES)
+
+    def __getitem__(self, key: str) -> float:
+        if key not in self._FIELD_NAMES:
+            raise KeyError(key)
+        return getattr(self, key)
+
+    def z_extent(self, density_cutoff_ratio: float = 1e-3) -> tuple[float, float]:
+        """Get the z extent of the generalized Lorentzian term based on the density cutoff ratio."""
+
+        # Calculate the z extent based on the density cutoff ratio
+        if density_cutoff_ratio >= 1.0:
+            return (self.c, self.c)
+        else:
+            delta_z = abs(
+                (density_cutoff_ratio ** (-1.0 / self.m) - 1.0) ** (1.0 / self.b)
+                * self.w
+            )
+            return (self.c - delta_z, self.c + delta_z)
+
+    def dens_func(self, z: npt.ArrayLike) -> npt.ArrayLike:
+        """Return the density function for the generalized Lorentzian term. May contain negative values!"""
+        z_arr = np.asarray(z)
+        return self.A * (1.0 + np.abs((z_arr - self.c) / self.w) ** self.b) ** (-self.m)
+
+
+@attrs.define(kw_only=True, slots=False, frozen=True)
+class GeneralizedLorentzianSum(_DensityProfile):
+    """
+    Summed series of generalized Lorentzian terms:
+    n(z) = sum_i A_i [1 + |(z - c_i)/w_i|^b_i]^{-m_i}
+
+    Args:
+        parameters: (list[GeneralizedLorentzianParameters]|GeneralizedLorentzianParameters) Parameters or list of parameters for each generalized Lorentzian term.
+        density_cutoff_ratio: (float) |OPTIONAL| Ratio of the density cutoff to the maximum density. The guaranteed minimum density ratio relative to the maximal component at the edges is the number of terms times this value. Defaults to 1e-3.
+        nominal_density: (float) [m^-3] |NOT REFERENCED| The maximal density contribution for an individual Lorentzian for this profile. This quantity is determined by the dataset used.
+    """
+
+    SUBCLASS: ClassVar[str] = "generalized_lorentzian_sum"
+
+    parameters: list[GeneralizedLorentzianParameters] = attrs.field(
+        converter=GeneralizedLorentzianParameters.normalize
+    )
+    density_cutoff_ratio: float = attrs.field(
+        default=1e-3, converter=float, validator=attrs.validators.gt(0.0)
+    )
+    nominal_density: float = attrs.field(init=False, default=0.0)
+
+    def __attrs_post_init__(self) -> None:
+        super().__attrs_post_init__()
+        # Determine the nominal density as the maximum of the sum of the generalized Lorentzian terms at their centers
+        if [p.A for p in self.parameters if p.A > 0.0] == []:
+            raise ValueError("At least one parameter must have a positive amplitude A.")
+        object.__setattr__(self, "nominal_density", max(p.A for p in self.parameters))
+
+    def get_z_extent(self) -> tuple[float, float]:
+        extents = [
+            p.z_extent(self.density_cutoff_ratio * abs(self.nominal_density / p.A))
+            for p in self.parameters
+            if p.A != 0.0
+        ]
+        return (
+            min(extent[0] for extent in extents),
+            max(extent[1] for extent in extents),
+        )
+
+    def get_r_extent(self) -> float | None:
+        return None
+
+    def build_density_function(self) -> DensityCallable:
+        return (
+            lambda z, r: np.maximum(sum(p.dens_func(z) for p in self.parameters), 0.0)
+            / self.nominal_density
         )

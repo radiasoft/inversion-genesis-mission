@@ -6,6 +6,7 @@ __pycache__/
 venv
 dist/
 *.egg-info/
+*.npz
 
 # C/C++
 build/
@@ -22,9 +23,8 @@ Thumbs.db
 # Conda
 *.egg-info/
 
-# FBPIC and WarpX
+# FBPIC
 *diags/
-plasma_simulations/Simulation_Beam_Tracking/diags*/
 
 # Data files that may be introduced externally
 *.txt
@@ -41,33 +41,25 @@ plasma_simulations/Simulation_Beam_Tracking/diags*/
 *.png
 *.mp4
 *.csv
-plasma_simulations/Simulation_FBPIC/inversion_fbpic/scripts/plasma_lineouts_data.npy
+lpa/Simulation_FBPIC/inversion_fbpic/scripts/plasma_lineouts_data.npy
 
-# WarpX repository if installed using README instructions
-/plasma_simulations/Simulation_WarpX/WarpX
-
-# WarpX-related directories and files
-*warpx.3d
-*warpx_used_inputs
-
-# FBPIC and WarpX
+# FBPIC
 *diags/
 *diags.old.[0-9][0-9][0-9][0-9][0-9][0-9][0-9]/
 *Backtrace.0.0
 *input.ini
-plasma_simulations/Simulation_Beam_Tracking/diags*/
 
 # Optimas Output Files and Directories (typically folders saved in "simXXXX" or "X_exploration")
 *exploration/
 *sim[0-9][0-9][0-9][0-9]/
 
 # Specific FBPIC Analysis Files
-plasma_simulations/Simulation_FBPIC/inversion_fbpic/scripts/ebeam/energy_at_peak_current_results.json
-plasma_simulations/Simulation_FBPIC/inversion_fbpic/scripts/ebeam/energy_at_peak_current_multibunch_results.json
+lpa/Simulation_FBPIC/inversion_fbpic/scripts/ebeam/energy_at_peak_current_results.json
+lpa/Simulation_FBPIC/inversion_fbpic/scripts/ebeam/energy_at_peak_current_multibunch_results.json
 
 # Inversion_FBPIC outputs
-plasma_simulations/Simulation_FBPIC/demos/**/*.yaml
-plasma_simulations/Simulation_FBPIC/demos/**/*.json
+lpa/Simulation_FBPIC/demos/**/*.yaml
+lpa/Simulation_FBPIC/demos/**/*.json
 **/plots/
 
 # Genesis output files
@@ -88,3 +80,6 @@ modelling/impactx/htu_digital_twin/beam_tracking/data
 # ignore repo copies used for docker image building
 proj_inversion/
 inversion-radiasoft-plasma-injector/           
+
+# fluid sim data files
+*.cgns

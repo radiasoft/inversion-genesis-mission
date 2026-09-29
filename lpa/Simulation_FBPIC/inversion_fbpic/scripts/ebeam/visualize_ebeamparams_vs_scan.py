@@ -53,14 +53,6 @@ Usage:
             Flag to skip plotting the phase space of each electron beam. This overrides
             the default value and sets it to False.
 
-        --do-objective-function
-            Flag to calculate the objective function for each case. Default value is set by
-            DEFAULT_DO_OBJECTIVE_FUNCTION in the script.
-
-        --no-do-objective-function
-            Flag to disable calculation of the objective function. This overrides the
-            default value and sets it to False.
-
     Examples:
         # Use all defaults
         python visualize_ebeamparams_vs_scan.py
@@ -71,19 +63,12 @@ Usage:
         # Analyze a specific scan with custom settings
         python visualize_ebeamparams_vs_scan.py --set-name my_scan --factor 1000 --units "mm"
 
-        # Enable objective function calculation
-        python visualize_ebeamparams_vs_scan.py --do-objective-function
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 from typing import Union, Optional
-
-# from inversion_fbpic.utils.optimas_analysis import analyze_htu_simulation as optimas_objective_function
-from inversion_fbpic.utils.optimas_analysis import (
-    analyze_hofi_simulation as optimas_objective_function,
-)
 
 from inversion_fbpic.utils.analysis import (
     analyze_beam,
@@ -117,11 +102,6 @@ DEFAULT_UNITS: str = ""  # Label to use for the scanned parameter in plots
 DEFAULT_PLOT_PHASE_SPACES: bool = (
     True  # Set as False to skip plotting the phase space of each electron beam
 )
-
-DEFAULT_DO_OBJECTIVE_FUNCTION: bool = (
-    False  # Set to True to calculate the objective function `optimas_objective_function` each case
-)
-
 
 def parse_args() -> argparse.Namespace:
     """
@@ -205,20 +185,6 @@ def parse_args() -> argparse.Namespace:
         help="Flag to skip plotting the phase space of each electron beam (overrides default)",
     )
 
-    parser.add_argument(
-        "--do-objective-function",
-        action="store_true",
-        default=DEFAULT_DO_OBJECTIVE_FUNCTION,
-        help="Flag to calculate the objective function for each case",
-    )
-
-    parser.add_argument(
-        "--no-do-objective-function",
-        action="store_false",
-        dest="do_objective_function",
-        help="Flag to disable calculation of the objective function (overrides default)",
-    )
-
     return parser.parse_args()
 
 
@@ -289,8 +255,6 @@ def process(args: argparse.Namespace) -> None:
     emittance_y: Union[list[float], np.ndarray] = []
     sigma_z: Union[list[float], np.ndarray] = []
     peak_current: Union[list[float], np.ndarray] = []
-    objective_function: Union[list[float], np.ndarray] = []
-
     set_directory = args.directory_folder / args.analysis_folder / args.set_name
     for case_directory in set_directory.iterdir():
         if case_directory.is_dir():
@@ -324,20 +288,8 @@ def process(args: argparse.Namespace) -> None:
 
                     results = analyze_beam(x, y, z, ux, uy, uz, w, q, bins=200)
 
-                    if args.do_objective_function:
-                        opa_dict = {}
-                        optimas_objective_function(
-                            simulation_directory=str(case_directory),
-                            output_params=opa_dict,
-                            file_tree=args.species,
-                            laser_energy_setpoint=5,
-                            do_storage_cleanup=False,
-                        )
-
                     if args.plot_phase_spaces:
                         sup_title = f"{case_directory.name}"
-                        if args.do_objective_function:
-                            sup_title += f": f={opa_dict['f']}"
                         plot_beam_analysis(
                             x,
                             y,
@@ -363,9 +315,6 @@ def process(args: argparse.Namespace) -> None:
                     emittance_y.append(results["emittance"]["y"] * 1e6)  # mm-mrad
                     sigma_z.append(results["beam_sizes"]["sigma_z_m"] * 1e6)  # um
                     peak_current.append(np.max(results["current"]) * 1e-3)  # kA
-                    if args.do_objective_function:
-                        objective_function.append(opa_dict["f"])
-
     # Sort by case
     case_values = np.array(case_values) * args.factor
     sort_idx = np.argsort(case_values)
@@ -378,9 +327,6 @@ def process(args: argparse.Namespace) -> None:
     emittance_y = np.array(emittance_y)[sort_idx]
     sigma_z = np.array(sigma_z)[sort_idx]
     peak_current = np.array(peak_current)[sort_idx]
-    if args.do_objective_function:
-        objective_function = np.array(objective_function)[sort_idx]
-
     # Plot results
     plt.figure(figsize=(10, 8))
     # Top-left: Central Energy and sigma_z
@@ -417,22 +363,8 @@ def process(args: argparse.Namespace) -> None:
     ax5.set_xlabel(f"{args.set_name} ({args.units})")
     ax5.set_ylabel("Energy Spread (MeV)", color="tab:blue")
     ax5.tick_params(axis="y", labelcolor="tab:blue")
-    if args.do_objective_function:
-        ax5.set_title(f"Energy Spread & Objective Function vs {args.set_name}")
-        ax6 = ax5.twinx()
-        ln7 = ax6.plot(
-            case_values,
-            objective_function,
-            marker="s",
-            color="tab:red",
-            label="Objective Function",
-        )
-        ax6.set_ylabel("Objective Function", color="tab:red")
-        ax6.tick_params(axis="y", labelcolor="tab:red")
-        lns3 = ln5 + ln6 + ln7
-    else:
-        ax5.set_title(f"Energy Spread vs {args.set_name}")
-        lns3 = ln5 + ln6
+    ax5.set_title(f"Energy Spread vs {args.set_name}")
+    lns3 = ln5 + ln6
     labs3 = [line.get_label() for line in lns3]
     ax5.legend(lns3, labs3, loc="best")
 

@@ -602,7 +602,10 @@ class Simulation(SerializableConfig):
         return period
 
     def setup_simulation(
-        self, working_directory: Path | str | None = None, skip_if_hashed: bool = True
+        self,
+        working_directory: Path | str | None = None,
+        skip_if_hashed: bool = True,
+        **kwargs,
     ) -> None:
         """
         Setup the simulation.
@@ -610,6 +613,7 @@ class Simulation(SerializableConfig):
         Args:
             working_directory: (str | Path | None) |OPTIONAL| The working directory to save the simulation. If None, the working directory is the current working directory.
             skip_if_hashed: (bool) |OPTIONAL| Whether to skip the setup if there is a recorded hash that matches the current simulation configuration. Defaults to True.
+            **kwargs: Additional keyword arguments for the simulation setup, passed to FBPIC's `Simulation` constructor.
 
         Returns:
             None
@@ -688,6 +692,7 @@ class Simulation(SerializableConfig):
             boundaries={"z": "open", "r": self.hyparams.r_boundary},
             use_all_mpi_ranks=self.hyparams.use_mpi,
             use_cuda=True,
+            **kwargs,
         )
 
         # Add the particles and particle diagnostics

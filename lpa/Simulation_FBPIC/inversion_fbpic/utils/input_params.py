@@ -49,6 +49,7 @@ class InputParameters:
             filename: Name of the INI file (default: 'input.ini')
         """
         config = configparser.ConfigParser()
+        config.optionxform = str
         
         # Dynamically create sections from input_params
         for group_name, group_params in cls.input_params.items():

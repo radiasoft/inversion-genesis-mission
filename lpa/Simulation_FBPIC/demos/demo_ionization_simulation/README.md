@@ -23,7 +23,7 @@ plotting dependencies. Run from this directory so generated files stay with
 the demo:
 
 ```bash
-cd plasma_simulations/Simulation_FBPIC/demos/demo_ionization_simulation
+cd lpa/Simulation_FBPIC/demos/demo_ionization_simulation
 python run_simulation.py
 ```
 

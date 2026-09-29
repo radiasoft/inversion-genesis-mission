@@ -11,6 +11,7 @@ import contextvars
 import copy
 import json
 import os
+from collections.abc import Mapping
 from contextlib import contextmanager
 import types
 import typing
@@ -23,36 +24,20 @@ import attrs
 import numpy as np
 import yaml
 
-try:
-    from inversion_fbpic.lib.commented_yaml import (
-        YamlDescriptionMap,
-        YamlDescriptions,
-        YamlPath,
-        dump_yaml_with_comments,
-        extract_yaml_comments,
-    )
-    from inversion_fbpic.lib._doc_management.merge import (
-        build_merged_docstring,
-        class_description,
-        format_args_block,
-        merge_parameter_descriptions,
-        parameter_descriptions_from_doc,
-    )
-except ImportError:
-    from commented_yaml import (
-        YamlDescriptionMap,
-        YamlDescriptions,
-        YamlPath,
-        dump_yaml_with_comments,
-        extract_yaml_comments,
-    )  # type: ignore
-    from _doc_management.merge import (  # type: ignore
-        build_merged_docstring,
-        class_description,
-        format_args_block,
-        merge_parameter_descriptions,
-        parameter_descriptions_from_doc,
-    )
+from inversion_fbpic.lib.commented_yaml import (
+    YamlDescriptionMap,
+    YamlDescriptions,
+    YamlPath,
+    dump_yaml_with_comments,
+    extract_yaml_comments,
+)
+from inversion_fbpic.lib._doc_management.merge import (
+    build_merged_docstring,
+    class_description,
+    format_args_block,
+    merge_parameter_descriptions,
+    parameter_descriptions_from_doc,
+)
 
 # Backward-compatible alias used by tests.
 _parameter_descriptions_from_doc = parameter_descriptions_from_doc
@@ -442,7 +427,7 @@ class SerializableConfig(ABC):
             return [value.real, value.imag]
         if isinstance(value, Path):
             return _serialize_path(value)
-        if isinstance(value, dict):
+        if isinstance(value, Mapping):
             converted: dict[str, Any] = {}
             for k, v in value.items():
                 serialized = SerializableConfig._to_serializable(v, include_nones=True)

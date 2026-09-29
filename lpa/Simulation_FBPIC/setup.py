@@ -6,15 +6,15 @@ setup(
     packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
         "attrs>=23.2",
-        "numpy",
-        "scipy",
+        "numpy>=1.24",
+        "scipy>=1.10",
         "fbpic",
-        "matplotlib",
+        "matplotlib>=3.7",
         "mpi4py",
         "h5py",
+        "openpmd-viewer>=1.10",
         "opencv-python",
         "lasy",
-        "optimas[all]",
         "periodictable",
     ],
     extras_require={
@@ -30,24 +30,20 @@ setup(
             "plot-slice-emittance=inversion_fbpic.scripts.ebeam.plot_slice_emittance:main",
             "plot-slice-energy-spread=inversion_fbpic.scripts.ebeam.plot_slice_energy_spread:main",
             "plot-dispersion=inversion_fbpic.scripts.ebeam.plot_dispersion:main",
+            "plot-phase-space-moments=inversion_fbpic.scripts.ebeam.plot_phase_space_moments:main",
             "energy-at-peak-current=inversion_fbpic.scripts.ebeam.energy_at_peak_current:main",
             "energy-at-peak-current-multibunch=inversion_fbpic.scripts.ebeam.energy_at_peak_current_multibunch:main",
             # Charge density scripts
             "slideshow-from-npy=inversion_fbpic.scripts.charge_density.slideshow_from_npy:main",
-            # Optimas scripts
-            "view-output=inversion_fbpic.scripts.optimas.view_output:main",
-            "gaussian-process-evaluation=inversion_fbpic.scripts.optimas.gaussian_process_evaluation:main",
-            # PWFA scripts
-            "modulated-ebeam-frequency=inversion_fbpic.scripts.pwfa.modulated_ebeam_frequency:main",
-            # Transport scripts
-            "simple-r56=inversion_fbpic.scripts.transport.simple_r56:main",
             # Data extraction scripts
             "extract-hdf5-field=inversion_fbpic.scripts.data_parsing.extract_hdf5_field:main",
             "extract-hdf5-particles=inversion_fbpic.scripts.data_parsing.extract_hdf5_particles:main",
+            "build-dataset=inversion_fbpic.scripts.data_parsing.build_dataset:main",
             # Calculation scripts
             "fbpic-calc-nr=inversion_fbpic.scripts.calculations.fbpic_calc_nr:main",
             # Laser analysis scripts
             "analyze-laser-evolution=inversion_fbpic.scripts.laser.analyze_laser_evolution:main",
+            "lasy-propagation=inversion_fbpic.scripts.laser.lasy_propagation:main",
         ],
     },
 )

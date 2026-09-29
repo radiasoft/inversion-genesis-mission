@@ -39,15 +39,6 @@ Usage:
             Maximum z value for particle selection. If not provided, uses the default
             value defined in the script. Use 'None' or 'null' to explicitly set to None.
 
-        --evaluate-objective-function
-            Flag to evaluate the imported objective function. If set, the objective
-            function will be evaluated after plotting. Default value is set by
-            DEFAULT_EVALUATE_OBJECTIVE_FUNCTION in the script.
-
-        --no-evaluate-objective-function
-            Flag to disable evaluation of the objective function. This overrides the
-            default value and sets it to False.
-
     Examples:
         # Use all defaults
         python plot_ebeam_analysis.py
@@ -64,11 +55,6 @@ Usage:
         # Explicitly set min-z to None (override default)
         python plot_ebeam_analysis.py --min-z None
 
-        # Evaluate objective function
-        python plot_ebeam_analysis.py --evaluate-objective-function
-
-        # Disable objective function evaluation (if default is True)
-        python plot_ebeam_analysis.py --no-evaluate-objective-function
 """
 
 from pathlib import Path
@@ -76,9 +62,6 @@ import argparse
 import inversion_fbpic.utils.analysis as an
 from typing import Optional
 from inversion_fbpic.utils.argparse_utils import float_or_none, build_selection_dict
-from inversion_fbpic.utils.optimas_analysis import (
-    analyze_hofi_simulation as objective_function,
-)
 
 DEFAULT_DIAG_FOLDER: Optional[Path] = None  # Path to ebeam .h5 files
 
@@ -94,11 +77,6 @@ DEFAULT_ITERATION_NUMBER: int = (
 DEFAULT_SPECIES: str = (
     "n_elec"  # Which species to load from DIAG_FOLDER.  Typically "electrons"
 )
-
-DEFAULT_EVALUATE_OBJECTIVE_FUNCTION: bool = (
-    False  # Set to True to evaluate the imported objective function
-)
-
 
 def parse_args() -> argparse.Namespace:
     """
@@ -163,20 +141,6 @@ def parse_args() -> argparse.Namespace:
         help="Maximum z value for particle selection. Use 'None' or 'null' to explicitly set to None",
     )
 
-    parser.add_argument(
-        "--evaluate-objective-function",
-        action="store_true",
-        default=DEFAULT_EVALUATE_OBJECTIVE_FUNCTION,
-        help="Flag to evaluate the imported objective function",
-    )
-
-    parser.add_argument(
-        "--no-evaluate-objective-function",
-        action="store_false",
-        dest="evaluate_objective_function",
-        help="Flag to disable evaluation of the objective function (overrides default)",
-    )
-
     return parser.parse_args()
 
 
@@ -221,17 +185,6 @@ def process(args: argparse.Namespace) -> None:
 
     # Plot
     an.plot_beam_analysis(x, y, z, ux, uy, uz, w, analysis)
-
-    if args.evaluate_objective_function:
-        opa_dict = {}
-        objective_function(
-            simulation_directory=str(args.diag_folder.parent),
-            output_params=opa_dict,
-            file_tree="hdf5",
-            do_storage_cleanup=False,
-        )
-        print(opa_dict)
-
 
 def main() -> None:
     """Main entry point for script execution: parses command-line arguments and calls process()"""

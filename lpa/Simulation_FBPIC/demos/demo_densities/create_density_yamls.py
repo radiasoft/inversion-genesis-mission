@@ -1,4 +1,4 @@
-"""Write example density-profile YAML configs for each concrete profile type."""
+"""Write example density-profile YAML configs for some concrete profile types."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def _common_density_kwargs() -> dict:
 
 
 def build_example_profiles() -> dict[str, _DensityProfile]:
-    """Instantiate each standalone concrete density profile with representative parameters."""
+    """Instantiate some standalone concrete density profiles with representative parameters."""
     common = _common_density_kwargs()
 
     return {

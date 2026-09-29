@@ -1,19 +1,12 @@
-# Inversion FBPIC
+# Genesis FBPIC
 
-A Python package for plasma simulations using FBPIC, with a focus on density profile generation and analysis.
+A Python package for Genesis laser-plasma accelerator simulations with FBPIC, focused on ionization injection and electron beams at a few hundred MeV.
 
 ## Prerequisites
 
-- Python 3.9 or higher
+- Python 3.11 or higher
 - Anaconda or Miniconda
 - For Apple Silicon (M1/M2) Macs: Additional setup required (see Installation section)
-
-## Simulation Location
-
-All the FBPIC run scripts, including for standalone simulations, parameter scans, and Optimas optimizations, are found in a separate repository:
-[Inversion-FBPIC-RunScripts](https://github.com/Inversion-Semiconductor/inversion-fbpic-runscripts)
-
-Using scripts in that separate repository still require the python environment for this sub-repository.
 
 ## Installation
 
@@ -82,8 +75,7 @@ density = build_gaussian_profile(sigma=3e-6, center_location=10e-6)
 
 ### Running FBPIC
 
-FBPIC can be run using python once in the properly set up environment.  For example simulations to test running the code, 
-see the examples in the directory `simulations/test_simulations/`
+FBPIC can be run from Python once the environment is set up. Example simulation workflows are in `demos/demo_ionization_simulation/` and `demos/demo_downramp_simulation/`.
 
 
 ### Visualization with openPMD
@@ -107,15 +99,9 @@ For visualizing simulation outputs, use the openPMD notebook tool:
 
 ### Visualization with CLI
 
-Within this project are several methods to view the data in a more customizable way.  These scripts are located in the
-`scripts/` directory and utilize analysis and hdf5 manipulation tools within the `utils/` folder.
+The package includes analysis and visualization commands implemented in `inversion_fbpic/scripts/`, backed by helpers in `inversion_fbpic/utils/`.
 
-1. (Optional) if your particle data contains more electrons than just the electron beam you are interested in (as is the
-case for the downramp injected ebeams in this project), then you will want to use the `ebeam_extract_particles_only()`
-function within `hdf5_funcs.py` to remove electrons below a given energy value.  See `utils/extract_ebeam_from_hdf5.py` or
-`utils/extract_ebeam_from_set.py` for the command line instructions for this.
-
-2. Call the analysis and visualization functions within the `scripts` directory.  After installing the package with `pip install -e .`, many scripts are available as command-line tools that can be called from anywhere. These scripts support flexible command-line arguments with both long and short flag options.
+After installing the package with `pip install -e .`, the commands below can be called from anywhere. They support flexible command-line arguments with both long and short flag options.
 
    **Command-Line Scripts:**
    
@@ -136,44 +122,46 @@ function within `hdf5_funcs.py` to remove electrons below a given energy value. 
    - `plot-ebeam-analysis`: Outputs beam analysis for a single simulation
    - `visualize-ebeamparams-vs-scan`: Analyzes beam parameter measurements in a 1D parameter scan
    - `energy-at-peak-current`: Calculates energy at peak current location
-   - `simple-r56`: Applies R56 transformation and analyzes compression chicane performance
    - `slideshow-from-npy`: Creates PNG images from .npy files for charge density movies
-   - `view-output`: Objective evolution and parameter scatter plots for Optimas runs
-   - `gaussian-process-evaluation`: Gaussian-process post-analysis of Optimas exploration data
+   - `extract-hdf5-field` and `extract-hdf5-particles`: Extract field and particle data from OpenPMD HDF5 diagnostics
+   - `fbpic-calc-nr`: Calculates FBPIC resolution requirements
    - `analyze-laser-evolution`: Laser energy and `a0` tracking from OpenPMD field diagnostics
-   - And many more (see `scripts/` directory for full list)
+   - `lasy-propagation`: Propagates and analyzes a LASY laser pulse
    
    For detailed usage information and all available options for each script, see the documentation at the top of each script file or use the `--help` flag:
    ```bash
    plot-ebeam-analysis --help
    ```
 
-   #### Optimas Gaussian process analysis (`gaussian-process-evaluation`)
+      #### Beam Dataset and Phase-Space Analysis
 
-   Post-processes completed Optimas exploration runs using ``ExplorationDiagnostics``
-   GP models. Use ``view-output`` for trial history and parameter correlations; use
-   this script for GP contours, model-vs-data checks, and 1D slice plots.
+      `build-dataset` converts a collection of FBPIC runs into a JSON dataset for
+      downstream analysis. Its required positional argument is a directory that
+      contains `sim_*` subdirectories. Each run must contain `input.ini` with a
+      `[PhysicalParameters]` section and particle diagnostics in
+      `lab_diags/hdf5/`.
 
-   Point ``-d`` at the optimization folder or at the ``exploration/`` subdirectory.
+      ```bash
+      build-dataset /path/to/raw_runs --output /path/to/dataset.json \
+         --species nitrogen_electrons --uz-min 30 --central-fraction 0.95
+      ```
 
-   ```bash
-   # List varying (contour) and analyzed (slice) parameter indices
-   gaussian-process-evaluation -d /path/to/optimas/run -p
+      The output records each run's physical input parameters and a weighted
+      six-dimensional electron-beam descriptor derived from the final diagnostic.
+      The `runs/initial_sample/` directory contains an example run configuration
+      and a seven-run sample dataset: one nominal case plus six single-parameter
+      variations.
 
-   # 2D GP contour over two varying parameters
-   gaussian-process-evaluation -d /path/to/optimas/run -c -cx 0 -cy 1
+      `plot-phase-space-moments` creates a phase-space figure from a single
+      openPMD particle diagnostic. It compares weighted particle projections with
+      moment-based density models; `--all` renders the full triangular set of 1D
+      and 2D projections.
 
-   # Compare GP predictions to observations
-   gaussian-process-evaluation -d /path/to/optimas/run -e
-
-   # 1D slices: objective on the left, analyzed parameter 0 on the right (maximize)
-   gaussian-process-evaluation -d /path/to/optimas/run -s -s2 0 -s2m
-   ```
-
-   Common flags: ``-d`` data path, ``-p`` print parameter indices, ``-c`` contour,
-   ``-cx`` / ``-cy`` contour axes, ``-e`` evaluate model, ``-s`` 1D curves,
-   ``-s1`` / ``-s2`` analyzed-parameter indices, ``-s1m`` / ``-s2m`` maximize
-   (rather than minimize) when building slice models.
+      ```bash
+      plot-phase-space-moments /path/to/lab_diags/hdf5/data00000049.h5 \
+         --species nitrogen_electrons --uz-min 30 --all \
+         --output phase_space_moments.png
+      ```
 
    #### Laser evolution analysis (`analyze-laser-evolution`)
 
@@ -260,29 +248,3 @@ conda install -c conda-forge "openpmd-api=0.16.1" "openpmd-viewer=1.11.0”
 ```
 
 
-# Setup on AWS
-
-Ideally, the AWS deployer app will create the docker image with the FBPIC python environment, but if the
-AWS instance was deployed from the website then this will need to be configured manually.  If that is the case,
-here are the steps.
-
-1. Setup ssh key
-   1. Copy a `.pem` ssh key to the directory for ssh keys.  Typically on a Mac this would be in `~/.shh/`
-   2. Update permissions for the key:  `chmod 400 my-key.pem`
-   3. In the AWS deployer app, make sure this key is selected when trying to ssh to the particular instance
-2. Configure docker image
-   1. Create the docker image: `docker run -d --name DOCKER-IMAGE-NAME --gpus all nvidia/cuda:12.8.0-runtime-ubuntu24.04 tail -f /dev/null`
-      2. NOTE: Could also try the newer CUDA 13.0, although it might still be buggy `nvidia/cuda:13.0.0-devel-ubuntu24.04`
-   3. Enter the docker image: `docker exec -it DOCKER-IMAGE-NAME bash`
-   3. Make `app` directory: `mkdir app`
-   4. `cd app`
-   5. Use the AWS deployer app to copy the environment setup script to the app folder.  This script is located in 
-`inversion-lab/AWS/FBPIC_test/setup_fbpic_cuda12-8_mpich.sh`
-      1. NOTE: Currently `mpich` is more reliable than `openmpi`, but environment setup scripts are provided for both
-      2. NOTE: If using CUDA 13.0, use the respective `13-0` setup scripts
-   6. Run script: `source setup_fbpic_cuda12-8_mpich.sh`
-3. Should be all good to go!
-   1. Run commands with a `&` at the end to run process in the background.  This ensures that the simulation continues even if the ssh terminal is disconnected
-   2. If using `mpich`, then use `mpiexec`.  Likewise, for `openmpi` use `mpirun`
-   2. Use `watch nvidia-smi` to check current GPU performance
-   2. Use `df -h` to view current storage statistics

@@ -71,6 +71,29 @@ H5_DENSITY_KWARGS = {
     "interpolation_points": {"x_mm": 1.0, "pressure_bar": 0.0},
 }
 
+GENERIC_CONICAL_TARGET_KWARGS = {
+    **_COMMON,
+    "start_position": 1.0e-3,
+    "main_profile_type": "cosine_squared_flattop",
+    "main_profile_parameters": {"fwhm": 2.0e-3, "ramp_length": 1.0e-3},
+    "fringe_profile_type": "cosine_squared",
+    "fringe_profile_parameters": {"fwhm": 0.25e-3},
+    "fringe_center_offset": 1.0e-3,
+    "fringe_relative_height": 0.4,
+    "skew_rate": 0.0,
+    "skew_mode": "exponential",
+}
+
+POWER_LAW_FLATTOP_KWARGS = {
+    **_COMMON,
+    "start_position": 1.0e-3,
+    "flattop_width": 2.0e-3,
+    "transition_length": 0.5e-3,
+    "transition_exponent": 3.0,
+    "skew_rate": 0.0,
+    "skew_mode": "exponential",
+}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -105,6 +128,33 @@ def _build_generalized_gaussian_plus_triangle():
     from inversion_fbpic.lib.density_profiles import GeneralizedGaussianPlusTriangle
 
     return GeneralizedGaussianPlusTriangle(**GENERALIZED_GAUSSIAN_PLUS_TRIANGLE_KWARGS)
+
+
+def _build_generic_conical_target():
+    from inversion_fbpic.lib.density_profiles import GenericConicalTarget
+
+    return GenericConicalTarget(**GENERIC_CONICAL_TARGET_KWARGS)
+
+
+def _build_power_law_flattop():
+    from inversion_fbpic.lib.density_profiles import PowerLawFlattop
+
+    return PowerLawFlattop(**POWER_LAW_FLATTOP_KWARGS)
+
+
+def _build_generalized_lorentzian_sum():
+    from inversion_fbpic.lib.density_profiles import (
+        GeneralizedLorentzianParameters,
+        GeneralizedLorentzianSum,
+    )
+
+    return GeneralizedLorentzianSum(
+        parameters=[GeneralizedLorentzianParameters(2, 0, 1, 2, 1)],
+        p_nz=1,
+        p_nr=1,
+        p_nt=1,
+        density_cutoff_ratio=1e-4,
+    )
 
 
 def _build_modified():
@@ -162,6 +212,9 @@ _PROFILE_BUILDERS = {
     "smooth_sine_flattop": _build_smooth_sine_flattop,
     "gaussian_plus_triangle": _build_gaussian_plus_triangle,
     "generalized_gaussian_plus_triangle": _build_generalized_gaussian_plus_triangle,
+    "generic_conical_target": _build_generic_conical_target,
+    "power_law_flattop": _build_power_law_flattop,
+    "generalized_lorentzian_sum": _build_generalized_lorentzian_sum,
     "modified_density_profile": _build_modified,
 }
 
@@ -213,6 +266,666 @@ class TestExampleDensityProfile:
         assert isinstance(result, np.ndarray)
         assert result.shape == z.shape
         assert np.all(result >= 0.0)
+
+
+# ===================================================================
+# Unit tests — Generalized Lorentzian profiles
+# ===================================================================
+
+
+class TestGeneralizedLorentzianParameters:
+    def test_exposes_mapping_parameters(self) -> None:
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        parameters = GeneralizedLorentzianParameters(2, 3, 4, 5, 6)
+
+        assert (
+            parameters.A,
+            parameters.c,
+            parameters.w,
+            parameters.b,
+            parameters.m,
+        ) == (
+            2.0,
+            3.0,
+            4.0,
+            5.0,
+            6.0,
+        )
+        assert list(parameters) == ["A", "c", "w", "b", "m"]
+        assert list(parameters.values()) == [2.0, 3.0, 4.0, 5.0, 6.0]
+        assert parameters["A"] == 2.0
+        assert parameters["m"] == 6.0
+        assert dict(parameters) == {
+            "A": 2.0,
+            "c": 3.0,
+            "w": 4.0,
+            "b": 5.0,
+            "m": 6.0,
+        }
+
+    @pytest.mark.parametrize(("parameter", "value"), [("b", 0.0), ("m", -1.0)])
+    def test_rejects_non_positive_exponents(self, parameter, value) -> None:
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        values = {"A": 2.0, "c": 3.0, "w": 4.0, "b": 2.0, "m": 1.0}
+        values[parameter] = value
+
+        with pytest.raises(ValueError):
+            GeneralizedLorentzianParameters(**values)
+
+    def test_z_extent_at_cutoff_ratio(self) -> None:
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        parameters = GeneralizedLorentzianParameters(A=5, c=10, w=2, b=2, m=1)
+
+        assert parameters.z_extent(0.2) == pytest.approx((6.0, 14.0))
+
+    def test_density_function_evaluates_scalar_and_array_inputs(self) -> None:
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        parameters = GeneralizedLorentzianParameters(A=5, c=10, w=2, b=2, m=1)
+
+        assert parameters.dens_func(10.0) == pytest.approx(5.0)
+        np.testing.assert_allclose(
+            parameters.dens_func(np.array([10.0, 14.0])), [5.0, 1.0]
+        )
+
+
+class TestGeneralizedLorentzianSum:
+    def _build(self, parameters, **overrides):
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianSum
+
+        return GeneralizedLorentzianSum(
+            parameters=parameters,
+            p_nz=1,
+            p_nr=1,
+            p_nt=1,
+            **overrides,
+        )
+
+    def test_sets_nominal_density_to_largest_term_amplitude(self) -> None:
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        profile = self._build(
+            [
+                GeneralizedLorentzianParameters(2, 0, 1, 2, 1),
+                GeneralizedLorentzianParameters(5, 3, 1, 2, 1),
+            ]
+        )
+
+        assert profile.nominal_density == pytest.approx(5.0)
+        assert profile.get_r_extent() is None
+
+    def test_serializes_parameters_as_keyed_mappings(self) -> None:
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        profile = self._build([GeneralizedLorentzianParameters(2, 3, 4, 5, 6)])
+
+        assert profile.to_dict()["parameters"]["parameters"] == [
+            {"A": 2.0, "c": 3.0, "w": 4.0, "b": 5.0, "m": 6.0}
+        ]
+
+    def test_json_round_trip(self) -> None:
+        from inversion_fbpic.lib.density_core import _DensityProfile
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        profile = self._build([GeneralizedLorentzianParameters(2, 3, 4, 5, 6)])
+
+        reloaded = _DensityProfile.from_json(profile.to_json())
+
+        assert type(reloaded) is type(profile)
+        assert reloaded.parameters == profile.parameters
+
+    def test_z_extent_combines_term_extents(self) -> None:
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        profile = self._build(
+            [
+                GeneralizedLorentzianParameters(2, 0, 1, 2, 1),
+                GeneralizedLorentzianParameters(2, 6, 1, 2, 1),
+            ],
+            density_cutoff_ratio=0.2,
+        )
+
+        assert profile.get_z_extent() == pytest.approx((-2.0, 8.0))
+
+    def test_density_function_sums_terms_and_clips_negative_values(self) -> None:
+        from inversion_fbpic.lib.density_profiles import GeneralizedLorentzianParameters
+
+        profile = self._build(
+            [
+                GeneralizedLorentzianParameters(2, 0, 1, 2, 1),
+                GeneralizedLorentzianParameters(-3, 3, 1, 2, 1),
+            ]
+        )
+        density = profile.build_density_function()
+        z = np.array([0.0, 3.0])
+
+        np.testing.assert_allclose(density(z, np.zeros_like(z)), [0.85, 0.0])
+        assert density(0.0, 0.0) == pytest.approx(density(0.0, 1.0))
+
+
+# ===================================================================
+# Unit tests — GenericConicalTarget
+# ===================================================================
+
+
+class TestGenericConicalTarget:
+    def _build(self, **overrides):
+        from inversion_fbpic.lib.density_profiles import GenericConicalTarget
+
+        return GenericConicalTarget(**(GENERIC_CONICAL_TARGET_KWARGS | overrides))
+
+    @pytest.mark.parametrize(
+        ("main_type", "main_parameters"),
+        [
+            ("supergaussian", {"fwhm": 2.0e-3, "beta": 4.0}),
+            ("cosine_squared_flattop", {"fwhm": 2.0e-3, "ramp_length": 1.0e-3}),
+            (
+                "power_law_flattop",
+                {
+                    "flattop_width": 2.0e-3,
+                    "transition_length": 0.5e-3,
+                    "transition_exponent": 3.0,
+                },
+            ),
+            (
+                "lorentzian_flattop",
+                {
+                    "flattop_width": 2.0e-3,
+                    "transition_length": 0.5e-3,
+                    "coordinate_exponent": 4.0,
+                    "profile_exponent": 2.0,
+                },
+            ),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("fringe_type", "fringe_parameters"),
+        [
+            ("supergaussian", {"fwhm": 0.25e-3, "beta": 4.0}),
+            ("cosine_squared", {"fwhm": 0.25e-3}),
+            (
+                "power_law",
+                {
+                    "transition_length": 0.1e-3,
+                    "transition_exponent": 3.0,
+                },
+            ),
+            (
+                "lorentzian",
+                {
+                    "transition_length": 0.1e-3,
+                    "coordinate_exponent": 4.0,
+                    "profile_exponent": 2.0,
+                },
+            ),
+            (None, {}),
+        ],
+    )
+    def test_all_main_and_fringe_pairs_build(
+        self, main_type, main_parameters, fringe_type, fringe_parameters
+    ) -> None:
+        overrides = {
+            "main_profile_type": main_type,
+            "main_profile_parameters": main_parameters,
+            "fringe_profile_type": fringe_type,
+            "fringe_profile_parameters": fringe_parameters,
+            "fringe_center_offset": 1.0e-3 if fringe_type is not None else None,
+            "fringe_relative_height": 0.4 if fringe_type is not None else 1.0,
+        }
+        profile = self._build(**overrides)
+        density = profile.build_density_function()
+        z_min, z_max = profile.get_z_extent()
+        values = density(np.linspace(z_min, z_max, 100), np.zeros(100))
+
+        assert np.all(np.isfinite(values))
+        assert np.all(values >= 0.0)
+
+    def test_power_law_fringe_has_no_flattop(self) -> None:
+        profile = self._build(
+            fringe_profile_type="power_law",
+            fringe_profile_parameters={
+                "transition_length": 1.0,
+                "transition_exponent": 3.0,
+            },
+            fringe_center_offset=3.0,
+            fringe_relative_height=1.0,
+        )
+        density = profile.build_density_function()
+        fringe_center = profile.centroid + profile.fringe_center_offset
+
+        assert density(fringe_center, 0.0) == pytest.approx(1.0)
+        assert density(fringe_center + 0.5, 0.0) == pytest.approx((1.0 - 0.5**3) ** 3)
+
+    def test_lorentzian_flattop_keeps_fringe_tails_inside_composite_support(
+        self,
+    ) -> None:
+        cutoff = 1.0e-3
+        coordinate_exponent = 4.0
+        profile_exponent = 2.0
+        cutoff_coordinate = (cutoff ** (-1.0 / profile_exponent) - 1.0) ** (
+            1.0 / coordinate_exponent
+        )
+        fringe_relative_height = 0.4
+        fringe_cutoff_coordinate = (
+            (cutoff / fringe_relative_height) ** (-1.0 / profile_exponent) - 1.0
+        ) ** (1.0 / coordinate_exponent)
+        profile = self._build(
+            main_profile_type="lorentzian_flattop",
+            main_profile_parameters={
+                "flattop_width": 4.0,
+                "transition_length": 2.0,
+                "coordinate_exponent": coordinate_exponent,
+                "profile_exponent": profile_exponent,
+                "density_cutoff_ratio": cutoff,
+            },
+            fringe_profile_type="lorentzian",
+            fringe_profile_parameters={
+                "transition_length": 1.0,
+                "coordinate_exponent": coordinate_exponent,
+                "profile_exponent": profile_exponent,
+                "density_cutoff_ratio": cutoff,
+            },
+            fringe_center_offset=10.0,
+            fringe_relative_height=fringe_relative_height,
+        )
+        density = profile.build_density_function()
+        main_transition = profile.centroid + 3.0
+        fringe_center = profile.centroid + profile.fringe_center_offset
+        main_cutoff = profile.centroid + 2.0 + 2.0 * cutoff_coordinate
+        fringe_cutoff = fringe_center + fringe_cutoff_coordinate
+        fringe_tail_at_main_cutoff = fringe_relative_height * (
+            1.0 + abs(main_cutoff - fringe_center) ** coordinate_exponent
+        ) ** (-profile_exponent)
+
+        assert density(profile.centroid, 0.0) == pytest.approx(1.0)
+        assert density(main_transition, 0.0) == pytest.approx((1.0 + 0.5**4) ** -2)
+        assert density(main_cutoff, 0.0) == pytest.approx(
+            cutoff + fringe_tail_at_main_cutoff
+        )
+        main_tail_at_fringe_center = (
+            1.0
+            + ((fringe_center - profile.centroid - 2.0) / 2.0) ** coordinate_exponent
+        ) ** (-profile_exponent)
+        assert density(fringe_center, 0.0) == pytest.approx(
+            fringe_relative_height + main_tail_at_fringe_center
+        )
+        main_tail_at_fringe_offset = (
+            1.0
+            + ((fringe_center + 0.5 - profile.centroid - 2.0) / 2.0)
+            ** coordinate_exponent
+        ) ** (-profile_exponent)
+        assert density(fringe_center + 0.5, 0.0) == pytest.approx(
+            fringe_relative_height * (1.0 + 0.5**4) ** -2 + main_tail_at_fringe_offset
+        )
+        main_tail_at_fringe_cutoff = (
+            1.0
+            + ((fringe_cutoff - profile.centroid - 2.0) / 2.0) ** coordinate_exponent
+        ) ** (-profile_exponent)
+        assert density(fringe_cutoff, 0.0) == pytest.approx(
+            cutoff + main_tail_at_fringe_cutoff
+        )
+        assert density(fringe_cutoff + 1.0e-9, 0.0) == pytest.approx(
+            density(fringe_cutoff, 0.0), rel=1.0e-6
+        )
+
+    def test_low_amplitude_lorentzian_fringe_does_not_expand_support(self) -> None:
+        main_parameters = {"fwhm": 4.0, "ramp_length": 2.0}
+        profile = self._build(
+            main_profile_parameters=main_parameters,
+            fringe_profile_type="lorentzian",
+            fringe_profile_parameters={
+                "transition_length": 1.0,
+                "coordinate_exponent": 4.0,
+                "profile_exponent": 2.0,
+                "density_cutoff_ratio": 1.0e-3,
+            },
+            fringe_center_offset=10.0,
+            fringe_relative_height=1.0e-4,
+        )
+        main_only = self._build(
+            main_profile_parameters=main_parameters,
+            fringe_profile_type=None,
+            fringe_profile_parameters={},
+            fringe_center_offset=None,
+            fringe_relative_height=1.0,
+        )
+
+        assert profile.get_z_extent() == pytest.approx(main_only.get_z_extent())
+        assert profile.build_density_function()(
+            profile.centroid + 10.0, 0.0
+        ) == pytest.approx(1.0e-4)
+
+    def test_supergaussian_fringe_tail_remains_inside_main_support(self) -> None:
+        profile = self._build(
+            main_profile_parameters={"fwhm": 10.0, "ramp_length": 2.0},
+            fringe_profile_type="supergaussian",
+            fringe_profile_parameters={"fwhm": 1.0, "beta": 2.0},
+            fringe_center_offset=2.0,
+            fringe_relative_height=0.1,
+        )
+        density = profile.build_density_function()
+        fringe_coordinate = profile.centroid + 4.0
+
+        assert fringe_coordinate < profile.get_z_extent()[1]
+        assert density(fringe_coordinate, 0.0) > 0.0
+
+    def test_lorentzian_density_remains_continuous_outside_metadata_extent(
+        self,
+    ) -> None:
+        profile = self._build(
+            main_profile_type="lorentzian_flattop",
+            main_profile_parameters={
+                "flattop_width": 2.0,
+                "transition_length": 1.0,
+                "coordinate_exponent": 4.0,
+                "profile_exponent": 2.0,
+                "density_cutoff_ratio": 1.0e-3,
+            },
+            fringe_profile_type=None,
+            fringe_profile_parameters={},
+            fringe_center_offset=None,
+            fringe_relative_height=1.0,
+        )
+        density = profile.build_density_function()
+        _, z_max = profile.get_z_extent()
+
+        assert density(z_max + 1.0e-6, 0.0) > 0.0
+
+    def test_high_amplitude_lorentzian_fringe_expands_to_relative_cutoff(self) -> None:
+        cutoff = 1.0e-3
+        relative_height = 2.0
+        coordinate_exponent = 4.0
+        profile_exponent = 2.0
+        old_half_extent = (cutoff ** (-1.0 / profile_exponent) - 1.0) ** (
+            1.0 / coordinate_exponent
+        )
+        effective_half_extent = (
+            (cutoff / relative_height) ** (-1.0 / profile_exponent) - 1.0
+        ) ** (1.0 / coordinate_exponent)
+        profile = self._build(
+            fringe_profile_type="lorentzian",
+            fringe_profile_parameters={
+                "transition_length": 1.0,
+                "coordinate_exponent": coordinate_exponent,
+                "profile_exponent": profile_exponent,
+                "density_cutoff_ratio": cutoff,
+            },
+            fringe_center_offset=10.0,
+            fringe_relative_height=relative_height,
+        )
+        fringe_edge = profile.centroid + 10.0 + effective_half_extent
+
+        assert effective_half_extent > old_half_extent
+        assert profile.get_z_extent()[1] == pytest.approx(fringe_edge)
+        assert profile.build_density_function()(fringe_edge, 0.0) == pytest.approx(
+            cutoff
+        )
+
+    @pytest.mark.parametrize("fringe_side", ["left", "right", "both"])
+    def test_fringe_side_controls_components_and_support(self, fringe_side) -> None:
+        profile = self._build(
+            fringe_side=fringe_side,
+            fringe_center_offset=2.0e-3,
+            fringe_profile_parameters={"fwhm": 0.1e-3},
+        )
+        density = profile.build_density_function()
+        z_min, z_max = profile.get_z_extent()
+        right_center = profile.centroid + profile.fringe_center_offset
+        left_center = profile.centroid - profile.fringe_center_offset
+
+        assert z_min == profile.start_position
+        if fringe_side in ("left", "both"):
+            assert density(left_center, 0.0) > 0.0
+        if fringe_side == "right":
+            assert density(left_center, 0.0) == pytest.approx(0.0)
+        if fringe_side in ("right", "both"):
+            assert density(right_center, 0.0) > 0.0
+        if fringe_side == "left":
+            assert density(right_center, 0.0) == pytest.approx(0.0)
+        assert density(z_min - 1.0e-9, 0.0) == pytest.approx(0.0)
+        assert density(z_max + 1.0e-9, 0.0) == pytest.approx(0.0)
+
+    def test_skew_is_applied_after_component_sum(self) -> None:
+        profile = self._build(
+            main_profile_parameters={"fwhm": 4.0, "ramp_length": 2.0},
+            fringe_profile_parameters={"fwhm": 1.0},
+            fringe_center_offset=1.5,
+            fringe_relative_height=0.4,
+            skew_rate=0.2,
+            skew_mode="finite_supergaussian",
+        )
+        density = profile.build_density_function()
+        shifted_z = 1.0
+        expected_unskewed = 1.0 + 0.4 * np.cos(np.pi / 4.0) ** 2
+        z_min, z_max = profile.get_z_extent()
+        support_width = z_max - z_min
+
+        assert density(profile.centroid + shifted_z, 0.0) == pytest.approx(
+            expected_unskewed
+            * np.exp(
+                profile.skew_rate * shifted_z
+                - 4.0 * np.log(2.0) * shifted_z**2 / support_width**2
+            )
+        )
+
+    def test_exponential_skew_remains_available(self) -> None:
+        profile = self._build(
+            main_profile_parameters={"fwhm": 4.0, "ramp_length": 2.0},
+            fringe_profile_parameters={"fwhm": 1.0},
+            fringe_center_offset=1.5,
+            fringe_relative_height=0.4,
+            skew_rate=0.2,
+            skew_mode="exponential",
+        )
+        density = profile.build_density_function()
+        shifted_z = 1.0
+        expected_unskewed = 1.0 + 0.4 * np.cos(np.pi / 4.0) ** 2
+
+        assert density(profile.centroid + shifted_z, 0.0) == pytest.approx(
+            expected_unskewed * np.exp(profile.skew_rate * shifted_z)
+        )
+
+    def test_saturated_skew_preserves_local_rate_and_reciprocal_limits(self) -> None:
+        from inversion_fbpic.lib._density_implementations.generic_conical_target import (
+            _skew_multiplier,
+        )
+
+        profile = self._build(
+            main_profile_parameters={"fwhm": 4.0, "ramp_length": 2.0},
+            fringe_profile_type=None,
+            fringe_profile_parameters={},
+            fringe_center_offset=None,
+            fringe_relative_height=1.0,
+            skew_rate=0.2,
+            skew_mode="saturated",
+        )
+        left_span, right_span = profile._profile_support_spans()
+        saturation_length = 3.0 * max(left_span, right_span)
+        coordinate = 20.0 * saturation_length
+        multiplier, reverse_multiplier = _skew_multiplier(
+            np.asarray([coordinate, -coordinate]),
+            left_span,
+            right_span,
+            profile.skew_rate,
+            "saturated",
+        )
+        step = 1.0e-6
+        density = profile.build_density_function()
+        center_density = density(profile.centroid, 0.0)
+        local_log_slope = (
+            np.log(density(profile.centroid + step, 0.0))
+            - np.log(density(profile.centroid - step, 0.0))
+        ) / (2.0 * step)
+
+        assert center_density == pytest.approx(1.0)
+        assert local_log_slope == pytest.approx(profile.skew_rate, rel=1.0e-5)
+        assert multiplier == pytest.approx(
+            np.exp(profile.skew_rate * saturation_length)
+        )
+        assert multiplier * reverse_multiplier == pytest.approx(1.0)
+
+    def test_auto_skew_selects_saturated_for_slow_tail_components(self) -> None:
+        lorentzian = self._build(
+            main_profile_type="lorentzian_flattop",
+            main_profile_parameters={
+                "flattop_width": 2.0,
+                "transition_length": 1.0,
+                "coordinate_exponent": 4.0,
+                "profile_exponent": 2.0,
+            },
+            skew_mode="auto",
+        )
+        slow_supergaussian = self._build(
+            main_profile_type="supergaussian",
+            main_profile_parameters={"fwhm": 1.0, "beta": 1.0},
+            skew_mode="auto",
+        )
+        fast_supergaussian = self._build(
+            main_profile_type="supergaussian",
+            main_profile_parameters={"fwhm": 1.0, "beta": 2.0},
+            skew_mode="auto",
+        )
+
+        assert lorentzian.skew_mode == "saturated"
+        assert slow_supergaussian.skew_mode == "saturated"
+        assert fast_supergaussian.skew_mode == "finite_supergaussian"
+        assert lorentzian.to_dict()["parameters"]["skew_mode"] == "saturated"
+
+    def test_finite_supergaussian_skew_permits_beta_at_most_one(self) -> None:
+        profile = self._build(
+            main_profile_type="supergaussian",
+            main_profile_parameters={"fwhm": 1.0, "beta": 1.0},
+            skew_rate=1.0,
+            skew_mode="finite_supergaussian",
+        )
+
+        assert np.isfinite(profile.build_density_function()(profile.centroid, 0.0))
+
+    def test_finite_supergaussian_peak_may_lie_outside_support(self) -> None:
+        profile = self._build(
+            main_profile_parameters={"fwhm": 4.0, "ramp_length": 2.0},
+            fringe_profile_type=None,
+            fringe_profile_parameters={},
+            fringe_center_offset=None,
+            fringe_relative_height=1.0,
+            skew_rate=2.0,
+            skew_mode="finite_supergaussian",
+        )
+        z_min, z_max = profile.get_z_extent()
+        support_width = z_max - z_min
+        peak = profile.centroid + profile.skew_rate * support_width**2 / (
+            8.0 * np.log(2.0)
+        )
+        density = profile.build_density_function()
+
+        assert peak > z_max
+        assert np.all(np.isfinite(density(np.linspace(z_min, z_max, 101), 0.0)))
+        assert density(z_max + 1.0e-9, 0.0) == pytest.approx(0.0)
+
+    @pytest.mark.parametrize(
+        "overrides",
+        [
+            {
+                "main_profile_type": "lorentzian_flattop",
+                "main_profile_parameters": {
+                    "flattop_width": 2.0,
+                    "transition_length": 1.0,
+                    "coordinate_exponent": 4.0,
+                    "profile_exponent": 2.0,
+                },
+                "skew_rate": 0.1,
+                "skew_mode": "exponential",
+            },
+            {
+                "fringe_profile_type": "lorentzian",
+                "fringe_profile_parameters": {
+                    "transition_length": 1.0,
+                    "coordinate_exponent": 4.0,
+                    "profile_exponent": 2.0,
+                },
+                "fringe_center_offset": 2.0,
+                "skew_rate": 0.1,
+                "skew_mode": "exponential",
+            },
+        ],
+    )
+    def test_rejects_unguarded_exponential_skew_for_lorentzians(
+        self, overrides
+    ) -> None:
+        with pytest.raises(ValueError, match="not supported"):
+            self._build(**overrides)
+
+    @pytest.mark.parametrize(
+        ("overrides", "match"),
+        [
+            ({"main_profile_parameters": {"fwhm": 1.0}}, "missing"),
+            (
+                {"main_profile_parameters": {"fwhm": 1.0, "ramp_length": 2.0}},
+                "less than or equal",
+            ),
+            (
+                {"fringe_profile_type": None, "fringe_center_offset": 1.0},
+                "require fringe_profile_type",
+            ),
+            ({"fringe_center_offset": None}, "fringe_center_offset is required"),
+            (
+                {
+                    "main_profile_type": "supergaussian",
+                    "main_profile_parameters": {"fwhm": 1.0, "beta": 1.0},
+                    "skew_rate": 1.0,
+                    "skew_mode": "exponential",
+                },
+                "beta <= 1.0",
+            ),
+            ({"skew_mode": "unsupported"}, "skew_mode"),
+        ],
+    )
+    def test_rejects_invalid_component_configuration(self, overrides, match) -> None:
+        with pytest.raises(ValueError, match=match):
+            self._build(**overrides)
+
+
+# ===================================================================
+# Unit tests — PowerLawFlattop
+# ===================================================================
+
+
+class TestPowerLawFlattop:
+    def _build(self, **overrides):
+        from inversion_fbpic.lib.density_profiles import PowerLawFlattop
+
+        return PowerLawFlattop(**(POWER_LAW_FLATTOP_KWARGS | overrides))
+
+    def test_constant_core_and_power_law_transition(self) -> None:
+        profile = self._build()
+        density = profile.build_density_function()
+        flat_edge = profile.centroid + profile.flattop_width / 2.0
+        transition_midpoint = flat_edge + profile.transition_length / 2.0
+
+        assert density(profile.centroid, 0.0) == pytest.approx(1.0)
+        assert density(flat_edge, 0.0) == pytest.approx(1.0)
+        assert density(transition_midpoint, 0.0) == pytest.approx(
+            (1.0 - 0.5**profile.transition_exponent) ** 3
+        )
+
+    def test_support_and_centroid_are_derived_from_start_position(self) -> None:
+        profile = self._build()
+        density = profile.build_density_function()
+        z_min, z_max = profile.get_z_extent()
+
+        assert z_min == profile.start_position
+        assert profile.centroid == pytest.approx((z_min + z_max) / 2.0)
+        assert density(z_min, 0.0) == pytest.approx(0.0)
+        assert density(z_max, 0.0) == pytest.approx(0.0)
+        assert density(z_min - 1.0e-9, 0.0) == pytest.approx(0.0)
+        assert density(z_max + 1.0e-9, 0.0) == pytest.approx(0.0)
+
+    def test_requires_exponent_greater_than_two(self) -> None:
+        with pytest.raises(ValueError, match="transition_exponent"):
+            self._build(transition_exponent=2.0)
 
 
 # ===================================================================

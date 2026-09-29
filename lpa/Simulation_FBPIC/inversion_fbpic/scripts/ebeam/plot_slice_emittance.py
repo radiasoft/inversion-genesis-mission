@@ -13,8 +13,7 @@ Usage:
 
     Optional Arguments:
         -d, --diag-folder PATH
-            Path to the ebeam .h5 files directory. If not provided, uses the default
-            value defined in the script.
+            Path to the ebeam .h5 files directory. Required.
 
         -i, --iteration-number INT
             Which dump to load from DIAG_FOLDER. Set to "-1" for final dump.
@@ -35,10 +34,7 @@ Usage:
             Default: None
 
     Examples:
-        # Use all defaults
-        python plot_slice_emittance.py
-
-        # Specify a different diagnostics folder
+        # Analyze a diagnostics folder
         python plot_slice_emittance.py -d /path/to/hdf5
 
         # Load a specific iteration and set z window
@@ -57,9 +53,7 @@ import inversion_fbpic.utils.analysis as an
 from inversion_fbpic.utils.argparse_utils import float_or_none
 
 # Default configuration variables
-DEFAULT_DIAG_FOLDER: Path = Path(
-    "../../../../../../inversion-fbpic-runscripts/simulations/htu/version_2/htu_optimas_solution/data/analysis/0_diags/electrons/"
-)
+DEFAULT_DIAG_FOLDER: Optional[Path] = None
 DEFAULT_MIN_Z: Optional[float] = 8860e-6  # Minimum z when selecting electrons (meters)
 DEFAULT_MAX_Z: Optional[float] = None  # Maximum z when selecting electrons
 DEFAULT_ITERATION_NUMBER: int = -1  # Which dump to load from DIAG_FOLDER
@@ -82,6 +76,7 @@ def parse_args() -> argparse.Namespace:
         "--diag-folder",
         type=Path,
         default=DEFAULT_DIAG_FOLDER,
+        required=True,
         help="Path to the ebeam .h5 files directory",
     )
 
@@ -361,6 +356,9 @@ def process(args: argparse.Namespace) -> None:
     Args:
         args: Parsed command-line arguments. See module docstring for argument details.
     """
+    if args.diag_folder is None:
+        raise RuntimeError("Must specify a beam data path with --diag-folder.")
+
     try:
         x, y, z, ux, uy, uz, w = load_and_filter_beam_data(
             args.diag_folder,

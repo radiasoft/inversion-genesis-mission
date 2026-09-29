@@ -21,6 +21,13 @@ import numpy.typing as npt
 
 from scipy.constants import c, pi
 
+from inversion_fbpic.lib.serializable_config import SerializableConfig
+from inversion_fbpic.utils.simulation_setup_tools import (
+    calculate_laser_a0_from_energy,
+    calculate_laser_energy_from_a0,
+    calculate_laser_tau_from_fwhm_intensity,
+)
+
 DensityCallable = Callable[[npt.ArrayLike, npt.ArrayLike], npt.ArrayLike]
 
 
@@ -44,18 +51,6 @@ def _format_polarization(pol: "float | list | str") -> str:
                 f"\u03b2={np.degrees(seq[1]):.1f}\u00b0)"
             )
     return f"linear (\u03b8={np.degrees(pol):.1f}\u00b0)"
-
-
-try:
-    from inversion_fbpic.lib.serializable_config import SerializableConfig
-    from inversion_fbpic.utils.simulation_setup_tools import (
-        calculate_laser_a0_from_energy,
-        calculate_laser_energy_from_a0,
-        calculate_laser_tau_from_fwhm_intensity,
-    )
-except ImportError:
-    from serializable_config import SerializableConfig  # type: ignore
-    from simulation_setup_tools import calculate_laser_a0_from_energy, calculate_laser_energy_from_a0, calculate_laser_tau_from_fwhm_intensity  # type: ignore
 
 
 _DERIVED_YAML_KEYS = ("out_a0", "out_energy")

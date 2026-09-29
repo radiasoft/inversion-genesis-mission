@@ -80,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
                     f"""\
                     Config docstring stubs are out of date. Regenerate with:
 
-                      python plasma_simulations/Simulation_FBPIC/scripts/sync_config_docstrings.py
+                      python lpa/Simulation_FBPIC/tools/sync_config_docstrings.py
 
                     Stale files:
                     {paths}

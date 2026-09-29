@@ -424,7 +424,8 @@ def _calculate_moments(
         w (np.ndarray): Particle weights.
 
     Returns:
-        dict: Dictionary of 2nd order moments of the electron beam
+        dict: Dictionary containing weighted centroids and second-order moments
+            of the electron beam.
     """
     gamma = np.sqrt(1 + ux**2 + uy**2 + uz**2)
     px_over_p = ux / gamma
@@ -440,6 +441,10 @@ def _calculate_moments(
     xpx = np.average((x - x_mean) * (px_over_p - px_mean), weights=w)
     ypy = np.average((y - y_mean) * (py_over_p - py_mean), weights=w)
     return {
+        "x_mean": float(x_mean),
+        "y_mean": float(y_mean),
+        "px_mean": float(px_mean),
+        "py_mean": float(py_mean),
         "x2": float(x2),
         "y2": float(y2),
         "px2": float(px2),
@@ -755,10 +760,16 @@ def plot_beam_analysis(
     py_over_p = uy / gamma
     px_std = np.sqrt(moments["px2"])
     py_std = np.sqrt(moments["py2"])
-    x_range = [-2 * x_std, 2 * x_std]
-    px_range = [-2 * px_std, 2 * px_std]
-    y_range = [-2 * y_std, 2 * y_std]
-    py_range = [-2 * py_std, 2 * py_std]
+
+    x_ave = moments["x_mean"] * 1e6
+    y_ave = moments["y_mean"] * 1e6
+    ux_ave = moments["px_mean"]
+    uy_ave = moments["py_mean"]
+
+    x_range = [-2 * x_std + x_ave, 2 * x_std + x_ave]
+    px_range = [-2 * px_std + ux_ave, 2 * px_std + ux_ave]
+    y_range = [-2 * y_std + y_ave, 2 * y_std + y_ave]
+    py_range = [-2 * py_std + uy_ave, 2 * py_std + uy_ave]
 
     if do_hist:
         axes[1, 0].hist2d(

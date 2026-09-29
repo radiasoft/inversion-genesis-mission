@@ -48,7 +48,7 @@ Activate an environment containing `inversion_fbpic`, `h5py`, `numpy`, and
 `matplotlib`. Run from this directory and pass paths to your profile files:
 
 ```bash
-cd plasma_simulations/Simulation_FBPIC/demos/miscellaneous/demo_fluid_interp
+cd lpa/Simulation_FBPIC/demos/miscellaneous/demo_fluid_interp
 python plot_profiles.py --files /path/to/profile.h5 --output density_profiles.png
 ```
 

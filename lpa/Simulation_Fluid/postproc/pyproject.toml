@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fludat-proc"
+version = "0.1.0"
+description = "Turn gas-jet fluid simulation exports into FBPIC-ready density cubes"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "h5py>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+lineouts-to-density-hdf5 = "fludat_proc.lineouts_to_density_hdf5:main"
+cgns-to-density-hdf5 = "fludat_proc.cgns_to_density_hdf5:main"
+plot-density = "fludat_proc.plot_density:main"
+density-convergence = "fludat_proc.convergence:main"
+shock-evaluator = "fludat_proc.shock_evaluator:main"
+
+[tool.setuptools]
+packages = ["fludat_proc"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+# Linting follows the repo-wide pre-commit setup (ruff defaults + black formatting).
+extend-exclude = ["data"]
+
+[tool.ruff.lint.per-file-ignores]
+# CLI modules bootstrap sys.path before their imports so they also run as plain scripts.
+"fludat_proc/lineouts_to_density_hdf5.py" = ["E402"]
+"fludat_proc/cgns_to_density_hdf5.py" = ["E402"]
+"fludat_proc/convergence.py" = ["E402"]
+"fludat_proc/plot_density.py" = ["E402"]
+"fludat_proc/shock_evaluator.py" = ["E402"]

@@ -20,7 +20,7 @@ NOMINAL_DENSITY = 1e18 * 1e6  # m^-3
 DOPED_FRACTION = 0.1
 Z0_DOPED = 1.0e-3  # m
 
-# Coarse settings for quick demo runs (matches demo_optimas).
+# Coarse settings for quick demo runs.
 P_NZ, P_NR, P_NT = 1, 1, 2
 NZ, NR, NM = 256, 256, 2
 

@@ -3,15 +3,16 @@ Script to fit the observed sinusoidal pattern in the ebeam's x-z phase space to 
 Alternatively, skip the fitting and just plot a given sinusoidal overtop.
 
 Usage:
-    Update the DIRECTORY FOLDER global variable with the diag folder of interest.
+    Provide the diagnostics folder with ``--diag-folder``.
     To run the fitting algorithm, make sure DO_FITS = True.  Otherwise the script will just plot the sinusoid given by
       the parameters of SINUSOIDAL_PARAMS (the latter is useful if data is messy and you want to compare wavelengths)
-      If DO_FITS = True, then it will try to perform fits on all *other* diags folders adjacent to DIRECTORY_FOLDER and
+    If DO_FITS = True, then it will try to perform fits on all *other* diagnostics folders adjacent to the supplied directory and
       plot the variation.  (If, for instance, you want to plot the wavelength vs number of cells in the simulation)
     Change MIN_Z as needed to crop out unwanted electrons upstream of the main electron bunch of interest
     Run with any python interpreter.
 """
 
+import argparse
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -20,15 +21,8 @@ from scipy.constants import pi
 from inversion_fbpic.utils.analysis import load_beam_data, apply_cut
 import re
 
-# Diagnostic folder for which to plot 2d histogram in z-x
-DIRECTORY_FOLDER: str = (
-    "../../../../../../inversion-fbpic-runscripts/optimas/htu/htu_downramp_test/analysis/exploration_evaluations/sim0078/"
-)
-
 MIN_Z: float = 8863e-6  # Minimum z when selecting elections, set to None for no selection
-DO_FITS: bool = (
-    False  # Set to True to attempt a fit across all simulations in DIRECTORY_FOLDER
-)
+DO_FITS: bool = False  # Set to True to attempt a fit across adjacent diagnostics folders
 SINUSOIDAL_PARAMS: tuple[float, float, float, float] = (
     2.5e-6,  # Amplitude
     2 * pi / 4e-6,  # Wavenumber (to change wavelength, remember that k = 2*pi/lambda)
@@ -72,14 +66,29 @@ def get_wavelength(k: float) -> float:
         return np.nan
 
 
-def main() -> None:
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Fit or overlay a sinusoid on an electron beam x-z phase space."
+    )
+    parser.add_argument(
+        "-d",
+        "--diag-folder",
+        type=Path,
+        required=True,
+        help="Simulation directory containing the ebeam diagnostics folder.",
+    )
+    return parser.parse_args()
+
+
+def main(diag_folder: Path) -> None:
     """
     Script entry point for fitting or plotting a sinusoidal pattern in the ebeam's x-z phase space.
 
     Returns:
         None
     """
-    base_dir = Path(DIRECTORY_FOLDER)
+    base_dir = diag_folder
 
     # Prepare for side-by-side plots
     if DO_FITS:
@@ -154,7 +163,7 @@ def main() -> None:
             axes[0].legend()
 
     else:
-        print(f"No ebeam h5 files found in {DIRECTORY_FOLDER}")
+        print(f"No ebeam h5 files found in {base_dir}")
 
     # --- PART 2: Wavelength vs N for all *_diags folders ---
     if DO_FITS:
@@ -227,4 +236,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(parse_args().diag_folder)
