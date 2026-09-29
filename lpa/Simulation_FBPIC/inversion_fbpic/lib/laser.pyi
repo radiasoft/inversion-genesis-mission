@@ -20,7 +20,7 @@ class _LaserPulse(SerializableConfig):
 
     Args:
         energy: (float|None) [J] |OPTIONAL| Energy of the laser pulse in Joules. Provide this or a0, not both.
-        a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both.
+        a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both. Not accepted by ``LasyLaserPulse``, which derives it numerically.
         z0: (float) [m] Position of the laser pulse within the simulation window in meters.
         method: (Literal["direct", "antenna"]|None) |OPTIONAL| Method to use for laser pulse propagation. If None, the laser pulse will be propagated using the direct method.
         z0_antenna: (float|None) [m] |OPTIONAL| Position of the antenna within the simulation window in meters. Required if method is "antenna".
@@ -53,7 +53,7 @@ class _LaserPulse(SerializableConfig):
 
         Args:
             energy: (float|None) [J] |OPTIONAL| Energy of the laser pulse in Joules. Provide this or a0, not both.
-            a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both.
+            a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both. Not accepted by ``LasyLaserPulse``, which derives it numerically.
             z0: (float) [m] Position of the laser pulse within the simulation window in meters.
             method: (Literal["direct", "antenna"]|None) |OPTIONAL| Method to use for laser pulse propagation. If None, the laser pulse will be propagated using the direct method.
             z0_antenna: (float|None) [m] |OPTIONAL| Position of the antenna within the simulation window in meters. Required if method is "antenna".
@@ -62,6 +62,23 @@ class _LaserPulse(SerializableConfig):
         ...
     @classmethod
     def from_dict(cls, payload: dict[str, Any], *, overrides: dict[str, Any] | None=None) -> '_LaserPulse':
+        ...
+    def prepare(self, comm: Any | None=None, *, relative_to: Path | str | None=None) -> None:
+        """Perform one-time, possibly collective, setup before ``build_laser_profile``.
+
+        ``Simulation.setup_simulation`` calls this on every MPI rank before adding
+        the laser. The base implementation is a no-op; subclasses that need to
+        write files or run expensive precomputation (e.g. ``LasyLaserPulse``)
+        override it.
+
+        Args:
+            comm: (BoundaryCommunicator|mpi4py.MPI.Comm|None) Communicator for
+                collective setup. Accepts FBPIC's ``sim.comm``, an mpi4py
+                communicator such as ``MPI.COMM_WORLD``, or ``None`` when running
+                without MPI (everything happens on the calling process).
+            relative_to: (Path|str|None) Directory against which relative output paths
+                are resolved. ``Simulation`` passes its ``working_directory``; ``None``
+                means the current working directory."""
         ...
     def get_z_extent(self, num_sigma: float=3.0) -> tuple[float, float]:
         """Get the longitudinal extent of the laser pulse in meters.
@@ -117,17 +134,63 @@ class _LaserPulse(SerializableConfig):
         ...
 
 class LasyLaserPulse(_LaserPulse):
-    """Laser pulse from a `Lasy` profile.
-    This is not yet implemented!
+    """Super-Gaussian laser pulse with Zernike aberrations, built with LASY.
+
+    Wraps ``inversion_fbpic.utils.laser.HighOrderLasyLaser``: the pulse is
+    constructed at focus, back-propagated to the simulation start plane,
+    optionally re-centred, normalized to ``energy``, and written to a LASY HDF5
+    file that FBPIC reads through ``FromLasyFileLaser``. The build is expensive
+    and happens once, in ``prepare()``, on MPI rank 0 only; other ranks wait at
+    a barrier and receive the file path.
+
+    Only ``energy`` may be provided. ``a0`` is measured numerically from the
+    field at focus during ``prepare()`` and is reported as ``out_a0``
+    (``null`` in YAML written before the build).
+
+    LASY pulses can only be emitted through an antenna, so ``method`` is fixed
+    to ``"antenna"``, ``v_antenna`` to ``0.0``, and ``z0_antenna`` is required.
+    FBPIC resets the LASY time axis to zero, so the peak intensity leaves the
+    antenna at ``t = t_start + 3 * tau_fwhm``. ``z0`` is informational only
+    (nominal centroid at ``t = 0``, used for plotting extents); for a
+    consistent picture set ``z0 = z0_antenna - c * (t_start + 3 * tau_fwhm)``.
 
     Args:
         energy: (float|None) [J] |OPTIONAL| Energy of the laser pulse in Joules. Provide this or a0, not both.
-        a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both.
+        a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both. Not accepted by ``LasyLaserPulse``, which derives it numerically.
         z0: (float) [m] Position of the laser pulse within the simulation window in meters.
         method: (Literal["direct", "antenna"]|None) |OPTIONAL| Method to use for laser pulse propagation. If None, the laser pulse will be propagated using the direct method.
         z0_antenna: (float|None) [m] |OPTIONAL| Position of the antenna within the simulation window in meters. Required if method is "antenna".
-        v_antenna: (float|None) [m/s] |OPTIONAL| Velocity of the antenna in meters per second. Required if method is "antenna"."""
+        v_antenna: (float|None) [m/s] |OPTIONAL| Velocity of the antenna in meters per second. Required if method is "antenna".
+        wavelength: (float) [m] Central wavelength of the laser pulse in meters.
+        tau_fwhm: (float) [s] Full-width at half-maximum intensity duration of the laser pulse in seconds.
+        waist: (float) [m] Super-Gaussian spot size (1/e^2 radius for order 2) at focus in meters.
+        focal_position: (float) [m] Focal position of the laser pulse in meters, relative to the simulation start plane.
+        super_gaussian_order: (float) Super-Gaussian order of the transverse profile. 2.0 is Gaussian.
+        zernike_coefficients: (dict[str, float]) [wavelengths] |OPTIONAL| Zernike phase amplitudes at focus keyed by name (astigmatism_2, astigmatism_4, coma_y, coma_x, trefoil_y, trefoil_x, spherical_3, astigmatism_6, coma_5_y, coma_5_x, secondary_trefoil_y, secondary_trefoil_x). Missing names default to 0.0; unknown names are rejected.
+        polarization: (tuple[float, float]) |OPTIONAL| Real Jones vector (Ex, Ey) passed to LASY. Defaults to (1, 0), linear along x.
+        n_azimuthal_modes: (int) |OPTIONAL| Number of azimuthal modes in the LASY r-t grid. Defaults to 5.
+        num_points: (tuple[int, int]) |OPTIONAL| LASY grid points (radial, temporal). Defaults to (600, 900).
+        hi_range: (float) [waists] |OPTIONAL| Radial extent of the LASY grid in units of `waist`. Defaults to 8.0.
+        center_and_remove_tilt: (bool) |OPTIONAL| Re-centre the fluence and remove the mean transverse phase gradient at the start plane. Defaults to True.
+        centering_angles: (int) |OPTIONAL| Number of polar angles used for centering; must be at least 2 * n_azimuthal_modes - 1. Defaults to 72.
+        lasy_file: (Path|str) |OPTIONAL| Output prefix for the LASY HDF5 file; the written file is `<parent>/<stem>_00000.h5`. If not absolute, this is relative to the `working_directory` passed to `Simulation.setup_simulation()` (or to `prepare(relative_to=...)`), falling back to the current working directory. Defaults to `diags/lasy_laser`.
+        t_start: (float) [s] |OPTIONAL| Delay before the antenna starts emitting the LASY file, as in FBPIC's `FromLasyFileLaser`. Defaults to 0.0."""
     SUBCLASS: ClassVar[str]
+    wavelength: float
+    tau_fwhm: float
+    waist: float
+    focal_position: float
+    super_gaussian_order: float
+    zernike_coefficients: dict[str, float]
+    polarization: tuple[float, float]
+    n_azimuthal_modes: int
+    num_points: tuple[int, int]
+    hi_range: float
+    center_and_remove_tilt: bool
+    centering_angles: int
+    lasy_file: Path
+    t_start: float
+    lasy_file_path: Path | None
     def __init__(
         self,
         *,
@@ -137,26 +200,127 @@ class LasyLaserPulse(_LaserPulse):
         method: Literal['direct', 'antenna'] | None = None,
         z0_antenna: float | None = None,
         v_antenna: float | None = None,
+        wavelength: float,
+        tau_fwhm: float,
+        waist: float,
+        focal_position: float,
+        super_gaussian_order: float,
+        zernike_coefficients: dict[str, float] = ...,
+        polarization: tuple[float, float] = (1.0, 0.0),
+        n_azimuthal_modes: int = 5,
+        num_points: tuple[int, int] = (600, 900),
+        hi_range: float = 8.0,
+        center_and_remove_tilt: bool = True,
+        centering_angles: int = 72,
+        lasy_file: Path = Path('diags/lasy_laser'),
+        t_start: float = 0.0,
     ) -> None:
-        """Laser pulse from a `Lasy` profile.
-        This is not yet implemented!
+        """Super-Gaussian laser pulse with Zernike aberrations, built with LASY.
+
+        Wraps ``inversion_fbpic.utils.laser.HighOrderLasyLaser``: the pulse is
+        constructed at focus, back-propagated to the simulation start plane,
+        optionally re-centred, normalized to ``energy``, and written to a LASY HDF5
+        file that FBPIC reads through ``FromLasyFileLaser``. The build is expensive
+        and happens once, in ``prepare()``, on MPI rank 0 only; other ranks wait at
+        a barrier and receive the file path.
+
+        Only ``energy`` may be provided. ``a0`` is measured numerically from the
+        field at focus during ``prepare()`` and is reported as ``out_a0``
+        (``null`` in YAML written before the build).
+
+        LASY pulses can only be emitted through an antenna, so ``method`` is fixed
+        to ``"antenna"``, ``v_antenna`` to ``0.0``, and ``z0_antenna`` is required.
+        FBPIC resets the LASY time axis to zero, so the peak intensity leaves the
+        antenna at ``t = t_start + 3 * tau_fwhm``. ``z0`` is informational only
+        (nominal centroid at ``t = 0``, used for plotting extents); for a
+        consistent picture set ``z0 = z0_antenna - c * (t_start + 3 * tau_fwhm)``.
 
         Args:
             energy: (float|None) [J] |OPTIONAL| Energy of the laser pulse in Joules. Provide this or a0, not both.
-            a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both.
+            a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both. Not accepted by ``LasyLaserPulse``, which derives it numerically.
             z0: (float) [m] Position of the laser pulse within the simulation window in meters.
             method: (Literal["direct", "antenna"]|None) |OPTIONAL| Method to use for laser pulse propagation. If None, the laser pulse will be propagated using the direct method.
             z0_antenna: (float|None) [m] |OPTIONAL| Position of the antenna within the simulation window in meters. Required if method is "antenna".
-            v_antenna: (float|None) [m/s] |OPTIONAL| Velocity of the antenna in meters per second. Required if method is "antenna"."""
-    def get_r_extent(self, simulation_extent: tuple[float, float], num_sigma: float=3.0) -> float:
+            v_antenna: (float|None) [m/s] |OPTIONAL| Velocity of the antenna in meters per second. Required if method is "antenna".
+            wavelength: (float) [m] Central wavelength of the laser pulse in meters.
+            tau_fwhm: (float) [s] Full-width at half-maximum intensity duration of the laser pulse in seconds.
+            waist: (float) [m] Super-Gaussian spot size (1/e^2 radius for order 2) at focus in meters.
+            focal_position: (float) [m] Focal position of the laser pulse in meters, relative to the simulation start plane.
+            super_gaussian_order: (float) Super-Gaussian order of the transverse profile. 2.0 is Gaussian.
+            zernike_coefficients: (dict[str, float]) [wavelengths] |OPTIONAL| Zernike phase amplitudes at focus keyed by name (astigmatism_2, astigmatism_4, coma_y, coma_x, trefoil_y, trefoil_x, spherical_3, astigmatism_6, coma_5_y, coma_5_x, secondary_trefoil_y, secondary_trefoil_x). Missing names default to 0.0; unknown names are rejected.
+            polarization: (tuple[float, float]) |OPTIONAL| Real Jones vector (Ex, Ey) passed to LASY. Defaults to (1, 0), linear along x.
+            n_azimuthal_modes: (int) |OPTIONAL| Number of azimuthal modes in the LASY r-t grid. Defaults to 5.
+            num_points: (tuple[int, int]) |OPTIONAL| LASY grid points (radial, temporal). Defaults to (600, 900).
+            hi_range: (float) [waists] |OPTIONAL| Radial extent of the LASY grid in units of `waist`. Defaults to 8.0.
+            center_and_remove_tilt: (bool) |OPTIONAL| Re-centre the fluence and remove the mean transverse phase gradient at the start plane. Defaults to True.
+            centering_angles: (int) |OPTIONAL| Number of polar angles used for centering; must be at least 2 * n_azimuthal_modes - 1. Defaults to 72.
+            lasy_file: (Path|str) |OPTIONAL| Output prefix for the LASY HDF5 file; the written file is `<parent>/<stem>_00000.h5`. If not absolute, this is relative to the `working_directory` passed to `Simulation.setup_simulation()` (or to `prepare(relative_to=...)`), falling back to the current working directory. Defaults to `diags/lasy_laser`.
+            t_start: (float) [s] |OPTIONAL| Delay before the antenna starts emitting the LASY file, as in FBPIC's `FromLasyFileLaser`. Defaults to 0.0."""
+    @property
+    def physical_parameters(self) -> dict[str, Any]:
+        """``HighOrderLasyLaser`` physical parameters built from this config."""
         ...
-    def get_z_extent(self, num_sigma: float=3.0) -> tuple[float, float]:
+    @property
+    def hyperparameters(self) -> dict[str, Any]:
+        """``HighOrderLasyLaser`` hyperparameters built from this config."""
+        ...
+    @property
+    def is_prepared(self) -> bool:
+        """Whether ``prepare()`` has produced the LASY file."""
+        ...
+    def resolve_lasy_file(self, relative_to: Path | str | None=None) -> Path:
+        """Absolute output prefix for the LASY file.
+
+        A relative ``lasy_file`` is anchored at *relative_to* when given, otherwise
+        at the current working directory."""
+        ...
+    def prepare(self, comm: Any | None=None, *, relative_to: Path | str | None=None) -> None:
+        """Build the LASY pulse, write its HDF5 file, and measure a0 at focus.
+
+        Runs the expensive build on rank 0 only. With MPI, the other ranks wait
+        at a barrier and then receive the written path and a0 by broadcast.
+        Calling this again after a successful build is a no-op.
+
+        Args:
+            comm: (BoundaryCommunicator|mpi4py.MPI.Comm|None) Communicator for the
+                rank-0 build and barrier. Accepts FBPIC's ``sim.comm``, an mpi4py
+                communicator such as ``MPI.COMM_WORLD``, or ``None`` when running
+                without MPI (the calling process builds the file itself).
+            relative_to: (Path|str|None) Directory a relative ``lasy_file`` is written
+                under. ``Simulation`` passes its ``working_directory``; ``None`` means
+                the current working directory."""
+        ...
+    def to_dict(self, *, include_nones: bool=True) -> dict[str, Any]:
         ...
     def resolve_laser_energy(self) -> float:
         ...
     def resolve_laser_a0(self) -> float:
         ...
     def build_laser_profile(self) -> LaserProfile | list[LaserProfile]:
+        ...
+    def get_r_extent(self, simulation_extent: tuple[float, float], num_sigma: float=3.0) -> float:
+        ...
+    def plot(self, *, mode: Literal['lineout', 'lineout_and_2d']='lineout_and_2d', ax: 'plt.Axes | None'=None, num: int=600, output_path: Path | str | None=None, show: bool=False, label: str | None=None) -> 'plt.Figure':
+        """Plot the start-plane LASY envelope and (optionally) a face-on |E| map.
+
+        Requires the LASY ``Laser`` object, so this only works on the rank that
+        ran ``prepare()`` (it runs ``prepare()`` itself if needed).
+
+        Args:
+            mode: (Literal["lineout", "lineout_and_2d"]) Panel layout.
+                ``"lineout"`` shows only the on-axis longitudinal envelope.
+                ``"lineout_and_2d"`` (default) adds a face-on field-amplitude
+                map at the start plane with the polarization direction marked.
+            ax: (matplotlib.axes.Axes|None) If provided, the longitudinal envelope
+                is also drawn on this external axes (for combined overlay figures).
+            num: (int) Number of points for the resampled longitudinal lineout.
+            output_path: (Path|str|None) If given, the figure is saved here.
+            show: (bool) Whether to call ``plt.show()``.
+            label: (str|None) Label for the external *ax* lineout. Defaults to
+                ``SUBCLASS (polarization)``.
+
+        Returns:
+            The created matplotlib Figure."""
         ...
 
 class _GaussianTemporalLaserPulse(_LaserPulse):
@@ -165,7 +329,7 @@ class _GaussianTemporalLaserPulse(_LaserPulse):
 
     Args:
         energy: (float|None) [J] |OPTIONAL| Energy of the laser pulse in Joules. Provide this or a0, not both.
-        a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both.
+        a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both. Not accepted by ``LasyLaserPulse``, which derives it numerically.
         z0: (float) [m] Position of the laser pulse within the simulation window in meters.
         method: (Literal["direct", "antenna"]|None) |OPTIONAL| Method to use for laser pulse propagation. If None, the laser pulse will be propagated using the direct method.
         z0_antenna: (float|None) [m] |OPTIONAL| Position of the antenna within the simulation window in meters. Required if method is "antenna".
@@ -211,7 +375,7 @@ class _GaussianTemporalLaserPulse(_LaserPulse):
 
         Args:
             energy: (float|None) [J] |OPTIONAL| Energy of the laser pulse in Joules. Provide this or a0, not both.
-            a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both.
+            a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both. Not accepted by ``LasyLaserPulse``, which derives it numerically.
             z0: (float) [m] Position of the laser pulse within the simulation window in meters.
             method: (Literal["direct", "antenna"]|None) |OPTIONAL| Method to use for laser pulse propagation. If None, the laser pulse will be propagated using the direct method.
             z0_antenna: (float|None) [m] |OPTIONAL| Position of the antenna within the simulation window in meters. Required if method is "antenna".
@@ -255,7 +419,7 @@ class GaussianLaserPulse(_GaussianTemporalLaserPulse):
 
     Args:
         energy: (float|None) [J] |OPTIONAL| Energy of the laser pulse in Joules. Provide this or a0, not both.
-        a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both.
+        a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both. Not accepted by ``LasyLaserPulse``, which derives it numerically.
         z0: (float) [m] Position of the laser pulse within the simulation window in meters.
         method: (Literal["direct", "antenna"]|None) |OPTIONAL| Method to use for laser pulse propagation. If None, the laser pulse will be propagated using the direct method.
         z0_antenna: (float|None) [m] |OPTIONAL| Position of the antenna within the simulation window in meters. Required if method is "antenna".
@@ -295,7 +459,7 @@ class GaussianLaserPulse(_GaussianTemporalLaserPulse):
 
         Args:
             energy: (float|None) [J] |OPTIONAL| Energy of the laser pulse in Joules. Provide this or a0, not both.
-            a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both.
+            a0: (float|None) |OPTIONAL| Normalized laser amplitude parameter. Provide this or energy, not both. Not accepted by ``LasyLaserPulse``, which derives it numerically.
             z0: (float) [m] Position of the laser pulse within the simulation window in meters.
             method: (Literal["direct", "antenna"]|None) |OPTIONAL| Method to use for laser pulse propagation. If None, the laser pulse will be propagated using the direct method.
             z0_antenna: (float|None) [m] |OPTIONAL| Position of the antenna within the simulation window in meters. Required if method is "antenna".

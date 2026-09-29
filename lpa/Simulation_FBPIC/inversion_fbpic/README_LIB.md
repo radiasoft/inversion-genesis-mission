@@ -17,7 +17,7 @@
 
 - `serializable_config.py`: configuration protocol and registry management.
 - `density_core.py`, `density_profiles.py`, and `density_modifiers.py`: common plasma behavior, public shapes, and composition.
-- `laser.py`: laser validation and FBPIC profile construction; `LasyLaserPulse` remains unimplemented.
+- `laser.py`: laser validation and FBPIC profile construction. `GaussianLaserPulse` builds analytic FBPIC profiles; `LasyLaserPulse` wraps `utils.laser.HighOrderLasyLaser` (super-Gaussian transverse profile with Zernike aberrations), writes a LASY HDF5 file on rank zero during `Simulation.setup_simulation()`, and emits it through FBPIC's laser antenna.
 - `simulation.py`: FBPIC assembly, execution, diagnostics, and completion hashing.
 - `commented_yaml.py`: comment-aware YAML I/O.
 - `_density_implementations/` and `_doc_management/`: numerical profile internals and generated editor-facing documentation.
@@ -75,7 +75,7 @@ simulation.run_simulation()
 - `SimulationHyperparameters` controls the FBPIC grid, timestep, boundaries, boosted-frame settings, moving window, diagnostics, restart behavior, and random seed. Values use SI units. `nz` is checked for FFT-friendly factorization; `save_directory` is relative to `working_directory` unless absolute.
 - Density profiles represent relative $n(z, r)$; `nominal_density` supplies the physical scale in $m^{-3}$. `get_z_extent()` contributes to the interaction length, and the `Simulation` instance will use this to determine the full interaction length. `get_r_extent()` or `p_rmax` bounds radial plasma loading.
 - `species` and `ionization` select the ion model. Ionization `0` starts neutral; a negative value means fully ionized. Electron and ion diagnostic names and selection maps determine recorded particle populations. In laboratory-frame runs, diagnostic names must be unique across density components.
-- Laser pulses require exactly one of energy or $a_0$; the wrapper derives and records the other. Concrete pulse types specify the envelope and optical parameters, then construct the FBPIC laser profile.
+- Laser pulses require exactly one of energy or $a_0$; the wrapper derives and records the other. Concrete pulse types specify the envelope and optical parameters, then construct the FBPIC laser profile. `LasyLaserPulse` accepts energy only: its $a_0$ is measured numerically at focus when the LASY file is built and reported as `out_a0`, so it is `null` in configurations written before setup.
 - Use density `plot()`, `plot_z_profile()`, and `plot_r_profile()` to inspect or record the plasma profile before launching a run. The standard plots report electron density by default.
 
 ## Use Configuration Files
@@ -97,6 +97,28 @@ parameters:
 
 `config_type` selects the component domain, `subclass` selects its model, and `parameters` contains user inputs rather than derived state. `commented_yaml.py` preserves user comments before PyYAML parsing and restores them, or injects docstring-derived descriptions, on output. Files therefore remain both machine-loadable and practical to inspect between runs.
 
+### LASY Laser Pulses
+
+`LasyLaserPulse` mirrors the inputs of `utils.laser.HighOrderLasyLaser` with the same defaults. It can only be emitted by a stationary antenna, so `z0_antenna` is required and `method`/`v_antenna` are fixed. The expensive LASY build runs once, inside `Simulation.setup_simulation()`, on MPI rank zero; the other ranks wait at a barrier and then read the written file. FBPIC resets the LASY time axis to zero, so the peak intensity leaves the antenna at `t_start + 3 * tau_fwhm`.
+
+```yaml
+config_type: laser_pulse
+subclass: lasy
+parameters:
+  energy: 2.5
+  z0: -1.0e-4            # informational: nominal centroid at t = 0
+  z0_antenna: 0.0
+  t_start: 0.0
+  wavelength: 8.0e-7
+  tau_fwhm: 3.0e-14
+  waist: 2.4e-5
+  focal_position: 3.5e-3
+  super_gaussian_order: 3.0
+  zernike_coefficients:  # missing names default to 0.0
+    coma_x: -0.25
+  lasy_file: diags/lasy_laser   # relative to working_directory; written as diags/lasy_laser_00000.h5
+```
+
 ## Demos
 
 The [demos](../demos) directory contains runnable examples. Start with the core wrapper demos; the `miscellaneous/` entries are related density-modeling workflows rather than minimal simulation templates.
@@ -106,6 +128,7 @@ The [demos](../demos) directory contains runnable examples. Start with the core 
 - [Laser pulses](../demos/demo_lasers): generates and plots Gaussian-laser YAML configurations for supported polarization variants.
 - [Downramp simulation](../demos/demo_downramp_simulation/README.md): script-assembled hydrogen flattop/downramp LPA simulation, with recorded configuration, diagnostics, and density movie output.
 - [Ionization simulation](../demos/demo_ionization_simulation/README.md): helium plasma with nitrogen doping, showing species-specific macroparticle settings and ionization injection.
+- [LASY laser simulation](../demos/demo_lasy_laser_simulation/README.md): hydrogen flattop driven by an aberrated super-Gaussian `LasyLaserPulse`, showing the rank-0 LASY build, antenna emission, and the numerically measured `a0`.
 
 ## Skipping Runs if Complete
 

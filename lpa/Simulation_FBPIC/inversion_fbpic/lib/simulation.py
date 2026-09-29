@@ -10,7 +10,7 @@ import attrs
 
 from inversion_fbpic.lib.serializable_config import SerializableConfig
 from inversion_fbpic.lib.density_core import _DensityProfile
-from inversion_fbpic.lib.laser import _LaserPulse
+from inversion_fbpic.lib.laser import _DERIVED_YAML_KEYS, _LaserPulse
 
 from fbpic.main import Simulation as FBPICSimulation, Particles
 from fbpic.utils.random_seed import set_random_seed
@@ -383,12 +383,27 @@ class Simulation(SerializableConfig):
                 key=_canonical_json,
             ),
             "laser_pulses": sorted(
-                (las.to_dict() for las in self.lasers),
+                (self._laser_hash_payload(las) for las in self.lasers),
                 key=_canonical_json,
             ),
         }
         digest_input = _canonical_json(payload)
         return hashlib.sha256(digest_input.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _laser_hash_payload(laser: _LaserPulse) -> dict[str, Any]:
+        """Laser payload for hashing, without derived outputs.
+
+        ``out_a0`` / ``out_energy`` are deterministic functions of the inputs, and
+        for ``LasyLaserPulse`` ``out_a0`` is only filled in after ``prepare()``.
+        Excluding them keeps the hash identical before and after setup.
+        """
+        payload = laser.to_dict()
+        parameters = payload.get("parameters")
+        if isinstance(parameters, dict):
+            for key in _DERIVED_YAML_KEYS:
+                parameters.pop(key, None)
+        return payload
 
     def _sort_component(
         self,
@@ -787,6 +802,10 @@ class Simulation(SerializableConfig):
         # /Add the particles and particle diagnostics
 
         # Add the laser pulses
+        # One-time (possibly collective) setup first, e.g. LasyLaserPulse writes
+        # its HDF5 file on rank 0 and the other ranks wait at a barrier.
+        for laser in self.lasers:
+            laser.prepare(self.simulation.comm, relative_to=self.working_directory)
         for laser in self.lasers:
             add_laser_pulse(
                 self.simulation,

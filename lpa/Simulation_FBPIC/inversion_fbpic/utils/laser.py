@@ -7,6 +7,7 @@ Module containing useful utilities for modeling laser properties.  Contains the 
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeAlias, Union
 import warnings
@@ -20,7 +21,7 @@ from lasy.profiles.longitudinal.longitudinal_profile_from_data import (
     LongitudinalProfileFromData,
 )
 from lasy.profiles.transverse import SuperGaussianTransverseProfile
-from scipy.constants import c, epsilon_0
+from scipy.constants import c, e, epsilon_0, m_e
 from scipy.interpolate import RegularGridInterpolator
 
 
@@ -83,6 +84,18 @@ def transverse_fluence(
     fluence = np.trapezoid(intensity, x=time, axis=-1)
     peak_time_index = int(np.argmax(intensity[:, 0, :].mean(axis=0)))
     return radius, angles, fluence, field[:, :, peak_time_index]
+
+
+def peak_a0(laser: Laser, n_angles: int = 361) -> float:
+    """Return the peak normalized vector potential of a LASY envelope.
+
+    The full transverse field is reconstructed from the azimuthal modes on
+    ``n_angles`` polar angles, and the envelope maximum is converted with
+    ``a0 = e |E| / (m_e c omega0)``.
+    """
+    angles = np.linspace(0.0, 2.0 * np.pi, n_angles, endpoint=False)
+    field = polar_fields(laser, angles)
+    return float(e * np.abs(field).max() / (m_e * c * laser.profile.omega0))
 
 
 class _ZernikeSuperGaussianProfile(Profile):
@@ -484,6 +497,19 @@ class HighOrderLasyLaser:
             write_dir=str(requested_path.parent),
         )
         return requested_path.parent / f"{requested_path.stem}_00000.h5"
+
+    def focus_laser(self) -> Laser:
+        """Return a copy of the prepared laser propagated forward to focus.
+
+        ``self.laser`` sits at the simulation start plane and is left untouched.
+        """
+        focus = copy.deepcopy(self.laser)
+        focus.propagate(distance=self.physical_parameters["laser_focal_position_m"])
+        return focus
+
+    def compute_focus_a0(self, n_angles: int = 361) -> float:
+        """Return the peak normalized vector potential of the prepared pulse at focus."""
+        return peak_a0(self.focus_laser(), n_angles)
 
 
 class HTULasyLaser:

@@ -330,8 +330,8 @@ def test_modified_density_profile_includes_list_default() -> None:
     )
 
 
-def test_lasy_laser_pulse_inherits_parent_init_fields_despite_init_false() -> None:
-    """Document current behavior: class-level init=False still inherits parent attrs fields."""
+def test_lasy_laser_pulse_init_fields() -> None:
+    """Inherited base fields plus the LASY-specific ones; cache fields are excluded."""
     index = _index()
     fields = index.init_fields(index.classes[("laser", "LasyLaserPulse")])
     assert {field.name for field in fields} == {
@@ -341,6 +341,20 @@ def test_lasy_laser_pulse_inherits_parent_init_fields_despite_init_false() -> No
         "method",
         "z0_antenna",
         "v_antenna",
+        "wavelength",
+        "tau_fwhm",
+        "waist",
+        "focal_position",
+        "super_gaussian_order",
+        "zernike_coefficients",
+        "polarization",
+        "n_azimuthal_modes",
+        "num_points",
+        "hi_range",
+        "center_and_remove_tilt",
+        "centering_angles",
+        "lasy_file",
+        "t_start",
     }
 
 

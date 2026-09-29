@@ -75,7 +75,7 @@ density = build_gaussian_profile(sigma=3e-6, center_location=10e-6)
 
 ### Running FBPIC
 
-FBPIC can be run from Python once the environment is set up. Example simulation workflows are in `demos/demo_ionization_simulation/` and `demos/demo_downramp_simulation/`.
+FBPIC can be run from Python once the environment is set up. Example simulation workflows are in `demos/demo_ionization_simulation/`, `demos/demo_downramp_simulation/`, and `demos/demo_lasy_laser_simulation/` (LASY-built aberrated laser).
 
 
 ### Visualization with openPMD
