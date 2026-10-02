@@ -35,7 +35,7 @@ _SPECIES_IONIZATION_CASES: list[pytest.param] = [
         None,
         None,
         None,
-        0,
+        1,
         False,
         False,
         id="species_none-ionization_none",
@@ -43,28 +43,37 @@ _SPECIES_IONIZATION_CASES: list[pytest.param] = [
     pytest.param(
         None,
         -1,
-        "H",
+        None,
         1,
         False,
-        True,
+        False,
         id="species_none-ionization_fully_ionized",
     ),
     pytest.param(
         None,
+        1,
+        None,
+        1,
+        False,
+        False,
+        id="species_none-ionization_one_is_the_stored_form",
+    ),
+    pytest.param(
+        None,
         2,
-        "H",
+        None,
         None,
         True,
-        True,
+        False,
         id="species_none-ionization_2",
     ),
     pytest.param(
         None,
         _IONIZATION_TOO_LARGE,
-        "H",
+        None,
         None,
         True,
-        True,
+        False,
         id="species_none-ionization_too_large",
     ),
     pytest.param(
@@ -174,7 +183,7 @@ def test_species_ionization_outer_product(
 ) -> None:
     """Validate species/ionization normalization and error handling."""
     if expect_error:
-        with pytest.raises(ValueError, match="ionization levels"):
+        with pytest.raises(ValueError, match="ionization"):
             _build_profile(species, ionization)
         return
 

@@ -37,11 +37,11 @@ class _DensityProfile(SerializableConfig):
         nominal_density: (float) [m^-3] Baseline (nominal) plasma density in m^-3 used to scale
             the relative profile returned by `build_density_function` (which is normalized to 1).
         species: (str|None) [str] |OPTIONAL| Species name for the density profile. Should be the one- or two-character code for the species.
-            If None, the plasma is assumed to be fully ionized and no ionization is considered.
-            If the gamma boost factor is used in the simulation, Hydrogen will be assumed if species is None.
+            If None, the profile is a bare electron species only: `nominal_density` is the electron density, there are no
+            ions and no ionization. This is not supported in a boosted-frame simulation (the ion background is needed there).
             Defaults to Hydrogen.
         ionization: (int|None) [int] |OPTIONAL| Initial ionization level for this species. If None or 0, the plasma is assumed to be initially unionized. If -1, the plasma is assumed to be fully ionized.
-            Defaults to unionized (ionization level 0).
+            Defaults to unionized (ionization level 0). When `species` is None, only None, -1 or 1 are accepted and all mean fully ionized (it is stored as 1, so a saved profile loads back).
         p_rmax: (float|None) [m] |OPTIONAL| Maximum radial extent of the density profile. If None, the radial extent is determined by the simulation grid.
         p_nz: (int) Number of macroparticles per gridcell along the longitudinal direction.
         p_nr: (int) Number of macroparticles per gridcell along the radial direction.
@@ -122,12 +122,16 @@ class _DensityProfile(SerializableConfig):
         """
 
     def __attrs_post_init__(self) -> None:
-        if self.ionization is not None:
-            if self.species is None:
-                object.__setattr__(self, "species", "H")
-                print(
-                    "Ionization level specified but species not provided, assuming Hydrogen."
+        if self.species is None:
+            # Bare electrons: one "level", already ionized.
+            if self.ionization not in (None, -1, 1):
+                raise ValueError(
+                    "species=None means bare electrons only; `ionization` must be None, -1 or 1, "
+                    f"got {self.ionization}."
                 )
+            object.__setattr__(self, "ionization", 1)
+            return
+        if self.ionization is not None:
             num_ionization_levels = _DensityProfile._get_num_ionization_levels(
                 self.species
             )
@@ -410,16 +414,19 @@ class _DensityProfile(SerializableConfig):
 
         Args:
             simulation: (FBPICSimulation) The simulation to add the density profile to.
-            is_boosted: (bool) Whether the simulation is boosted. If True and species is None, Hydrogen will be assumed.
+            is_boosted: (bool) Whether the simulation is boosted. A bare-electron profile (species None) is rejected if True.
 
         Returns:
             tuple[Particles, Particles | None]: A tuple containing the added electron species and the added ion species if it exists, otherwise None (e.g., electron-only).
         """
         species = self.species
         if species is None:
-            num_ionization_levels = 1
             if is_boosted:
-                species = "H"
+                raise ValueError(
+                    "species=None (bare electrons) is not supported in a boosted-frame "
+                    "simulation; provide a species so an ion background is added."
+                )
+            num_ionization_levels = 1
         else:
             num_ionization_levels = _DensityProfile._get_num_ionization_levels(species)
 
@@ -435,7 +442,7 @@ class _DensityProfile(SerializableConfig):
         )
 
         ions = None
-        if species is not None or is_boosted:
+        if species is not None:
             ions = simulation.add_new_species(
                 q=e * self.ionization,
                 m=m_p * _get_atomic_mass(species),

@@ -71,11 +71,11 @@ class ModifiedDensityProfile(_DensityProfile):
         nominal_density: (float) [m^-3] Baseline (nominal) plasma density in m^-3 used to scale
             the relative profile returned by `build_density_function` (which is normalized to 1).
         species: (str|None) [str] |OPTIONAL| Species name for the density profile. Should be the one- or two-character code for the species.
-            If None, the plasma is assumed to be fully ionized and no ionization is considered.
-            If the gamma boost factor is used in the simulation, Hydrogen will be assumed if species is None.
+            If None, the profile is a bare electron species only: `nominal_density` is the electron density, there are no
+            ions and no ionization. This is not supported in a boosted-frame simulation (the ion background is needed there).
             Defaults to Hydrogen.
         ionization: (int|None) [int] |OPTIONAL| Initial ionization level for this species. If None or 0, the plasma is assumed to be initially unionized. If -1, the plasma is assumed to be fully ionized.
-            Defaults to unionized (ionization level 0).
+            Defaults to unionized (ionization level 0). When `species` is None, only None, -1 or 1 are accepted and all mean fully ionized (it is stored as 1, so a saved profile loads back).
         p_rmax: (float|None) [m] |OPTIONAL| Maximum radial extent of the density profile. If None, the radial extent is determined by the simulation grid.
         p_nz: (int) Number of macroparticles per gridcell along the longitudinal direction.
         p_nr: (int) Number of macroparticles per gridcell along the radial direction.
@@ -124,11 +124,11 @@ class ModifiedDensityProfile(_DensityProfile):
             nominal_density: (float) [m^-3] Baseline (nominal) plasma density in m^-3 used to scale
                 the relative profile returned by `build_density_function` (which is normalized to 1).
             species: (str|None) [str] |OPTIONAL| Species name for the density profile. Should be the one- or two-character code for the species.
-                If None, the plasma is assumed to be fully ionized and no ionization is considered.
-                If the gamma boost factor is used in the simulation, Hydrogen will be assumed if species is None.
+                If None, the profile is a bare electron species only: `nominal_density` is the electron density, there are no
+                ions and no ionization. This is not supported in a boosted-frame simulation (the ion background is needed there).
                 Defaults to Hydrogen.
             ionization: (int|None) [int] |OPTIONAL| Initial ionization level for this species. If None or 0, the plasma is assumed to be initially unionized. If -1, the plasma is assumed to be fully ionized.
-                Defaults to unionized (ionization level 0).
+                Defaults to unionized (ionization level 0). When `species` is None, only None, -1 or 1 are accepted and all mean fully ionized (it is stored as 1, so a saved profile loads back).
             p_rmax: (float|None) [m] |OPTIONAL| Maximum radial extent of the density profile. If None, the radial extent is determined by the simulation grid.
             p_nz: (int) Number of macroparticles per gridcell along the longitudinal direction.
             p_nr: (int) Number of macroparticles per gridcell along the radial direction.
