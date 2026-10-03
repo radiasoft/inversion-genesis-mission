@@ -1,0 +1,7 @@
+# Not checked in: images, PDFs and other large or generated files.
+*.png
+*.pdf
+*.h5
+*.egg-info/
+__pycache__/
+.pytest_cache/
