@@ -1,12 +1,12 @@
-"""Generate `lpa_bunch.bob`, a Phoebus display of the LPA bunch served by `lume-fbpic-serve --twin`.
+"""Generate `lpa_bunch.bob`, a Phoebus display of the LPA bunch served by `serve.py --twin`.
 
 The display shows the twin's `Source_*` readbacks (the LPA bunch as injected),
 the 33 moment-descriptor scalars (the covariance as an upper-triangular grid) and the run
 statistics. Every PV is `pva://$(P)<name>`; `P` is a display macro, `HTU:SIM:` by default, the
-prefix `lume-fbpic-serve --twin` uses. Open it with a different prefix by setting the macro
+prefix `serve.py --twin` uses. Open it with a different prefix by setting the macro
 (`phoebus -resource lpa_bunch.bob?P=OTHER:`).
 
-A combo box selects among the archives `lume-fbpic-serve` was given (the `LPA_Archive` PV).
+A combo box selects among the archives `serve.py` was given (the `LPA_Archive` PV).
 A button opens `htu_synoptic_lpa.bob`, the twin's synoptic with the LPA tied in, which
 `generate_linked_synoptic.py` writes next to this file.
 
@@ -23,11 +23,14 @@ from xml.sax.saxutils import escape
 
 from lume_fbpic.actions import make_descriptor_actions
 
-SELECTOR = "LPA_Archive"  # the enum PV `lume-fbpic-serve` serves; its options are the archives
+SELECTOR = "LPA_Archive"  # the enum PV `serve.py` serves; its options are the archives
 
 COORDS = ("x", "ux", "y", "uy", "z", "uz")
 COORD_LABELS = ("x [m]", "ux", "y [m]", "uy", "z [m]", "uz")
 PREFIX = "descriptor_"
+
+# Source readbacks that are counts, shown without decimals.
+INTEGER_SOURCE = ("Source_NumParticles",)
 
 # (PV name, label) of the twin's source readbacks, in two columns.
 SOURCE = (
@@ -161,7 +164,7 @@ def build() -> str:
     d.label("Title", "LPA bunch", left, 10, 300, 28, bold=True, size=16.0)
     d.label(
         "Subtitle",
-        "Served by lume-fbpic-serve --twin. The values are the selected run's recorded results.",
+        "Served by serve.py --twin. The values are the selected run's recorded results.",
         left,
         40,
         width - 2 * left,
@@ -200,7 +203,7 @@ def build() -> str:
         column, row = index % 2, index // 2
         x = left + column * column_w
         d.label(f"SrcL{index}", text, x, y + row * 26, 150)
-        d.value(f"SrcV{index}", pv, x + 155, y + row * 26, 110, precision=4)
+        d.value(f"SrcV{index}", pv, x + 155, y + row * 26, 110, precision=0 if pv in INTEGER_SOURCE else 4)
     y += 26 * ((len(SOURCE) + 1) // 2) + 14
 
     d.label("MomentHeader", "Moment descriptor: momentum centroids and charge", left, y, 500, 22, bold=True)

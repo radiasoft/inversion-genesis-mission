@@ -5,7 +5,7 @@ script reads it and writes a copy, next to `lpa_bunch.bob`, with three changes:
 
 - a new bottom row shows the LPA bunch the twin is tracking (energy, energy spread, charge,
   macroparticles, read from the `Source_*` PVs), a combo box that selects the LPA run (the
-  `LPA_Archive` PV, one option per archive `lume-fbpic-serve` was given) and a button that opens
+  `LPA_Archive` PV, one option per archive `serve.py` was given) and a button that opens
   `lpa_bunch.bob`;
 - the `SRC` element's button opens `lpa_bunch.bob` instead of the twin's source display. It is a
   single action on purpose: Phoebus draws a button with several actions as a drop-down menu, and a
@@ -20,7 +20,7 @@ script reads it and writes a copy, next to `lpa_bunch.bob`, with three changes:
   directory through a `TWIN_DISPLAYS` macro, so they keep working from here.
 
 `TWIN_DISPLAYS` defaults to the directory the copy was built from; set it when opening the display
-(`phoebus -resource htu_synoptic_lpa.bob?TWIN_DISPLAYS=/path/to/geecs-lume-twin/display`) if the
+(`phoebus -resource htu_synoptic_lpa.bob?TWIN_DISPLAYS=<twin display directory>`) if the
 twin lives elsewhere. The PVs are the synoptic's own, `pva://HTU:SIM:...`.
 
 Run `python generate_linked_synoptic.py <twin display dir> [output.bob]` again whenever the twin's
@@ -39,7 +39,7 @@ ROTATION_ORDINAL = {0.0: 0, 90.0: 1, 180.0: 2, 270.0: 3, -90.0: 3}
 
 STRIP_HEIGHT = 44
 LPA_DISPLAY = "lpa_bunch.bob"
-SELECTOR = "LPA_Archive"  # the enum PV `lume-fbpic-serve` serves, one option per archive
+SELECTOR = "LPA_Archive"  # the enum PV `serve.py` serves, one option per archive
 PREFIX = "pva://HTU:SIM:"
 
 # (label, PV name, label width, value width, decimals)

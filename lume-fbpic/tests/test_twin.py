@@ -1,4 +1,4 @@
-"""Tests for `lume_fbpic.twin.TwinStage` against the real HTU twin.
+"""Tests for `TwinStage` (docs/htu-twin/twin/twin.py) against the real HTU twin.
 
 Need `htu` (geecs-lume-twin) importable, for example with `PYTHONPATH` pointing at its checkout;
 they are skipped otherwise. The twin builds slowly (about a second), so one is shared per module.
@@ -6,7 +6,7 @@ they are skipped otherwise. The twin builds slowly (about a second), so one is s
 
 from __future__ import annotations
 
-import numpy as np
+import numpy
 import pytest
 from scipy.constants import c, e, m_e
 
@@ -17,20 +17,24 @@ from lume.exceptions import ReadOnlyError  # noqa: E402
 from lume.staged_model import StagedModel  # noqa: E402
 
 from htu.model import build_htu_model  # noqa: E402
-from lume_fbpic.handoff import beam_moments, bunch_frame_particles, drift_particles  # noqa: E402
+from tests.downramp_actions import make_actions  # noqa: E402
 from lume_fbpic.model import LUMEFBPICModel  # noqa: E402
-from lume_fbpic.twin import TwinStage, binned_screen_geometries, build_chain  # noqa: E402
+from twin import (  # noqa: E402
+    TwinStage,
+    beam_moments,
+    binned_screen_geometries,
+    build_chain,
+    bunch_frame_particles,
+    drift_particles,
+)
 
-try:
-    from beamphysics import ParticleGroup
-except ImportError:
-    from pmd_beamphysics import ParticleGroup
+from beamphysics import ParticleGroup
 
 _MC2_EV = m_e * c**2 / e
 
 
 def _lab_snapshot(n=4000, seed=0, uz_mean=150.0, uz_std=20.0) -> ParticleGroup:
-    rng = np.random.default_rng(seed)
+    rng = numpy.random.default_rng(seed)
     return ParticleGroup(
         data={
             "x": rng.normal(0.0, 3.0e-6, n),
@@ -39,9 +43,9 @@ def _lab_snapshot(n=4000, seed=0, uz_mean=150.0, uz_std=20.0) -> ParticleGroup:
             "px": rng.normal(0.0, 2.0, n) * _MC2_EV,
             "py": rng.normal(0.0, 1.0, n) * _MC2_EV,
             "pz": rng.normal(uz_mean, uz_std, n) * _MC2_EV,
-            "t": np.zeros(n),
-            "status": np.ones(n, dtype=int),
-            "weight": np.full(n, 1.0e3 * e),
+            "t": numpy.zeros(n),
+            "status": numpy.ones(n, dtype=int),
+            "weight": numpy.full(n, 1.0e3 * e),
             "species": "electron",
         }
     )
@@ -80,7 +84,7 @@ def test_source_pvs_read_the_injected_bunchs_moments(stage):
 
     stage.initial_particles = pg
 
-    gamma = np.sqrt(1 + 150.0**2)
+    gamma = numpy.sqrt(1 + 150.0**2)
     assert _get(stage, "Source_Energy_MeV") == pytest.approx(gamma * _MC2_EV / 1e6, rel=0.02)
     assert _get(stage, "Source_EnergySpread_pct") == pytest.approx(13.0, abs=2.0)
 
@@ -88,7 +92,7 @@ def test_source_pvs_read_the_injected_bunchs_moments(stage):
 def test_screen_images_carry_the_injected_charge(stage):
     stage.initial_particles = _lab_snapshot()
 
-    image = np.asarray(stage.get(["TCPhosphor_image"])["TCPhosphor_image"])
+    image = numpy.asarray(stage.get(["TCPhosphor_image"])["TCPhosphor_image"])
 
     assert image.sum() > 0
     assert image.sum() == pytest.approx(_get(stage, "Source_Charge_pC") * 1e-12, rel=0.3)
@@ -168,7 +172,7 @@ def test_the_source_can_be_left_writable(twin_model):
 
 def test_a_staged_chain_refuses_source_puts_and_passes_the_lpa_bunch_on(simulator, twin_model):
     simulator.final_particles = _lab_snapshot()
-    chain = build_chain(LUMEFBPICModel.from_simulator(simulator, dummy_run=True), twin_model)
+    chain = build_chain(LUMEFBPICModel(simulator, make_actions(simulator), dummy_run=True), twin_model)
     stage = chain.lume_model_instances[1]
     try:
         with pytest.raises(ReadOnlyError):
@@ -209,7 +213,7 @@ def test_wrapped_variables_are_the_twins_apart_from_the_locked_source(stage, twi
 
 def test_the_stage_follows_an_lpa_model_in_a_staged_chain(stage, simulator):
     simulator.final_particles = _lab_snapshot()
-    lpa = LUMEFBPICModel.from_simulator(simulator, dummy_run=True)
+    lpa = LUMEFBPICModel(simulator, make_actions(simulator), dummy_run=True)
     chain = StagedModel([lpa, stage])
 
     chain.set({"EMQ1H_Current": 0.7})  # only a twin variable: the LPA bunch is still passed on
@@ -230,16 +234,16 @@ def test_the_bunch_is_drifted_to_the_plasma_exit_plane(twin_model):
     try:
         pg = _lab_snapshot()
         expected_selection = bunch_frame_particles(pg, uz_min=30.0, central_fraction=0.95)
-        z_mean = float(np.average(expected_selection.z, weights=expected_selection.weight))
+        z_mean = float(numpy.average(expected_selection.z, weights=expected_selection.weight))
 
         stage.initial_particles = pg
 
         assert stage.drift_length == pytest.approx(0.0029 - z_mean)
         assert stage.drift_length < 0  # the bunch was past the exit: moved back
         injected = stage.initial_particles
-        assert float(np.average(injected.z, weights=injected.weight)) == pytest.approx(0.0029)
+        assert float(numpy.average(injected.z, weights=injected.weight)) == pytest.approx(0.0029)
         expected = drift_particles(expected_selection, stage.drift_length)
-        np.testing.assert_allclose(np.asarray(injected.x), np.asarray(expected.x))
+        numpy.testing.assert_allclose(numpy.asarray(injected.x), numpy.asarray(expected.x))
     finally:
         stage.reset()
 
@@ -282,10 +286,10 @@ def test_the_served_chain_exposes_the_twin_controls_and_keeps_the_source_read_on
 ):
     from lume_pva.runner import PutMode
 
-    from lume_fbpic.serve import build_config
+    from serve import build_config
 
     simulator.final_particles = _lab_snapshot()
-    chain = build_chain(LUMEFBPICModel.from_simulator(simulator, dummy_run=True), twin_model)
+    chain = build_chain(LUMEFBPICModel(simulator, make_actions(simulator), dummy_run=True), twin_model)
     stage = chain.lume_model_instances[1]
     try:
         config = build_config(
@@ -331,27 +335,36 @@ def test_a_set_after_an_injection_tracks_once(stage, twin_model, mocker):
 def test_screens_are_current_when_read_right_after_an_injection(stage):
     stage.initial_particles = _lab_snapshot()
 
-    image = np.asarray(stage.get(["TCPhosphor_image"])["TCPhosphor_image"])
+    image = numpy.asarray(stage.get(["TCPhosphor_image"])["TCPhosphor_image"])
 
     assert image.sum() > 0
 
 
-def test_a_synthesized_bunch_becomes_the_twins_source_with_the_recorded_charge(simulator, twin_model):
+def test_a_synthesized_bunch_becomes_the_twins_source_with_the_recorded_charge(
+    simulator, twin_model, tmp_path
+):
     from scipy.constants import e as electron_charge
+
+    from selector import ArchiveSelector
 
     from inversion_fbpic.utils import distributions
 
     pg = _lab_snapshot()
-    phase_space = np.stack(
+    phase_space = numpy.stack(
         [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
     )
     descriptor = distributions.compute_moment_descriptor(
-        phase_space, np.asarray(pg.weight) / electron_charge
+        phase_space, numpy.asarray(pg.weight) / electron_charge
     )
-    lpa = LUMEFBPICModel.from_simulator(simulator, dummy_run=True)
-    lpa._recorded_outputs = {f"descriptor_{k}": float(x) for k, x in descriptor.items()}
-    lpa.synthesize_bunch(n_particles=5000)
-    chain = build_chain(lpa, twin_model)
+    from lume_fbpic.actions import make_descriptor_actions
+
+    source = LUMEFBPICModel(
+        simulator, [*make_actions(simulator), *make_descriptor_actions()], dummy_run=True
+    )
+    source.simulator.stats = {f"descriptor_{k}": float(x) for k, x in descriptor.items()}
+    source.archive(tmp_path / "lpa.h5")
+    lpa = LUMEFBPICModel.from_archive(tmp_path / "lpa.h5", dummy_run=True)
+    chain = build_chain(ArchiveSelector({"lpa": lpa}, synthetic_bunch_particles=5000), twin_model)
     stage = chain.lume_model_instances[1]
     try:
         chain.set({"EMQ1H_Current": 0.7})
@@ -362,34 +375,33 @@ def test_a_synthesized_bunch_becomes_the_twins_source_with_the_recorded_charge(s
             descriptor["total_beam_charge_c"] * 1e12, rel=1e-6
         )
         assert _get(stage, "Source_Energy_MeV") == pytest.approx(
-            np.sqrt(1 + descriptor["mean_uz"] ** 2) * _MC2_EV / 1e6, rel=0.05
+            numpy.sqrt(1 + descriptor["mean_uz"] ** 2) * _MC2_EV / 1e6, rel=0.05
         )
     finally:
         stage.reset()
 
 
 def test_switching_the_lpa_run_changes_the_twins_source(simulator, twin_model, tmp_path):
-    from lume_fbpic.actions import make_actions, make_descriptor_actions
-    from lume_fbpic.selector import ArchiveSelector
+    from tests.downramp_actions import make_actions
+    from lume_fbpic.actions import make_descriptor_actions
+    from selector import ArchiveSelector
     from inversion_fbpic.utils import distributions
 
     models = {}
     for name, uz, charge_pc in (("low", 100.0, 200.0), ("high", 200.0, 400.0)):
         pg = _lab_snapshot(uz_mean=uz)
-        phase_space = np.stack(
+        phase_space = numpy.stack(
             [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
         )
-        weights = np.full(len(pg), charge_pc * 1e-12 / len(pg)) / e
+        weights = numpy.full(len(pg), charge_pc * 1e-12 / len(pg)) / e
         descriptor = distributions.compute_moment_descriptor(phase_space, weights)
         source = LUMEFBPICModel(
             simulator, [*make_actions(simulator), *make_descriptor_actions()], dummy_run=True
         )
-        source.archive(
-            tmp_path / f"{name}.h5", outputs={f"descriptor_{k}": v for k, v in descriptor.items()}
-        )
+        source.simulator.stats = {f"descriptor_{k}": v for k, v in descriptor.items()}
+        source.archive(tmp_path / f"{name}.h5")
         models[name] = LUMEFBPICModel.from_archive(tmp_path / f"{name}.h5", dummy_run=True)
-        models[name].synthesize_bunch(n_particles=4000)
-    chain = build_chain(ArchiveSelector(models), twin_model)
+    chain = build_chain(ArchiveSelector(models, synthetic_bunch_particles=4000), twin_model)
     stage = chain.lume_model_instances[1]
     try:
         chain.set({"EMQ1H_Current": 0.7})
@@ -442,12 +454,12 @@ def test_a_binned_stage_serves_smaller_images_with_the_same_charge(stage):
         stage.initial_particles = pg
         binned.initial_particles = pg
 
-        full = np.asarray(stage.get(["TCPhosphor_image"])["TCPhosphor_image"])
-        coarse = np.asarray(binned.get(["TCPhosphor_image"])["TCPhosphor_image"])
+        full = numpy.asarray(stage.get(["TCPhosphor_image"])["TCPhosphor_image"])
+        coarse = numpy.asarray(binned.get(["TCPhosphor_image"])["TCPhosphor_image"])
 
         assert full.shape == (1024, 1024) and coarse.shape == (256, 256)
         assert coarse.sum() == pytest.approx(full.sum(), rel=1e-3)  # same charge in view
-        occupied = lambda image: np.count_nonzero(image)  # noqa: E731
+        occupied = lambda image: numpy.count_nonzero(image)  # noqa: E731
         assert occupied(coarse) < occupied(full)  # fewer, fuller pixels
         assert coarse.max() > full.max()
     finally:

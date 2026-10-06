@@ -6,11 +6,12 @@ import pytest
 
 from lume.exceptions import ReadOnlyError
 
+from tests.downramp_actions import make_actions
 from lume_fbpic.model import LUMEFBPICModel
 
 
-def test_from_simulator_builds_default_action_set(simulator):
-    model = LUMEFBPICModel.from_simulator(simulator)
+def test_the_model_has_the_actions_it_was_given(simulator):
+    model = LUMEFBPICModel(simulator, make_actions(simulator))
     assert "laser_energy" in model.supported_variables
     assert "downramp_length" in model.supported_variables
     assert "final_particles" in model.supported_variables
@@ -25,7 +26,7 @@ def test_dummy_run_set_updates_parameter_without_running(model, simulator, mocke
 
 
 def test_set_runs_simulator_after_updating_parameter(simulator, mocker):
-    model = LUMEFBPICModel.from_simulator(simulator)
+    model = LUMEFBPICModel(simulator, make_actions(simulator))
     seen = []
     mocker.patch.object(
         simulator, "run", side_effect=lambda: seen.append(simulator.laser.energy)

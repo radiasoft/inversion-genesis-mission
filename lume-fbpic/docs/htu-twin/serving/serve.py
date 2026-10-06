@@ -1,6 +1,6 @@
 """Serve an archived `LUMEFBPICModel` as EPICS PVs through `lume-pva`.
 
-`lume-fbpic-serve <archive.h5 | directory> ... [--prefix LPA:SIM:]` loads the archives
+`python serve.py <archive.h5 | directory> ... [--prefix LPA:SIM:]` loads the archives
 (`LUMEFBPICModel.from_archive()`; a directory means its `*.h5` files) and serves every read-only
 scalar action -- the stats and the moment-descriptor features -- over PVA and CA, each named
 `<prefix><action name>`; `lume-pva` adds `<prefix>RESET` and `<prefix>SNAPSHOT`.
@@ -10,7 +10,7 @@ them by file name (without `.h5`) and putting one makes it the active run. The f
 start. The served values and, with `--twin`, the bunch the twin tracks follow the active run. They
 must all have the same variables (be made with the same action list). The values are the archive's: the live results when it
 holds the final particles, otherwise the recorded output values (as in the archives made by
-`docs/examples/initial_sample_archives.py`). `final_particles` is not served, as `lume-pva` has no
+`docs/htu-twin/twin/initial_sample_archives.py`). `final_particles` is not served, as `lume-pva` has no
 handler for a particle group.
 
 The model is always loaded with `dummy_run=True`, so a put can change a parameter but can never
@@ -18,7 +18,7 @@ start a simulation. Input actions are not served unless `--include-inputs` is gi
 makes the recorded outputs stale (they read NaN until `RESET`).
 
 With `--twin` the archive's final particles are the source of the HTU transport twin
-(`lume_fbpic.twin.build_chain`): the twin's own variables (magnets, steering, chicane, slit,
+(`build_chain` in `docs/htu-twin/twin/twin.py`): the twin's own variables (magnets, steering, chicane, slit,
 magspec, ...) are served read-write and re-track on every put, its `Source_*` variables read the
 LPA bunch read-only, and the archive's outputs are served read-only next to them. The archive must
 hold the final particles (`save_final_particles=True`). `htu` (geecs-lume-twin) must be importable,
@@ -32,24 +32,25 @@ a write error and freeze. `--wait-for-puts` acknowledges only after the re-track
 1024 x 1024 pixels.
 
 An archive without final particles (one reconstructed from a dataset, as
-`docs/examples/initial_sample_archives.py` writes) cannot feed the twin on its own. With
-`--synthesize-bunch` a bunch is built from its recorded moment descriptor
-(`LUMEFBPICModel.synthesize_bunch`): an APPROXIMATION of the real bunch, matching the descriptor's
-means, variances and main correlations, not its tails. The served descriptor values stay the
-recorded ones.
+`docs/htu-twin/twin/initial_sample_archives.py` writes) cannot feed the twin on its own. With
+`--synthesize-bunch` a bunch is built from its recorded moment descriptor (the selector's
+`synthetic_bunch_particles`): an APPROXIMATION of the real bunch, matching the descriptor's means,
+variances and main correlations, not its tails. The served descriptor values stay the recorded ones.
 
-Needs `lume-pva` (not a dependency of this package); it is imported only when serving.
+Needs `lume-pva` (not a dependency of this package); it is imported only when serving. Run it from
+this directory or by path; it imports `selector.py` beside it and the `lume_fbpic` package.
 """
 
 from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from pathlib import Path
-from typing import Any
+import typing
 
 from lume_fbpic.model import LUMEFBPICModel
-from lume_fbpic.selector import DEFAULT_SELECTOR_NAME, ArchiveSelector
+from selector import DEFAULT_SELECTOR_NAME, ArchiveSelector
 
 
 def build_config(
@@ -60,7 +61,7 @@ def build_config(
     protocol: list[str] | None = None,
     serve_always: set[str] | None = None,
     wait_for_puts: bool = False,
-) -> dict[str, Any]:
+) -> dict[str, typing.Any]:
     """The `lume_pva.runner.Runner` config for `model`: read-only variables only, unless
     `include_inputs`, in which case the writable ones are served read-write. Variables named in
     `serve_always` are served in their natural mode either way. `wait_for_puts` makes a put
@@ -182,8 +183,6 @@ def main(argv: list[str] | None = None) -> None:
                 "Write them with save_final_particles=True, or pass --synthesize-bunch to build "
                 "an approximate bunch from each recorded descriptor"
             )
-        for name in without:
-            models[name].synthesize_bunch(n_particles=args.bunch_particles)
         if without:
             logging.getLogger(__name__).warning(
                 "serving SYNTHETIC bunches built from the moment descriptor (%d macroparticles) "
@@ -192,12 +191,17 @@ def main(argv: list[str] | None = None) -> None:
                 without,
             )
     try:
-        selector = ArchiveSelector(models, selector_name=args.selector_name)
+        selector = ArchiveSelector(
+            models,
+            selector_name=args.selector_name,
+            synthetic_bunch_particles=args.bunch_particles if args.synthesize_bunch else None,
+        )
     except ValueError as error:
         parser.error(str(error))
     serve_always = {args.selector_name}
     if args.twin:
-        from lume_fbpic.twin import build_chain
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "twin"))
+        from twin import build_chain
 
         try:
             served = build_chain(selector, screen_binning=args.screen_binning)
@@ -229,7 +233,7 @@ def _import_runner():
         import lume_pva.runner as runner
     except ImportError as error:
         raise ImportError(
-            "lume-fbpic-serve needs the lume-pva package, which is not installed."
+            "serve.py needs the lume-pva package, which is not installed."
         ) from error
     return runner
 

@@ -1,7 +1,7 @@
 # Phoebus displays for the LPA-fed HTU twin
 
-Displays for the HTU transport twin (`geecs-lume-twin`) when its source is a `lume-fbpic` run,
-served by `lume-fbpic-serve --twin`. All PVs are `pva://HTU:SIM:...`.
+Displays for the HTU transport twin when its source is a `lume-fbpic` run,
+served by `serve.py --twin`. All PVs are `pva://HTU:SIM:...`.
 
 | File | What it is |
 |---|---|
@@ -12,27 +12,14 @@ served by `lume-fbpic-serve --twin`. All PVs are `pva://HTU:SIM:...`.
 
 ## Run the server
 
-```bash
-export PYTHONPATH=$HOME/src/Inversion-Semiconductor/inversion-genesis-mission/geecs-lume-twin
-lume-fbpic-serve ~/save/inversion/output/initial_sample_archives --twin --synthesize-bunch
-```
-
-- Archives are files or directories of `.h5` files; their file names (without `.h5`) are the options
-  of the `HTU:SIM:LPA_Archive` selector PV. The first one is active at start.
-- `PYTHONPATH` is needed because `htu` is not installed in the main environment.
-- `--synthesize-bunch` builds an approximate bunch from each archive's recorded moment descriptor.
-  It is needed for archives without final particles (such as the reconstructed `initial_sample`
-  runs); leave it out for archives saved with `save_final_particles=True`.
-- Other options: `--prefix` (default `HTU:SIM:` with `--twin`), `--screen-binning N` (camera images
-  N times coarser, default 4; 1 keeps the twin's 1024 x 1024), `--bunch-particles N` (synthetic
-  bunch size, default 20000), `--wait-for-puts` (acknowledge a put only after the twin re-tracks,
-  for scan clients; the default acknowledges at once).
+See `../README.md` (`serve.py --twin`).
 
 ## Open the display
 
+Start Phoebus with this display as the resource, for example from the Phoebus product directory:
+
 ```bash
-cd ~/src/ControlSystemStudio/phoebus/phoebus-product
-java -jar target/product-5.0.3-SNAPSHOT.jar -resource <this directory>/htu_synoptic_lpa.bob
+java -jar target/product-<version>.jar -resource <this directory>/htu_synoptic_lpa.bob
 ```
 
 Start the server first, and restart Phoebus after any server restart. Phoebus restores your last
@@ -44,14 +31,14 @@ session, so older windows may open too; use the one with the LPA strip along its
 - **`SRC` element:** opens `lpa_bunch.bob`.
 - **Other elements:** the twin's own control and camera displays, found through the `TWIN_DISPLAYS`
   macro. It defaults to the directory the synoptic was generated from; set it when opening the
-  display if the twin lives elsewhere: `-resource "htu_synoptic_lpa.bob?TWIN_DISPLAYS=/path/to/geecs-lume-twin/display"`.
+  display if the twin's displays live elsewhere: `-resource "htu_synoptic_lpa.bob?TWIN_DISPLAYS=<twin display directory>"`.
 - **`lpa_bunch.bob` on its own** takes a `P` macro for the PV prefix (default `HTU:SIM:`).
 
 ## Regenerate the displays
 
 ```bash
 python generate_lpa_display.py
-python generate_linked_synoptic.py <geecs-lume-twin>/display
+python generate_linked_synoptic.py <twin display directory>
 ```
 
 Run the second whenever the twin's synoptic changes. The twin's own files are only read.
@@ -71,5 +58,5 @@ Run the second whenever the twin's synoptic changes. The twin's own files are on
   a re-track (about 3 s) made every write time out. That is why puts are acknowledged at once by
   default.
 - The tests in `tests/test_phoebus_displays.py` check the generators and that the committed
-  `lpa_bunch.bob` is up to date. `htu_synoptic_lpa.bob` depends on where the twin checkout is, so
+  `lpa_bunch.bob` is up to date. `htu_synoptic_lpa.bob` depends on where the twin's display directory is, so
   regenerate it on each machine.

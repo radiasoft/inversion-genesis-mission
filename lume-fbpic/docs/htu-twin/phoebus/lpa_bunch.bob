@@ -14,7 +14,7 @@
   </widget>
   <widget type="label" version="2.0.0">
     <name>Subtitle</name>
-    <text>Served by lume-fbpic-serve --twin. The values are the selected run's recorded results.</text>
+    <text>Served by serve.py --twin. The values are the selected run's recorded results.</text>
     <x>20</x><y>40</y><width>718</width><height>20</height>
     <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
   </widget>
@@ -109,7 +109,7 @@
     <name>SrcV3</name>
     <pv_name>pva://$(P)Source_NumParticles</pv_name>
     <x>534</x><y>166</y><width>110</width><height>22</height>
-    <precision>4</precision>
+    <precision>0</precision>
     <precision_from_pv>false</precision_from_pv>
     <show_units>false</show_units>
   </widget>

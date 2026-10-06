@@ -1,4 +1,4 @@
-"""Tests for the Phoebus display generators in `docs/phoebus` (no Phoebus needed)."""
+"""Tests for the Phoebus display generators in `docs/htu-twin/phoebus` (no Phoebus needed)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import pytest
 
 from lume_fbpic.actions import make_descriptor_actions
 
-_DOCS = Path(__file__).resolve().parents[1] / "docs" / "phoebus"
+_DOCS = Path(__file__).resolve().parents[1] / "docs" / "htu-twin" / "phoebus"
 
 
 def _load(name: str):

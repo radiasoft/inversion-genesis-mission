@@ -1,4 +1,4 @@
-"""Tests for `docs/examples/initial_sample_archives.py` on the repository's real dataset."""
+"""Tests for `docs/htu-twin/twin/initial_sample_archives.py` on the repository's real dataset."""
 
 from __future__ import annotations
 
@@ -7,22 +7,29 @@ import math
 import sys
 from pathlib import Path
 
+import h5py
 import pytest
 
-from lume_fbpic.model import LUMEFBPICModel, read_action_values, read_archive_metadata
+from lume_fbpic.model import LUMEFBPICModel, _read_output_values
 
-_EXAMPLES = Path(__file__).resolve().parents[1] / "docs" / "examples"
+_TWIN = Path(__file__).resolve().parents[1] / "docs" / "htu-twin" / "twin"
+
+
+def _recorded_values(path):
+    """The recorded action values of the archive at `path`."""
+    with h5py.File(path, "r") as f:
+        return _read_output_values(f)
 
 
 @pytest.fixture()
 def script():
-    sys.path.insert(0, str(_EXAMPLES))
+    sys.path.insert(0, str(_TWIN))
     try:
         import initial_sample_archives
     except ModuleNotFoundError:
-        pytest.skip("docs/examples not importable")
+        pytest.skip("docs/htu-twin/twin not importable")
     finally:
-        sys.path.remove(str(_EXAMPLES))
+        sys.path.remove(str(_TWIN))
     if not initial_sample_archives.DEFAULT_DATASET.is_file():
         pytest.skip("sample_dataset.json is not in this checkout")
     return initial_sample_archives
@@ -36,11 +43,9 @@ def dataset(script) -> dict:
 def test_archive_records_the_dataset_outputs_exactly(script, dataset, tmp_path):
     record = dataset["runs"]["sim_0003"]
 
-    path = script.build_archive(
-        "sim_0003", record, dataset["metadata"], tmp_path / "s.h5", script.DEFAULT_DATASET
-    )
+    path = script.build_archive(record, dataset["metadata"], tmp_path / "s.h5")
 
-    outputs = read_action_values(path)["outputs"]
+    outputs = _recorded_values(path)
     for name, value in record["output"].items():
         assert outputs[f"descriptor_{name}"] == value
 
@@ -48,9 +53,7 @@ def test_archive_records_the_dataset_outputs_exactly(script, dataset, tmp_path):
 def test_archive_config_has_the_production_grid_and_the_runs_inputs(script, dataset, tmp_path):
     record = dataset["runs"]["sim_0003"]  # zernike_astigmatism_4 = 8
 
-    path = script.build_archive(
-        "sim_0003", record, dataset["metadata"], tmp_path / "s.h5", script.DEFAULT_DATASET
-    )
+    path = script.build_archive(record, dataset["metadata"], tmp_path / "s.h5")
 
     model = LUMEFBPICModel.from_archive(path, dummy_run=True)
     hyparams = model.simulator.hyparams
@@ -60,18 +63,15 @@ def test_archive_config_has_the_production_grid_and_the_runs_inputs(script, data
     assert model.get("laser_energy") == record["input"]["laser_energy_J"]
 
 
-def test_loaded_archive_serves_the_recorded_descriptor_and_is_marked_reconstructed(
+def test_loaded_archive_serves_the_recorded_descriptor_and_has_no_stats(
     script, dataset, tmp_path
 ):
     record = dataset["runs"]["sim_0000"]
-    path = script.build_archive(
-        "sim_0000", record, dataset["metadata"], tmp_path / "s.h5", script.DEFAULT_DATASET
-    )
+    path = script.build_archive(record, dataset["metadata"], tmp_path / "s.h5")
 
     model = LUMEFBPICModel.from_archive(path, dummy_run=True)
 
     assert model.get(["descriptor_mean_uz"])["descriptor_mean_uz"] == record["output"]["mean_uz"]
-    assert read_archive_metadata(path)["reconstructed"]
     assert math.isnan(model.get(["charge_pc"])["charge_pc"])  # the dataset has no stats
 
 
@@ -82,9 +82,7 @@ def test_an_input_without_an_action_that_differs_from_the_baseline_is_an_error(
     record["input"]["laser_wavelength_m"] = 7.0e-7
 
     with pytest.raises(ValueError, match="laser_wavelength_m"):
-        script.build_archive(
-            "x", record, dataset["metadata"], tmp_path / "s.h5", script.DEFAULT_DATASET
-        )
+        script.build_archive(record, dataset["metadata"], tmp_path / "s.h5")
 
 
 def test_an_unknown_input_is_an_error(script, dataset, tmp_path):
@@ -92,15 +90,11 @@ def test_an_unknown_input_is_an_error(script, dataset, tmp_path):
     record["input"]["mystery_knob"] = 1.0
 
     with pytest.raises(ValueError, match="mystery_knob"):
-        script.build_archive(
-            "x", record, dataset["metadata"], tmp_path / "s.h5", script.DEFAULT_DATASET
-        )
+        script.build_archive(record, dataset["metadata"], tmp_path / "s.h5")
 
 
 def test_descriptor_settings_must_match_the_dataset(script, dataset, tmp_path):
     metadata = {**dataset["metadata"], "uz_min": 10.0}
 
     with pytest.raises(ValueError, match="uz_min"):
-        script.build_archive(
-            "x", dataset["runs"]["sim_0000"], metadata, tmp_path / "s.h5", script.DEFAULT_DATASET
-        )
+        script.build_archive(dataset["runs"]["sim_0000"], metadata, tmp_path / "s.h5")

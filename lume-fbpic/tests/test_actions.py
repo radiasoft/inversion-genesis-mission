@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from lume_fbpic.actions import HyperparameterFieldAction, LaserFieldAction, make_actions
+from tests.downramp_actions import make_actions
+from lume_fbpic.actions import HyperparameterFieldAction, LaserFieldAction
 
 
 def _action(simulator, name):
@@ -63,9 +64,9 @@ def test_laser_field_action_set_a0_after_energy_still_allows_further_field_chang
 
 
 def test_hyperparameter_field_action_get_set(simulator):
-    # Not part of the default HTU action set (make_actions() deliberately excludes grid/
-    # numerical hyperparameters as control variables), but exercised directly here since
-    # HyperparameterFieldAction is available as a general-purpose class.
+    # Not part of the HTU downramp action set (tests/downramp_actions.py deliberately
+    # excludes grid/numerical hyperparameters as control variables), but exercised directly here
+    # since HyperparameterFieldAction is available as a general-purpose class.
     action = HyperparameterFieldAction(
         name="gamma_boost", field_name="gamma_boost", unit=None
     )

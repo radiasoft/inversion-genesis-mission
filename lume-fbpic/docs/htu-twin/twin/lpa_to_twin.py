@@ -1,7 +1,7 @@
 """Make a `lume-fbpic` bunch the source of the HTU transport twin (`geecs-lume-twin`).
 
 `build_chain(lpa_model)` is `StagedModel([lpa_model, TwinStage(twin_model)])`: it hands the LPA
-stage's `final_particles` to the twin's `initial_particles` (see `lume_fbpic.twin`), and the
+stage's `final_particles` to the twin's `initial_particles` (see `docs/htu-twin/twin/twin.py`), and the
 twin's own `Source_*` variables become read-only readbacks of that bunch. The bunch comes from either
 
 - `--archive`: an archive written with `LUMEFBPICModel.archive(save_final_particles=True)`, or
@@ -25,13 +25,15 @@ spread is mostly lost; this shows the hand-off, not a matched optics.
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
-import numpy as np
-
-import ionization_injection
+import numpy
 from lume_fbpic.model import LUMEFBPICModel
-from lume_fbpic.twin import build_chain
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "examples"))
+import ionization_injection  # noqa: E402  (docs/examples/ionization_injection.py)
+from twin import build_chain  # noqa: E402  (docs/htu-twin/twin/twin.py, this directory)
 
 SCREENS = (
     "TCPhosphor",
@@ -100,7 +102,7 @@ def main(argv: list[str] | None = None) -> None:
         print(f"  {name:26} {float(chain.get([name])[name]):.4g}")
     print("charge on each screen (pC, fraction of injected):")
     for screen in SCREENS:
-        image = np.asarray(chain.get([f"{screen}_image"])[f"{screen}_image"])
+        image = numpy.asarray(chain.get([f"{screen}_image"])[f"{screen}_image"])
         charge = float(image.sum()) * 1e12
         print(f"  {screen:18} {charge:8.1f}  {charge / (injected.charge * 1e12):6.1%}")
 

@@ -7,18 +7,17 @@
 - the config rebuilt from the run's inputs, on the production hyperparameters of
   `ionization_injection_runscript_00.py`;
 - the action inputs, read from that config;
-- the 33 `descriptor_*` outputs exactly as recorded in the dataset;
-- `metadata` marking it as reconstructed, with its source.
+- the 33 `descriptor_*` outputs exactly as recorded in the dataset.
 
 `LUMEFBPICModel.from_archive()` loads one and its `get()` returns the recorded descriptor values,
-so it can be served with `lume-fbpic-serve`.
+so it can be served with `serve.py`.
 
 These are RECONSTRUCTED archives, not the runs themselves:
 
 1. There are no final particles and no `stats`; the dataset keeps only the 33 descriptor scalars.
 2. The config approximates the config that produced the numbers. `lume_fbpic` cannot match the
    original interaction length (`right_buffer` must be positive, see `ionization_injection.py`
-   point 6), does not pass `p_zmin`/`p_rmax` to the particle loading (point 4), and the runs
+   docstring), does not pass `p_zmin`/`p_rmax` to the particle loading, and the runs
    used 8 MPI ranks on GPUs, which this records only as `use_mpi=True`.
 3. Only inputs that have an action (laser energy, pulse duration, focal position, the nitrogen
    dopant fraction and the 12 Zernike coefficients) may differ from the `ionization_injection.py`
@@ -34,16 +33,19 @@ import argparse
 import json
 import math
 from pathlib import Path
-from typing import Any
+import sys
+import typing
 
 import attrs
 
-import ionization_injection
 from lume_fbpic.actions import LaserFieldAction, MomentDescriptorAction
 from lume_fbpic.model import LUMEFBPICModel
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "examples"))
+import ionization_injection  # noqa: E402  (docs/examples/ionization_injection.py)
+
 DEFAULT_DATASET = (
-    Path(__file__).resolve().parents[3]
+    Path(__file__).resolve().parents[4]
     / "lpa/Simulation_FBPIC/runs/initial_sample/sample_dataset/sample_dataset.json"
 )
 
@@ -71,7 +73,7 @@ _ACTION_FOR_INPUT = {
 
 
 def build_archive(
-    run: str, record: dict[str, Any], dataset_metadata: dict[str, Any], path: Path, source: Path
+    record: dict[str, typing.Any], dataset_metadata: dict[str, typing.Any], path: Path
 ) -> Path:
     """Write the archive for one dataset run and return its path."""
     model = ionization_injection.build_model()
@@ -80,18 +82,11 @@ def build_archive(
     _check_descriptor_settings(model, dataset_metadata)
     _check_fixed_inputs(model, record["input"])
     _apply_inputs(model, record["input"])
-    model.archive(
-        path,
-        metadata={
-            "reconstructed": True,
-            "source": str(source),
-            "run": run,
-            "dataset_metadata": dataset_metadata,
-            "note": "Reconstructed from sample_dataset.json: no final particles or stats, and "
-            "the config only approximates the original run (see initial_sample_archives.py).",
-        },
-        outputs={f"descriptor_{name}": value for name, value in record["output"].items()},
-    )
+    # The recorded outputs go where the output actions read them when there are no particles.
+    model.simulator.stats = {
+        f"descriptor_{name}": value for name, value in record["output"].items()
+    }
+    model.archive(path)
     return path
 
 
@@ -104,9 +99,7 @@ def main(argv: list[str] | None = None) -> None:
     dataset = json.loads(args.dataset.read_text())
     args.output_dir.mkdir(parents=True, exist_ok=True)
     for run, record in dataset["runs"].items():
-        path = build_archive(
-            run, record, dataset["metadata"], args.output_dir / f"{run}.h5", args.dataset
-        )
+        path = build_archive(record, dataset["metadata"], args.output_dir / f"{run}.h5")
         print(f"wrote {path}")
 
 
@@ -121,14 +114,14 @@ def _apply_inputs(model: LUMEFBPICModel, inputs: dict[str, float]) -> None:
     model.set(values)
 
 
-def _check_descriptor_settings(model: LUMEFBPICModel, dataset_metadata: dict[str, Any]) -> None:
+def _check_descriptor_settings(model: LUMEFBPICModel, dataset_metadata: dict[str, typing.Any]) -> None:
     """The model's descriptor actions must select particles as the dataset's did."""
     wanted = {
         "uz_min": dataset_metadata["uz_min"],
         "central_fraction": dataset_metadata["central_fraction"],
         "longitudinal_bins": dataset_metadata["longitudinal_bins"],
     }
-    for action in model._actions:
+    for action in model.supported_variables.values():
         if isinstance(action, MomentDescriptorAction):
             have = {key: getattr(action, key) for key in wanted}
             if have != wanted:

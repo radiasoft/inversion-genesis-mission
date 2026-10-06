@@ -4,26 +4,24 @@ from __future__ import annotations
 
 import math
 
-import numpy as np
+import numpy
 import pytest
 from scipy.constants import c, e, m_e
 
-from lume_fbpic.actions import make_actions, make_descriptor_actions
+from tests.downramp_actions import make_actions
+from lume_fbpic.actions import make_descriptor_actions
 from lume_fbpic.model import LUMEFBPICModel
 
 from inversion_fbpic.utils import distributions
 
-try:
-    from beamphysics import ParticleGroup
-except ImportError:
-    from pmd_beamphysics import ParticleGroup
+from beamphysics import ParticleGroup
 
 _MC2_EV = m_e * c**2 / e
 _ELECTRONS_PER_MACROPARTICLE = 1.0e3
 
 
 def _particle_group(n=3000, seed=0, uz_mean=150.0, uz_std=30.0) -> ParticleGroup:
-    rng = np.random.default_rng(seed)
+    rng = numpy.random.default_rng(seed)
     return ParticleGroup(
         data={
             "x": rng.normal(1.0e-6, 3.0e-6, n),
@@ -32,9 +30,9 @@ def _particle_group(n=3000, seed=0, uz_mean=150.0, uz_std=30.0) -> ParticleGroup
             "px": rng.normal(0.5, 2.0, n) * _MC2_EV,
             "py": rng.normal(0.0, 1.0, n) * _MC2_EV,
             "pz": rng.normal(uz_mean, uz_std, n) * _MC2_EV,
-            "t": np.zeros(n),
-            "status": np.ones(n, dtype=int),
-            "weight": np.full(n, _ELECTRONS_PER_MACROPARTICLE * e),
+            "t": numpy.zeros(n),
+            "status": numpy.ones(n, dtype=int),
+            "weight": numpy.full(n, _ELECTRONS_PER_MACROPARTICLE * e),
             "species": "electron",
         }
     )
@@ -48,10 +46,10 @@ def descriptor_model(simulator) -> LUMEFBPICModel:
 
 def _reference(pg, uz_min=30.0, central_fraction=0.95) -> dict[str, float]:
     """The descriptor computed directly with the library, as `build_dataset.py` would."""
-    phase_space = np.stack(
+    phase_space = numpy.stack(
         [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
     )
-    weights = np.asarray(pg.weight) / e
+    weights = numpy.asarray(pg.weight) / e
     phase_space, weights = distributions.select_by_uz(phase_space, weights, uz_min=uz_min)
     phase_space, weights = distributions.crop_central_particles(
         phase_space, weights, central_fraction=central_fraction
@@ -92,7 +90,7 @@ def test_charge_is_the_selected_weights_in_coulombs(descriptor_model, simulator)
         "descriptor_total_beam_charge_c"
     ]
 
-    selected = np.count_nonzero(np.asarray(pg.pz) / _MC2_EV >= 30.0)
+    selected = numpy.count_nonzero(numpy.asarray(pg.pz) / _MC2_EV >= 30.0)
     assert charge == pytest.approx(_reference(pg)["total_beam_charge_c"], rel=1e-12)
     assert 0 < charge <= selected * _ELECTRONS_PER_MACROPARTICLE * e  # the crop only removes
 
@@ -107,7 +105,7 @@ def test_selection_parameters_change_the_result(simulator):
         return model.get([name])[name]
 
     everything = charge(uz_min=None, central_fraction=None)
-    assert everything == pytest.approx(len(np.asarray(pg.x)) * _ELECTRONS_PER_MACROPARTICLE * e)
+    assert everything == pytest.approx(len(numpy.asarray(pg.x)) * _ELECTRONS_PER_MACROPARTICLE * e)
     assert charge(uz_min=170.0, central_fraction=0.5) < everything
 
 

@@ -1,4 +1,4 @@
-"""Tests for `lume_fbpic.serve.build_config` (the Runner config; no server is started)."""
+"""Tests for `serve.build_config` (docs/htu-twin/serving/serve.py) (the Runner config; no server is started)."""
 
 from __future__ import annotations
 
@@ -6,9 +6,10 @@ import sys
 
 import pytest
 
-from lume_fbpic.actions import make_actions, make_descriptor_actions
+from tests.downramp_actions import make_actions
+from lume_fbpic.actions import make_descriptor_actions
 from lume_fbpic.model import LUMEFBPICModel
-from lume_fbpic.serve import build_config, expand_archives
+from serve import build_config, expand_archives
 
 
 @pytest.fixture()
@@ -57,7 +58,7 @@ def test_config_uses_the_prefix_and_protocol(full_model):
 
 def test_synthesizing_a_bunch_needs_the_twin(full_model, tmp_path):
     pytest.importorskip("lume_pva")
-    from lume_fbpic.serve import main
+    from serve import main
 
     full_model.archive(tmp_path / "a.h5")
 
@@ -67,7 +68,7 @@ def test_synthesizing_a_bunch_needs_the_twin(full_model, tmp_path):
 
 def test_the_twin_needs_particles_or_the_flag_to_synthesize_them(full_model, tmp_path, capsys):
     pytest.importorskip("lume_pva")
-    from lume_fbpic.serve import main
+    from serve import main
 
     full_model.archive(tmp_path / "a.h5")  # no final particles
 
@@ -106,7 +107,7 @@ def test_an_empty_directory_or_a_missing_path_is_an_error(tmp_path):
 
 def test_archives_with_the_same_file_name_are_refused(full_model, tmp_path, capsys):
     pytest.importorskip("lume_pva")
-    from lume_fbpic.serve import main
+    from serve import main
 
     for directory in ("one", "two"):
         (tmp_path / directory).mkdir()
@@ -120,7 +121,7 @@ def test_archives_with_the_same_file_name_are_refused(full_model, tmp_path, caps
 
 def test_the_twin_names_every_archive_that_lacks_particles(full_model, tmp_path, capsys):
     pytest.importorskip("lume_pva")
-    from lume_fbpic.serve import main
+    from serve import main
 
     full_model.archive(tmp_path / "a.h5")
     full_model.archive(tmp_path / "b.h5")
@@ -134,7 +135,7 @@ def test_the_twin_names_every_archive_that_lacks_particles(full_model, tmp_path,
 
 def test_the_selector_is_served_read_write(full_model):
     pytest.importorskip("lume_pva")
-    from lume_fbpic.selector import ArchiveSelector
+    from selector import ArchiveSelector
 
     selector = ArchiveSelector({"a": full_model})
 

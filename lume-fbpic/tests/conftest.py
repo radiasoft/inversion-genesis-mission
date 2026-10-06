@@ -8,12 +8,22 @@ unless they explicitly call `simulator.run()`.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pytest
+
+# The example scripts (docs/examples), serve.py and selector.py (docs/htu-twin/serving) and twin.py
+# (docs/htu-twin/twin) are scripts, not package modules.
+_DOCS = Path(__file__).resolve().parents[1] / "docs"
+for _directory in (_DOCS / "examples", _DOCS / "htu-twin" / "serving", _DOCS / "htu-twin" / "twin"):
+    sys.path.insert(0, str(_directory))
 
 from inversion_fbpic.lib.simulation import SimulationHyperparameters
 from inversion_fbpic.lib.laser import GaussianLaserPulse
 from inversion_fbpic.lib.density_profiles import SmoothSineFlattop
 
+from tests.downramp_actions import make_actions
 from lume_fbpic.model import LUMEFBPICModel
 from lume_fbpic.simulator import FBPICSimulator
 
@@ -89,23 +99,20 @@ def simulator(hyparams, laser, densities, tmp_path) -> FBPICSimulator:
 
 @pytest.fixture()
 def model(simulator) -> LUMEFBPICModel:
-    return LUMEFBPICModel.from_simulator(simulator, dummy_run=True)
+    return LUMEFBPICModel(simulator, make_actions(simulator), dummy_run=True)
 
 
 @pytest.fixture()
 def particle_group():
     """A small synthetic electron bunch (px/py/pz in eV/c, weights in coulombs)."""
-    import numpy as np
+    import numpy
     from scipy.constants import c, e, m_e
 
-    try:
-        from beamphysics import ParticleGroup
-    except ImportError:
-        from pmd_beamphysics import ParticleGroup
+    from beamphysics import ParticleGroup
 
     mc2_ev = m_e * c**2 / e
     n = 400
-    rng = np.random.default_rng(3)
+    rng = numpy.random.default_rng(3)
     return ParticleGroup(
         data={
             "x": rng.normal(1.0e-6, 3.0e-6, n),
@@ -114,9 +121,9 @@ def particle_group():
             "px": rng.normal(0.5, 2.0, n) * mc2_ev,
             "py": rng.normal(0.0, 1.0, n) * mc2_ev,
             "pz": rng.normal(150.0, 30.0, n) * mc2_ev,
-            "t": np.zeros(n),
-            "status": np.ones(n, dtype=int),
-            "weight": np.full(n, 1.0e3 * e),
+            "t": numpy.zeros(n),
+            "status": numpy.ones(n, dtype=int),
+            "weight": numpy.full(n, 1.0e3 * e),
             "species": "electron",
         }
     )

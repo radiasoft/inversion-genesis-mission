@@ -5,7 +5,7 @@ from __future__ import annotations
 import h5py
 import pytest
 
-from lume_fbpic.simulator import FBPICSimulator
+from lume_fbpic.simulator import BaseSimulator, FBPICSimulator
 
 
 def test_configure_accepts_complete_config(simulator):
@@ -27,37 +27,82 @@ def test_run_without_configure_is_a_noop(simulator):
     assert simulator.final_particles is None
 
 
-def test_reset_clears_state_without_rerunning(simulator):
+def test_reset_restores_the_starting_state_without_rerunning(simulator):
+    config = simulator.config()
     simulator.configure()
     simulator.stats = {"charge_pc": 1.0}
     simulator.final_particles = object()
+    simulator.laser = None
+    simulator.finished = True
 
     simulator.reset()
 
     assert simulator.stats == {}
     assert simulator.final_particles is None
-    assert simulator.configured is False
+    assert simulator.laser is config["laser"]
+    assert simulator.densities == config["densities"]
     assert simulator.finished is False
+    assert simulator.configured is True  # reset leaves it as it was
+
+
+def test_reset_restores_the_archived_state_of_a_loaded_simulator(simulator, particle_group, tmp_path):
+    simulator.final_particles = particle_group
+    simulator.stats = {"charge_pc": 7.0}
+    simulator.archive(tmp_path / "a.h5", save_final_particles=True)
+    restored = FBPICSimulator.from_archive(tmp_path / "a.h5")
+    laser = restored.laser
+
+    restored.laser = None
+    restored.stats = {}
+    restored.final_particles = None
+    restored.reset()
+
+    assert restored.laser is laser
+    assert restored.stats == {"charge_pc": 7.0}
+    assert len(restored.final_particles) == len(particle_group)
+
+
+def test_stats_given_to_from_archive_are_the_starting_stats_of_an_archive_without_particles(
+    simulator, tmp_path
+):
+    simulator.archive(tmp_path / "a.h5")
+
+    restored = FBPICSimulator.from_archive(tmp_path / "a.h5", stats={"descriptor_mean_uz": 3.0})
+    restored.stats = {}
+    restored.reset()
+
+    assert restored.stats == {"descriptor_mean_uz": 3.0}
+
+
+def test_stats_given_to_from_archive_do_not_replace_those_of_an_archive_with_particles(
+    simulator, particle_group, tmp_path
+):
+    simulator.final_particles = particle_group
+    simulator.stats = {"charge_pc": 7.0}
+    simulator.archive(tmp_path / "a.h5", save_final_particles=True)
+
+    restored = FBPICSimulator.from_archive(tmp_path / "a.h5", stats={"descriptor_mean_uz": 3.0})
+
+    assert restored.stats == {"charge_pc": 7.0}
+
+
+def test_reset_needs_a_starting_state(simulator):
+    simulator._initial_state = None
+
+    with pytest.raises(RuntimeError, match="starting state"):
+        simulator.reset()
 
 
 def test_fingerprint_is_stable_for_the_same_config(simulator):
     assert simulator.fingerprint() == simulator.fingerprint()
 
 
-def test_archive_round_trips_config_only(simulator, hyparams, laser, densities, tmp_path):
+def test_archive_round_trips_config_only(simulator, tmp_path):
     simulator.configure()
     archive_path = tmp_path / "archive.h5"
     simulator.archive(archive_path)
 
-    restored = FBPICSimulator(
-        hyparams,
-        laser,
-        densities,
-        target_species=simulator.target_species,
-        working_directory=simulator.working_directory,
-    )
-    with h5py.File(archive_path, "r") as f:
-        restored.load_archive(f, configure=False)
+    restored = FBPICSimulator.from_archive(archive_path, working_directory=tmp_path)
 
     assert restored.hyparams.to_dict() == simulator.hyparams.to_dict()
     assert restored.laser.to_dict() == simulator.laser.to_dict()
@@ -65,7 +110,7 @@ def test_archive_round_trips_config_only(simulator, hyparams, laser, densities, 
     for original, loaded in zip(simulator.densities, restored.densities):
         assert loaded.to_dict() == original.to_dict()
 
-    # Must reconfigure to run again -- matches Impact.load_archive()'s convention.
+    # A loaded simulator has to be configured before it runs.
     assert restored.configured is False
     assert restored.final_particles is None
 
@@ -82,18 +127,6 @@ def test_archive_stores_target_species_and_from_archive_restores_it(simulator, t
         d.to_dict() for d in simulator.densities
     ]
     assert restored.working_directory == tmp_path
-
-
-def test_from_archive_without_stored_species_requires_one(simulator, tmp_path):
-    simulator.archive(tmp_path / "a.h5")
-    with h5py.File(tmp_path / "a.h5", "a") as f:
-        del f.attrs["target_species"]
-
-    with pytest.raises(ValueError, match="target_species"):
-        FBPICSimulator.from_archive(tmp_path / "a.h5")
-    assert (
-        FBPICSimulator.from_archive(tmp_path / "a.h5", target_species="x").target_species == "x"
-    )
 
 
 def test_load_results_reads_diagnostics_under_the_given_directory(simulator, tmp_path, mocker):
@@ -153,3 +186,48 @@ def test_archive_with_a_lume_fbpic_profile_loads_in_a_fresh_process(simulator, t
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.split()[-3:] == ["LinearRampFlattop", "None", "1"]
+
+
+def test_archive_records_its_kind_and_base_from_archive_returns_the_matching_class(
+    simulator, tmp_path
+):
+    simulator.archive(tmp_path / "a.h5")
+
+    with h5py.File(tmp_path / "a.h5") as f:
+        assert f.attrs["config_kind"] == "lwfa"
+    assert type(BaseSimulator.from_archive(tmp_path / "a.h5")) is FBPICSimulator
+
+
+def test_from_archive_of_another_kind_raises(simulator, tmp_path):
+    class Other(BaseSimulator):
+        CONFIG_KIND = "other-kind"
+
+    try:
+        simulator.archive(tmp_path / "a.h5")
+        with h5py.File(tmp_path / "a.h5", "a") as f:
+            f.attrs["config_kind"] = "other-kind"
+
+        with pytest.raises(ValueError, match="cannot load"):
+            FBPICSimulator.from_archive(tmp_path / "a.h5")
+    finally:
+        BaseSimulator._registry.pop("other-kind")
+
+
+def test_from_archive_of_an_unknown_kind_raises(simulator, tmp_path):
+    simulator.archive(tmp_path / "a.h5")
+    with h5py.File(tmp_path / "a.h5", "a") as f:
+        f.attrs["config_kind"] = "nope"
+
+    with pytest.raises(ValueError, match="unknown kind"):
+        BaseSimulator.from_archive(tmp_path / "a.h5")
+
+
+def test_config_and_set_config_round_trip(simulator):
+    config = simulator.config()
+    original = simulator.laser
+    simulator.laser = None
+
+    simulator.set_config(config)
+
+    assert simulator.laser is original
+    assert config["densities"] is not simulator.densities

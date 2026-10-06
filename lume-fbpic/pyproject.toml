@@ -16,11 +16,8 @@ dependencies = [
     "scipy",
     "h5py",
     "openpmd-viewer",
-    "pmd-beamphysics",
+    "openpmd-beamphysics>=0.16",
 ]
-
-[project.scripts]
-lume-fbpic-serve = "lume_fbpic.serve:main"
 
 [project.optional-dependencies]
 dev = ["pytest"]
