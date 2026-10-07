@@ -226,6 +226,30 @@ def test_a_short_run_with_gaussian_bunches_reads_the_witness_back(tmp_path):
     assert len(simulator.final_particles) == 100
 
 
+def test_the_gaussian_example_plots_the_fields_of_a_short_run(tmp_path):
+    pytest.importorskip("matplotlib")
+    model = pwfa_gaussian_example.build_model(n_steps=3)
+    simulator = model.simulator
+    simulator.working_directory = tmp_path
+    simulator.grid = attrs.evolve(simulator.grid, nz=40, nr=16, write_period=2)
+    simulator.driver = attrs.evolve(simulator.driver, n_macroparticles=200)
+    simulator.witness = attrs.evolve(simulator.witness, n_macroparticles=100)
+    simulator.configure()
+    simulator.run()
+
+    files = pwfa_gaussian_example.plot_results(tmp_path, output=tmp_path / "plots")
+
+    assert [f.name for f in files] == [
+        "electron_density.png",
+        "longitudinal_field.png",
+        "transverse_force.png",
+        "longitudinal_field_lineout.png",
+    ]
+    assert all(f.stat().st_size > 1000 for f in files)
+    with pytest.raises(FileNotFoundError, match="no dumps"):
+        pwfa_gaussian_example.plot_results(tmp_path / "plots")
+
+
 def _up_down_ramp(**changes) -> UpDownRampProfile:
     kwargs = dict(
         nominal_density=4.2e22,

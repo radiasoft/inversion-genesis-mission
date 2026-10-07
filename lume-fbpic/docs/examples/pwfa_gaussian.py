@@ -15,10 +15,17 @@ Setup notes:
   start behind it.
 - The grid is open in z and reflective in r.
 - `random_seed` is set so a run repeats.
+
+Running it prints the witness's charge, mean energy and energy spread, then plots the last dump
+(`plot_results()`): the electron density, the longitudinal field `E_z` as a map and as a lineout
+near the axis, and the transverse force `E_r - c B_theta`. Needs matplotlib.
 """
 
 from __future__ import annotations
 
+import pathlib
+
+import h5py
 import numpy
 from scipy.constants import c, e, epsilon_0, m_e, pi
 
@@ -104,8 +111,97 @@ def build_model(*, dummy_run: bool = False, n_steps: int = N_STEPS) -> LUMEFBPIC
     return LUMEFBPICModel(simulator, make_pwfa_actions(simulator), dummy_run=dummy_run)
 
 
+def plot_results(
+    directory: str | pathlib.Path, *, output: str | pathlib.Path = "."
+) -> list[pathlib.Path]:
+    """Plot the last dump of the run in `directory` (its working directory, holding
+    `diags/hdf5`) and return the files written to `output`:
+
+    - `electron_density.png`: the electron density of the plasma and the bunches [cm^-3].
+    - `longitudinal_field.png`: `E_z` [GV/m], with zero at the middle of the colour scale.
+    - `longitudinal_field_lineout.png`: `E_z` along the axis.
+    - `transverse_force.png`: `E_r - c B_theta` [GV/m], the force on a relativistic electron.
+
+    The horizontal axis is `k_p zeta`, with `zeta = z - z_driver` (zero at the drive bunch's
+    centre, the wake behind it at negative values) and the radial one is `k_p r`. Needs
+    matplotlib.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as pyplot
+    from matplotlib.colors import TwoSlopeNorm
+
+    snapshot = _read_last_dump(pathlib.Path(directory))
+    zeta, radius = K_P * snapshot["zeta"], K_P * snapshot["r"]
+    extent = [zeta[0], zeta[-1], radius[0], radius[-1]]
+    output = pathlib.Path(output)
+    output.mkdir(parents=True, exist_ok=True)
+    files = []
+
+    def field_map(name, data, label, cmap, norm=None):
+        figure, axis = pyplot.subplots()
+        image = axis.imshow(data, extent=extent, cmap=cmap, origin="lower", norm=norm, aspect="auto")
+        axis.set(xlabel=r"$k_p \zeta$", ylabel=r"$k_p r$")
+        figure.colorbar(image, ax=axis, orientation="horizontal", label=label)
+        figure.tight_layout()
+        files.append(output / f"{name}.png")
+        figure.savefig(files[-1], dpi=120)
+        pyplot.close(figure)
+
+    def centred(data):
+        return TwoSlopeNorm(0.0, vmin=min(data.min(), -1e-30), vmax=max(data.max(), 1e-30))
+
+    field_map("electron_density", snapshot["n_e"], r"$n_e$ [cm$^{-3}$]", "viridis")
+    field_map("longitudinal_field", snapshot["E_z"], r"$E_z$ [GV/m]", "RdBu", centred(snapshot["E_z"]))
+    field_map(
+        "transverse_force",
+        snapshot["F_r"],
+        r"$E_r - c B_\theta$ [GV/m]",
+        "RdBu",
+        centred(snapshot["F_r"]),
+    )
+
+    figure, axis = pyplot.subplots()
+    axis.plot(zeta, snapshot["E_z"][0])
+    axis.set(xlabel=r"$k_p \zeta$", ylabel=r"$E_z$ on axis [GV/m]")
+    figure.tight_layout()
+    files.append(output / "longitudinal_field_lineout.png")
+    figure.savefig(files[-1], dpi=120)
+    pyplot.close(figure)
+    return files
+
+
+def _read_last_dump(directory: pathlib.Path) -> dict:
+    """The last dump of a run: `zeta` and `r` [m], and `n_e` [cm^-3], `E_z` and `F_r = E_r - c B_theta`
+    [GV/m] on the grid, shape (r, z)."""
+    paths = sorted((directory / "diags" / "hdf5").glob("data*.h5"))
+    if not paths:
+        raise FileNotFoundError(f"no dumps under {directory / 'diags' / 'hdf5'}")
+    with h5py.File(paths[-1], "r") as f:
+        step = f[f"data/{int(paths[-1].name[4:12])}"]
+        mesh = step["fields/E"]
+        dr, dz = mesh.attrs["gridSpacing"]
+        z0 = mesh.attrs["gridGlobalOffset"][1]
+        e_z, e_r, b_t = step["fields/E/z"][0], step["fields/E/r"][0], step["fields/B/t"][0]
+        rho = step["fields/rho"][0]
+        z_driver = numpy.average(
+            step["particles/driver/position/z"][:], weights=step["particles/driver/weighting"][:]
+        )
+    n_r, n_z = e_z.shape
+    return {
+        "zeta": z0 + dz * numpy.arange(n_z) - z_driver,
+        "r": dr * (numpy.arange(n_r) + 0.5),
+        "n_e": -rho / e / 100.0**3,  # rho is the charge density of everything: plasma and bunches
+        "E_z": e_z * 1.0e-9,
+        "F_r": (e_r - c * b_t) * 1.0e-9,
+    }
+
+
 if __name__ == "__main__":
     model = build_model()
     model.simulator.configure()
     model.set({"driver_charge": DRIVE_Q})  # set() applies the value, then runs the simulation
     print(model.get(["charge_pc", "energy_mean_mev", "energy_std_mev"]))
+    for path in plot_results(model.simulator.working_directory, output=model.simulator.working_directory):
+        print(f"wrote {path}")
