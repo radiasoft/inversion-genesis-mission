@@ -276,7 +276,7 @@ def make_descriptor_actions(
     """Build one read-only `MomentDescriptorAction` per descriptor feature (33 by default).
 
     The names are `prefix` + the feature name (`descriptor_mean_uz`,
-    `descriptor_cov_x_ux`, `descriptor_total_beam_charge_c`, ...), in the order
+    `descriptor_cov_x_ux`, `descriptor_total_beam_charge_pc`, ...), in the order
     `compute_moment_descriptor` returns them. The default selection (`uz_min=30`,
     `central_fraction=0.95`) is the `build_dataset.py` default, tuned to the
     ionization-injection beams; a lower-energy bunch (the LWFA example's, for instance, has a
@@ -290,7 +290,7 @@ def make_descriptor_actions(
             longitudinal_bins=longitudinal_bins,
             read_only=True,
             uz_min=uz_min,
-            unit="C" if feature == "total_beam_charge_c" else None,
+            unit="pC" if feature == "total_beam_charge_pc" else None,
         )
         for feature in _descriptor_features(longitudinal_bins)
     ]
@@ -400,5 +400,5 @@ def _descriptor_features(longitudinal_bins: int) -> list[str]:
     for index in range(longitudinal_bins):
         features.append(f"longitudinal_mean_uz_{index:02d}")
         features.append(f"longitudinal_rms_uz_{index:02d}")
-    features.append("total_beam_charge_c")
+    features.append("total_beam_charge_pc")
     return features

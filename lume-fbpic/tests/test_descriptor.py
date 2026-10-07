@@ -64,7 +64,7 @@ def test_actions_are_the_33_read_only_features_in_library_order():
     assert [a.name for a in actions] == [f"descriptor_{k}" for k in keys]
     assert len(actions) == 33
     assert all(a.read_only for a in actions)
-    assert actions[-1].unit == "C"
+    assert actions[-1].unit == "pC"
 
 
 def test_cache_is_recomputed_when_final_particles_change(descriptor_model, simulator, mocker):
@@ -74,7 +74,7 @@ def test_cache_is_recomputed_when_final_particles_change(descriptor_model, simul
 
     simulator.final_particles = _particle_group(seed=1)
     descriptor_model.get(names)
-    descriptor_model.get(["descriptor_total_beam_charge_c"])
+    descriptor_model.get(["descriptor_total_beam_charge_pc"])
     assert spy.call_count == 1  # one computation shared by every feature
 
     simulator.final_particles = _particle_group(seed=2)
@@ -82,30 +82,30 @@ def test_cache_is_recomputed_when_final_particles_change(descriptor_model, simul
     assert spy.call_count == 2
 
 
-def test_charge_is_the_selected_weights_in_coulombs(descriptor_model, simulator):
+def test_charge_is_the_selected_weights_in_picocoulombs(descriptor_model, simulator):
     pg = _particle_group()
     simulator.final_particles = pg
 
-    charge = descriptor_model.get(["descriptor_total_beam_charge_c"])[
-        "descriptor_total_beam_charge_c"
+    charge = descriptor_model.get(["descriptor_total_beam_charge_pc"])[
+        "descriptor_total_beam_charge_pc"
     ]
 
     selected = numpy.count_nonzero(numpy.asarray(pg.pz) / _MC2_EV >= 30.0)
-    assert charge == pytest.approx(_reference(pg)["total_beam_charge_c"], rel=1e-12)
-    assert 0 < charge <= selected * _ELECTRONS_PER_MACROPARTICLE * e  # the crop only removes
+    assert charge == pytest.approx(_reference(pg)["total_beam_charge_pc"], rel=1e-12)
+    assert 0 < charge <= selected * _ELECTRONS_PER_MACROPARTICLE * e * 1e12  # the crop only removes
 
 
 def test_selection_parameters_change_the_result(simulator):
     pg = _particle_group()
     simulator.final_particles = pg
-    name = "descriptor_total_beam_charge_c"
+    name = "descriptor_total_beam_charge_pc"
 
     def charge(**selection):
         model = LUMEFBPICModel(simulator, make_descriptor_actions(**selection), dummy_run=True)
         return model.get([name])[name]
 
     everything = charge(uz_min=None, central_fraction=None)
-    assert everything == pytest.approx(len(numpy.asarray(pg.x)) * _ELECTRONS_PER_MACROPARTICLE * e)
+    assert everything == pytest.approx(len(numpy.asarray(pg.x)) * _ELECTRONS_PER_MACROPARTICLE * e * 1e12)
     assert charge(uz_min=170.0, central_fraction=0.5) < everything
 
 

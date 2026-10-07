@@ -170,7 +170,7 @@ def particles_from_descriptor(
 
     `descriptor` is `inversion_fbpic.utils.distributions.compute_moment_descriptor`'s output in
     its default spline schema (3 momentum centroids, 21 covariance entries, `longitudinal_mean_uz_NN`
-    and `longitudinal_rms_uz_NN` for each longitudinal bin, `total_beam_charge_c`). It is an
+    and `longitudinal_rms_uz_NN` for each longitudinal bin, `total_beam_charge_pc`). It is an
     APPROXIMATION of the bunch it summarizes -- those 33 numbers do not determine a distribution:
 
     - The longitudinal `uz` structure is a mixture of the descriptor's bins. The bins are equal
@@ -184,7 +184,7 @@ def particles_from_descriptor(
       distribution are not reproduced.
 
     The result is in the bunch frame (`t = -z / c`, `z` centred on zero), has equal charge weights
-    summing to `total_beam_charge_c`, and is already the selected bunch the descriptor was computed
+    summing to `total_beam_charge_pc` (in coulombs), and is already the selected bunch the descriptor was computed
     on: do not select it again.
 
     Raises:
@@ -201,7 +201,7 @@ def particles_from_descriptor(
         slice_mean = numpy.array([descriptor[k] for k in bins])
         slice_rms = numpy.array([descriptor[k.replace("mean", "rms")] for k in bins])
         mean_ux, mean_uy, mean_uz = (descriptor[f"mean_{n}"] for n in ("ux", "uy", "uz"))
-        charge = descriptor["total_beam_charge_c"]
+        charge = descriptor["total_beam_charge_pc"] * 1e-12  # pC -> C
     except KeyError as error:
         raise ValueError(f"descriptor lacks {error.args[0]!r}") from error
     if not bins:

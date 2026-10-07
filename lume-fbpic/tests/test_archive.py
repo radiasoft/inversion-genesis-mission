@@ -127,7 +127,7 @@ def test_restored_model_returns_outputs_when_particles_were_saved(
 ):
     simulator.final_particles = particle_group
     simulator.stats = {"charge_pc": 7.0, "energy_mean_mev": 8.0, "energy_std_mev": 0.5}
-    names = ["charge_pc", "descriptor_mean_uz", "descriptor_total_beam_charge_c"]
+    names = ["charge_pc", "descriptor_mean_uz", "descriptor_total_beam_charge_pc"]
     expected = full_model.get(names)
     full_model.archive(tmp_path / "m.h5", save_final_particles=True)
 
@@ -251,12 +251,12 @@ def test_outputs_recorded_in_the_simulators_stats_are_archived(full_model, tmp_p
     _archive_with_outputs(
         full_model,
         tmp_path / "m.h5",
-        {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_c": 5.1e-10},
+        {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_pc": 510.0},
     )
 
     values = _recorded_values(tmp_path / "m.h5")
     assert values["descriptor_mean_uz"] == 171.6
-    assert values["descriptor_total_beam_charge_c"] == 5.1e-10
+    assert values["descriptor_total_beam_charge_pc"] == 510.0
     assert math.isnan(values["descriptor_cov_uz_uz"])  # not recorded
 
 
@@ -266,15 +266,15 @@ def recorded_model(full_model, tmp_path) -> LUMEFBPICModel:
     _archive_with_outputs(
         full_model,
         tmp_path / "m.h5",
-        {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_c": 5.1e-10},
+        {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_pc": 510.0},
     )
     return LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True)
 
 
 def test_loaded_model_serves_the_recorded_outputs_when_there_are_no_particles(recorded_model):
-    got = recorded_model.get(["descriptor_mean_uz", "descriptor_total_beam_charge_c"])
+    got = recorded_model.get(["descriptor_mean_uz", "descriptor_total_beam_charge_pc"])
 
-    assert got == {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_c": 5.1e-10}
+    assert got == {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_pc": 510.0}
     assert math.isnan(recorded_model.get(["descriptor_cov_uz_uz"])["descriptor_cov_uz_uz"])
 
 

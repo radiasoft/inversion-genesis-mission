@@ -296,16 +296,15 @@
   </widget>
   <widget type="label" version="2.0.0">
     <name>ChargeL</name>
-    <text>Charge [C]</text>
+    <text>Charge [pC]</text>
     <x>560</x><y>394</y><width>90</width><height>22</height>
     <horizontal_alignment>2</horizontal_alignment>
   </widget>
   <widget type="textupdate" version="2.0.0">
     <name>ChargeV</name>
-    <pv_name>pva://$(P)descriptor_total_beam_charge_c</pv_name>
+    <pv_name>pva://$(P)descriptor_total_beam_charge_pc</pv_name>
     <x>670</x><y>394</y><width>108</width><height>22</height>
-    <format>2</format>
-    <precision>4</precision>
+    <precision>2</precision>
     <precision_from_pv>false</precision_from_pv>
     <show_units>false</show_units>
   </widget>

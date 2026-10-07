@@ -372,7 +372,7 @@ def test_a_synthesized_bunch_becomes_the_twins_source_with_the_recorded_charge(
         assert stage.external_beam is True
         assert len(stage.initial_particles) == 5000  # taken as the selected bunch: no second cut
         assert _get(stage, "Source_Charge_pC") == pytest.approx(
-            descriptor["total_beam_charge_c"] * 1e12, rel=1e-6
+            descriptor["total_beam_charge_pc"], rel=1e-6
         )
         assert _get(stage, "Source_Energy_MeV") == pytest.approx(
             numpy.sqrt(1 + descriptor["mean_uz"] ** 2) * _MC2_EV / 1e6, rel=0.05
@@ -413,8 +413,8 @@ def test_switching_the_lpa_run_changes_the_twins_source(simulator, twin_model, t
         assert low[0] == pytest.approx(200.0, rel=1e-3) and high[0] == pytest.approx(400.0, rel=1e-3)
         assert high[1] > 1.5 * low[1]
         assert chain.get(["LPA_Archive"])["LPA_Archive"] == "high"
-        assert chain.get(["descriptor_total_beam_charge_c"])["descriptor_total_beam_charge_c"] == pytest.approx(
-            400.0e-12
+        assert chain.get(["descriptor_total_beam_charge_pc"])["descriptor_total_beam_charge_pc"] == pytest.approx(
+            400.0
         )
         assert stage.external_beam is True
     finally:

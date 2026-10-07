@@ -7,7 +7,7 @@
 - the config rebuilt from the run's inputs, on the production hyperparameters of
   `ionization_injection_runscript_00.py`;
 - the action inputs, read from that config;
-- the 33 `descriptor_*` outputs exactly as recorded in the dataset.
+- the 33 `descriptor_*` outputs as recorded in the dataset (the charge converted from C to pC).
 
 `LUMEFBPICModel.from_archive()` loads one and its `get()` returns the recorded descriptor values,
 so it can be served with `serve.py`.
@@ -84,7 +84,7 @@ def build_archive(
     _apply_inputs(model, record["input"])
     # The recorded outputs go where the output actions read them when there are no particles.
     model.simulator.stats = {
-        f"descriptor_{name}": value for name, value in record["output"].items()
+        f"descriptor_{name}": value for name, value in _descriptor_outputs(record["output"]).items()
     }
     model.archive(path)
     return path
@@ -157,6 +157,18 @@ def _check_fixed_inputs(model: LUMEFBPICModel, inputs: dict[str, float]) -> None
     }
     if unknown:
         raise ValueError(f"inputs this script does not know how to apply: {sorted(unknown)}")
+
+
+def _descriptor_outputs(output: dict[str, float]) -> dict[str, float]:
+    """The dataset's recorded descriptor values under the feature names `lume_fbpic` uses.
+
+    The dataset records the charge in coulombs as `total_beam_charge_c`; the descriptor now has
+    it in picocoulombs as `total_beam_charge_pc`.
+    """
+    converted = dict(output)
+    if "total_beam_charge_c" in converted:
+        converted["total_beam_charge_pc"] = converted.pop("total_beam_charge_c") * 1e12
+    return converted
 
 
 def _use_production_settings(model: LUMEFBPICModel) -> None:

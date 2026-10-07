@@ -213,8 +213,8 @@ def build() -> str:
         x = left + index * 2 * cell_w
         d.label(f"MeanL{index}", name.replace("mean_", "mean "), x, y, 60)
         d.value(f"MeanV{index}", PREFIX + name, x + 62, y, cell_w, precision=4)
-    d.label("ChargeL", "Charge [C]", left + 6 * cell_w - cell_w, y + 26, 90, align=2)
-    d.value("ChargeV", PREFIX + "total_beam_charge_c", left + 6 * cell_w + 2, y + 26, cell_w, exponential=True, precision=4)
+    d.label("ChargeL", "Charge [pC]", left + 6 * cell_w - cell_w, y + 26, 90, align=2)
+    d.value("ChargeV", PREFIX + "total_beam_charge_pc", left + 6 * cell_w + 2, y + 26, cell_w, precision=2)
     y += 62
 
     d.label(

@@ -66,7 +66,7 @@ def selector(simulator, tmp_path) -> ArchiveSelector:
 
 
 def _charge(selector) -> float:
-    return selector.get(["descriptor_total_beam_charge_c"])["descriptor_total_beam_charge_c"]
+    return selector.get(["descriptor_total_beam_charge_pc"])["descriptor_total_beam_charge_pc"]
 
 
 def test_the_first_run_is_active_at_the_start(selector):
@@ -82,12 +82,12 @@ def test_the_enum_lists_the_runs_in_order(selector):
 
 
 def test_selecting_a_run_switches_the_outputs(selector):
-    assert _charge(selector) == pytest.approx(200.0e-12)
+    assert _charge(selector) == pytest.approx(200.0)
 
     selector.set({"LPA_Archive": "run_b"})
 
     assert selector.active == "run_b"
-    assert _charge(selector) == pytest.approx(400.0e-12)
+    assert _charge(selector) == pytest.approx(400.0)
     assert selector.get(["descriptor_mean_uz"])["descriptor_mean_uz"] == pytest.approx(200.0, rel=0.02)
 
 
@@ -138,7 +138,7 @@ def test_reset_makes_the_first_run_active_and_resets_every_run(selector):
 
     assert selector.active == "run_a"
     assert selector.models["run_b"].get("laser_energy") != 9.0
-    assert _charge(selector) == pytest.approx(200.0e-12)
+    assert _charge(selector) == pytest.approx(200.0)
 
 
 def test_a_single_run_is_a_selector_with_one_option(simulator, tmp_path):
@@ -236,7 +236,7 @@ def test_a_run_with_no_recorded_descriptor_cannot_be_synthesized(simulator, tmp_
 def test_an_incomplete_recorded_descriptor_cannot_be_synthesized(simulator, tmp_path):
     actions = [*make_actions(simulator), *make_descriptor_actions()]
     source = LUMEFBPICModel(simulator, actions, dummy_run=True)
-    source.simulator.stats = {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_c": 5.1e-10}
+    source.simulator.stats = {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_pc": 510.0}
     source.archive(tmp_path / "some.h5")
     source.simulator.stats = {}
     model = LUMEFBPICModel.from_archive(tmp_path / "some.h5", dummy_run=True)
@@ -289,7 +289,7 @@ def test_a_synthetic_bunch_reproduces_the_descriptors_moments():
     again = distributions.compute_moment_descriptor(
         _phase_space(synthetic), numpy.asarray(synthetic.weight) / e
     )
-    assert again["total_beam_charge_c"] == pytest.approx(descriptor["total_beam_charge_c"], rel=1e-9)
+    assert again["total_beam_charge_pc"] == pytest.approx(descriptor["total_beam_charge_pc"], rel=1e-9)
     assert again["mean_uz"] == pytest.approx(descriptor["mean_uz"], rel=0.01)
     for key in ("cov_uz_uz", "cov_x_x", "cov_y_y", "cov_ux_ux", "cov_uy_uy", "cov_z_z"):
         assert again[key] == pytest.approx(descriptor[key], rel=0.05), key
@@ -308,7 +308,7 @@ def test_a_synthetic_bunch_is_in_the_bunch_frame_with_equal_charges():
     assert numpy.all(numpy.asarray(synthetic.status) == 1)
     weight = numpy.asarray(synthetic.weight)
     assert numpy.allclose(weight, weight[0])
-    assert weight.sum() == pytest.approx(descriptor["total_beam_charge_c"])
+    assert weight.sum() == pytest.approx(descriptor["total_beam_charge_pc"] * 1e-12)
     assert numpy.asarray(synthetic.pz).min() / _MC2_EV >= 1.0  # no non-physical negative energies
 
 
