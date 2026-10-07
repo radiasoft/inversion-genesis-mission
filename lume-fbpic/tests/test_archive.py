@@ -3,7 +3,6 @@ input values at execution / output values after it."""
 
 from __future__ import annotations
 
-import json
 import math
 import warnings
 
@@ -50,7 +49,9 @@ def _pretend_run_finishes(simulator, mocker, particle_group, stats):
     mocker.patch.object(simulator, "run", side_effect=run)
 
 
-def test_archive_does_not_store_particles_by_default(simulator, particle_group, tmp_path):
+def test_archive_does_not_store_particles_by_default(
+    simulator, particle_group, tmp_path
+):
     simulator.final_particles = particle_group
     simulator.stats = {"charge_pc": 1.0}
 
@@ -64,7 +65,9 @@ def test_archive_does_not_store_particles_by_default(simulator, particle_group, 
     assert restored.stats == {}
 
 
-def test_archive_stores_final_particles_as_a_particle_group(simulator, particle_group, tmp_path):
+def test_archive_stores_final_particles_as_a_particle_group(
+    simulator, particle_group, tmp_path
+):
     simulator.final_particles = particle_group
     simulator.stats = {"charge_pc": 1.5, "energy_mean_mev": 2.5}
 
@@ -73,9 +76,10 @@ def test_archive_stores_final_particles_as_a_particle_group(simulator, particle_
     restored = FBPICSimulator.from_archive(tmp_path / "a.h5")
     assert len(restored.final_particles) == len(particle_group)
     numpy.testing.assert_allclose(restored.final_particles.pz, particle_group.pz)
-    numpy.testing.assert_allclose(restored.final_particles.weight, particle_group.weight)
+    numpy.testing.assert_allclose(
+        restored.final_particles.weight, particle_group.weight
+    )
     assert restored.stats == {"charge_pc": 1.5, "energy_mean_mev": 2.5}
-
 
 
 def test_archive_with_particles_opens_directly_as_a_particle_file(
@@ -148,25 +152,41 @@ def test_archive_stores_the_current_input_and_output_values(
     )
     model.set({"laser_energy": 6.0})  # runs
     model.dummy_run = True
-    model.set({"laser_energy": 9.0})  # changes the config after the run, without running
+    model.set(
+        {"laser_energy": 9.0}
+    )  # changes the config after the run, without running
     model.archive(tmp_path / "m.h5")
 
     values = _recorded_values(tmp_path / "m.h5")
 
     assert values["charge_pc"] == 7.0
     assert values["energy_mean_mev"] == 8.0
-    assert "laser_energy" not in values  # the inputs are in the config, not stored as values
+    assert (
+        "laser_energy" not in values
+    )  # the inputs are in the config, not stored as values
     # the config holds the current input, not the 6.0 that ran
-    assert LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True).get("laser_energy") == 9.0
+    assert (
+        LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True).get(
+            "laser_energy"
+        )
+        == 9.0
+    )
 
 
-def test_model_that_never_ran_stores_its_inputs_in_the_config_and_nan_outputs(full_model, tmp_path):
+def test_model_that_never_ran_stores_its_inputs_in_the_config_and_nan_outputs(
+    full_model, tmp_path
+):
     full_model.set({"laser_energy": 4.0})
     full_model.archive(tmp_path / "m.h5")
 
     values = _recorded_values(tmp_path / "m.h5")
 
-    assert LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True).get("laser_energy") == 4.0
+    assert (
+        LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True).get(
+            "laser_energy"
+        )
+        == 4.0
+    )
     assert math.isnan(values["charge_pc"])
     assert "final_particles" not in values  # no scalar value for particles
 
@@ -187,7 +207,9 @@ def test_from_archive_rejects_an_unknown_action_class(full_model, tmp_path):
         LUMEFBPICModel.from_archive(tmp_path / "m.h5")
 
 
-def test_an_action_class_from_outside_lume_fbpic_actions_cannot_be_loaded(simulator, tmp_path):
+def test_an_action_class_from_outside_lume_fbpic_actions_cannot_be_loaded(
+    simulator, tmp_path
+):
     class MyLaserAction(LaserFieldAction):
         pass
 
@@ -210,17 +232,21 @@ def test_action_parameters_are_stored_as_attributes_not_json(full_model, tmp_pat
         parameters = entry["parameters"].attrs
         assert entry.attrs["name"] == next(iter(full_model.supported_variables))
         assert parameters["name"] == entry.attrs["name"]
-        assert parameters["read_only"] == False  # noqa: E712 -- h5py returns numpy.bool_
+        assert not parameters["read_only"]  # h5py returns numpy.bool_
         assert "variable_class" not in parameters and "default_value" not in parameters
         assert "parameters" not in entry.attrs  # no JSON blob
         assert len(f["actions"]) == len(full_model.supported_variables)
 
 
-def test_action_parameters_round_trip_with_their_types(simulator, particle_group, tmp_path):
+def test_action_parameters_round_trip_with_their_types(
+    simulator, particle_group, tmp_path
+):
     from lume_fbpic.actions import make_descriptor_actions
 
     model = LUMEFBPICModel(
-        simulator, [*make_actions(simulator), *make_descriptor_actions(uz_min=12.5)], dummy_run=True
+        simulator,
+        [*make_actions(simulator), *make_descriptor_actions(uz_min=12.5)],
+        dummy_run=True,
     )
     model.archive(tmp_path / "m.h5")
 
@@ -238,7 +264,9 @@ def test_an_action_with_an_unstorable_parameter_cannot_be_archived(simulator, tm
         tags: list[str] = []
 
     model = LUMEFBPICModel(
-        simulator, [ListAction(name="x", field_name="waist", unit="m", tags=["a"])], dummy_run=True
+        simulator,
+        [ListAction(name="x", field_name="waist", unit="m", tags=["a"])],
+        dummy_run=True,
     )
 
     with pytest.raises(TypeError, match="tags"):
@@ -271,11 +299,18 @@ def recorded_model(full_model, tmp_path) -> LUMEFBPICModel:
     return LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True)
 
 
-def test_loaded_model_serves_the_recorded_outputs_when_there_are_no_particles(recorded_model):
+def test_loaded_model_serves_the_recorded_outputs_when_there_are_no_particles(
+    recorded_model,
+):
     got = recorded_model.get(["descriptor_mean_uz", "descriptor_total_beam_charge_pc"])
 
-    assert got == {"descriptor_mean_uz": 171.6, "descriptor_total_beam_charge_pc": 510.0}
-    assert math.isnan(recorded_model.get(["descriptor_cov_uz_uz"])["descriptor_cov_uz_uz"])
+    assert got == {
+        "descriptor_mean_uz": 171.6,
+        "descriptor_total_beam_charge_pc": 510.0,
+    }
+    assert math.isnan(
+        recorded_model.get(["descriptor_cov_uz_uz"])["descriptor_cov_uz_uz"]
+    )
 
 
 def test_recorded_outputs_go_stale_once_an_input_is_set(recorded_model):
@@ -333,6 +368,3 @@ def test_reset_discards_results_produced_after_construction(
 
     assert simulator.final_particles is None
     assert simulator.stats == {}
-
-
-

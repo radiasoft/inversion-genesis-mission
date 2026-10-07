@@ -50,7 +50,9 @@ def _reference(pg, uz_min=30.0, central_fraction=0.95) -> dict[str, float]:
         [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
     )
     weights = numpy.asarray(pg.weight) / e
-    phase_space, weights = distributions.select_by_uz(phase_space, weights, uz_min=uz_min)
+    phase_space, weights = distributions.select_by_uz(
+        phase_space, weights, uz_min=uz_min
+    )
     phase_space, weights = distributions.crop_central_particles(
         phase_space, weights, central_fraction=central_fraction
     )
@@ -67,7 +69,9 @@ def test_actions_are_the_33_read_only_features_in_library_order():
     assert actions[-1].unit == "pC"
 
 
-def test_cache_is_recomputed_when_final_particles_change(descriptor_model, simulator, mocker):
+def test_cache_is_recomputed_when_final_particles_change(
+    descriptor_model, simulator, mocker
+):
     spy = mocker.spy(distributions, "compute_moment_descriptor")
     mocker.patch("lume_fbpic.actions.compute_moment_descriptor", spy)
     names = ["descriptor_mean_uz", "descriptor_cov_uz_uz"]
@@ -92,7 +96,9 @@ def test_charge_is_the_selected_weights_in_picocoulombs(descriptor_model, simula
 
     selected = numpy.count_nonzero(numpy.asarray(pg.pz) / _MC2_EV >= 30.0)
     assert charge == pytest.approx(_reference(pg)["total_beam_charge_pc"], rel=1e-12)
-    assert 0 < charge <= selected * _ELECTRONS_PER_MACROPARTICLE * e * 1e12  # the crop only removes
+    assert (
+        0 < charge <= selected * _ELECTRONS_PER_MACROPARTICLE * e * 1e12
+    )  # the crop only removes
 
 
 def test_selection_parameters_change_the_result(simulator):
@@ -101,11 +107,15 @@ def test_selection_parameters_change_the_result(simulator):
     name = "descriptor_total_beam_charge_pc"
 
     def charge(**selection):
-        model = LUMEFBPICModel(simulator, make_descriptor_actions(**selection), dummy_run=True)
+        model = LUMEFBPICModel(
+            simulator, make_descriptor_actions(**selection), dummy_run=True
+        )
         return model.get([name])[name]
 
     everything = charge(uz_min=None, central_fraction=None)
-    assert everything == pytest.approx(len(numpy.asarray(pg.x)) * _ELECTRONS_PER_MACROPARTICLE * e * 1e12)
+    assert everything == pytest.approx(
+        len(numpy.asarray(pg.x)) * _ELECTRONS_PER_MACROPARTICLE * e * 1e12
+    )
     assert charge(uz_min=170.0, central_fraction=0.5) < everything
 
 
@@ -126,8 +136,12 @@ def test_values_are_nan_before_a_run(descriptor_model):
     assert math.isnan(value)
 
 
-def test_values_are_nan_when_the_selection_leaves_too_few_particles(descriptor_model, simulator):
-    simulator.final_particles = _particle_group(uz_mean=2.0, uz_std=0.5)  # none reach uz >= 30
+def test_values_are_nan_when_the_selection_leaves_too_few_particles(
+    descriptor_model, simulator
+):
+    simulator.final_particles = _particle_group(
+        uz_mean=2.0, uz_std=0.5
+    )  # none reach uz >= 30
 
     value = descriptor_model.get(["descriptor_mean_uz"])["descriptor_mean_uz"]
 

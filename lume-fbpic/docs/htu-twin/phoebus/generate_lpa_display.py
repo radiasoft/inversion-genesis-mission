@@ -69,7 +69,9 @@ class _Display:
         self._names.add(name)
         return name
 
-    def label(self, name, text, x, y, w, h=22, bold=False, size=None, align=None, wrap=False):
+    def label(
+        self, name, text, x, y, w, h=22, bold=False, size=None, align=None, wrap=False
+    ):
         font = ""
         if bold or size:
             font = (
@@ -136,7 +138,7 @@ class _Display:
             f'  <widget type="rectangle" version="2.0.0">\n'
             f"    <name>{self._unique(name)}</name>\n"
             f"    <x>{x}</x><y>{y}</y><width>{w}</width><height>1</height>\n"
-            f'    <line_width>0</line_width>\n'
+            f"    <line_width>0</line_width>\n"
             f'    <background_color><color red="150" green="150" blue="150"/></background_color>\n'
             f"  </widget>"
         )
@@ -195,7 +197,15 @@ def build() -> str:
     )
 
     y = 108
-    d.label("SourceHeader", "Twin source (the LPA bunch as injected)", left, y, 400, 22, bold=True)
+    d.label(
+        "SourceHeader",
+        "Twin source (the LPA bunch as injected)",
+        left,
+        y,
+        400,
+        22,
+        bold=True,
+    )
     d.rule("SourceRule", left, y + 24, width - 2 * left)
     y += 32
     column_w = (width - 2 * left) // 2
@@ -203,10 +213,25 @@ def build() -> str:
         column, row = index % 2, index // 2
         x = left + column * column_w
         d.label(f"SrcL{index}", text, x, y + row * 26, 150)
-        d.value(f"SrcV{index}", pv, x + 155, y + row * 26, 110, precision=0 if pv in INTEGER_SOURCE else 4)
+        d.value(
+            f"SrcV{index}",
+            pv,
+            x + 155,
+            y + row * 26,
+            110,
+            precision=0 if pv in INTEGER_SOURCE else 4,
+        )
     y += 26 * ((len(SOURCE) + 1) // 2) + 14
 
-    d.label("MomentHeader", "Moment descriptor: momentum centroids and charge", left, y, 500, 22, bold=True)
+    d.label(
+        "MomentHeader",
+        "Moment descriptor: momentum centroids and charge",
+        left,
+        y,
+        500,
+        22,
+        bold=True,
+    )
     d.rule("MomentRule", left, y + 24, width - 2 * left)
     y += 32
     for index, name in enumerate(("mean_ux", "mean_uy", "mean_uz")):
@@ -214,7 +239,14 @@ def build() -> str:
         d.label(f"MeanL{index}", name.replace("mean_", "mean "), x, y, 60)
         d.value(f"MeanV{index}", PREFIX + name, x + 62, y, cell_w, precision=4)
     d.label("ChargeL", "Charge [pC]", left + 6 * cell_w - cell_w, y + 26, 90, align=2)
-    d.value("ChargeV", PREFIX + "total_beam_charge_pc", left + 6 * cell_w + 2, y + 26, cell_w, precision=2)
+    d.value(
+        "ChargeV",
+        PREFIX + "total_beam_charge_pc",
+        left + 6 * cell_w + 2,
+        y + 26,
+        cell_w,
+        precision=2,
+    )
     y += 62
 
     d.label(
@@ -229,10 +261,27 @@ def build() -> str:
     d.rule("CovRule", left, y + 24, width - 2 * left)
     y += 32
     for column, text in enumerate(COORD_LABELS):
-        d.label(f"CovCol{column}", text, left + grid_label_w + column * cell_w, y, cell_w - 4, 20, bold=True, align=1)
+        d.label(
+            f"CovCol{column}",
+            text,
+            left + grid_label_w + column * cell_w,
+            y,
+            cell_w - 4,
+            20,
+            bold=True,
+            align=1,
+        )
     y += 24
     for row, row_text in enumerate(COORD_LABELS):
-        d.label(f"CovRow{row}", row_text, left, y + row * (cell_h + 2), grid_label_w - 4, cell_h, bold=True)
+        d.label(
+            f"CovRow{row}",
+            row_text,
+            left,
+            y + row * (cell_h + 2),
+            grid_label_w - 4,
+            cell_h,
+            bold=True,
+        )
         for column in range(row, 6):
             d.value(
                 f"Cov_{COORDS[row]}_{COORDS[column]}",
@@ -246,19 +295,53 @@ def build() -> str:
             )
     y += 6 * (cell_h + 2) + 14
 
-    d.label("SliceHeader", "Longitudinal slices (equal particle count along z, tail to head)", left, y, 560, 22, bold=True)
+    d.label(
+        "SliceHeader",
+        "Longitudinal slices (equal particle count along z, tail to head)",
+        left,
+        y,
+        560,
+        22,
+        bold=True,
+    )
     d.rule("SliceRule", left, y + 24, width - 2 * left)
     y += 32
     d.label("SliceMeanL", "mean uz", left, y + 24, grid_label_w - 4)
     d.label("SliceRmsL", "rms uz", left, y + 50, grid_label_w - 4)
     for index, mean_name in enumerate(bins):
         x = left + grid_label_w + index * cell_w
-        d.label(f"SliceCol{index}", f"slice {index}", x, y, cell_w - 4, 20, bold=True, align=1)
-        d.value(f"SliceMean{index}", PREFIX + mean_name, x, y + 24, cell_w - 4, precision=4)
-        d.value(f"SliceRms{index}", PREFIX + mean_name.replace("mean", "rms"), x, y + 50, cell_w - 4, precision=4)
+        d.label(
+            f"SliceCol{index}",
+            f"slice {index}",
+            x,
+            y,
+            cell_w - 4,
+            20,
+            bold=True,
+            align=1,
+        )
+        d.value(
+            f"SliceMean{index}", PREFIX + mean_name, x, y + 24, cell_w - 4, precision=4
+        )
+        d.value(
+            f"SliceRms{index}",
+            PREFIX + mean_name.replace("mean", "rms"),
+            x,
+            y + 50,
+            cell_w - 4,
+            precision=4,
+        )
     y += 84
 
-    d.label("StatsHeader", "Run statistics (blank/NaN for a reconstructed run: no particles)", left, y, 560, 22, bold=True)
+    d.label(
+        "StatsHeader",
+        "Run statistics (blank/NaN for a reconstructed run: no particles)",
+        left,
+        y,
+        560,
+        22,
+        bold=True,
+    )
     d.rule("StatsRule", left, y + 24, width - 2 * left)
     y += 32
     for index, (pv, text) in enumerate(STATS):

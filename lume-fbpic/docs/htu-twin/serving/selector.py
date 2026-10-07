@@ -127,7 +127,10 @@ class ArchiveSelector(FinalParticlesMixIn, LUMEModel):
 
     @property
     def supported_variables(self) -> dict[str, Variable]:
-        return {self.selector_name: self._selector, **self.active_model.supported_variables}
+        return {
+            self.selector_name: self._selector,
+            **self.active_model.supported_variables,
+        }
 
     def _get(self, names: list[str]) -> dict[str, typing.Any]:
         values = {}
@@ -156,11 +159,17 @@ class ArchiveSelector(FinalParticlesMixIn, LUMEModel):
         names = [name for name in model.supported_variables if name.startswith(prefix)]
         values = model.get(names) if names else {}
         descriptor = {
-            name[len(prefix) :]: value for name, value in values.items() if not math.isnan(value)
+            name[len(prefix) :]: value
+            for name, value in values.items()
+            if not math.isnan(value)
         }
         if not descriptor:
-            raise ValueError("a run without final particles has no recorded descriptor values")
-        return particles_from_descriptor(descriptor, n_particles=self._synthetic_bunch_particles)
+            raise ValueError(
+                "a run without final particles has no recorded descriptor values"
+            )
+        return particles_from_descriptor(
+            descriptor, n_particles=self._synthetic_bunch_particles
+        )
 
 
 def particles_from_descriptor(
@@ -200,7 +209,9 @@ def particles_from_descriptor(
         bins = sorted(k for k in descriptor if k.startswith("longitudinal_mean_uz_"))
         slice_mean = numpy.array([descriptor[k] for k in bins])
         slice_rms = numpy.array([descriptor[k.replace("mean", "rms")] for k in bins])
-        mean_ux, mean_uy, mean_uz = (descriptor[f"mean_{n}"] for n in ("ux", "uy", "uz"))
+        mean_ux, mean_uy, mean_uz = (
+            descriptor[f"mean_{n}"] for n in ("ux", "uy", "uz")
+        )
         charge = descriptor["total_beam_charge_pc"] * 1e-12  # pC -> C
     except KeyError as error:
         raise ValueError(f"descriptor lacks {error.args[0]!r}") from error
@@ -208,7 +219,9 @@ def particles_from_descriptor(
         raise ValueError("descriptor has no longitudinal_mean_uz_NN features")
 
     rng = numpy.random.default_rng(seed)
-    fractions = _slice_charge_fractions(slice_mean, slice_rms, mean_uz, covariance[5, 5])
+    fractions = _slice_charge_fractions(
+        slice_mean, slice_rms, mean_uz, covariance[5, 5]
+    )
     counts = numpy.floor(fractions * n_particles).astype(int)
     counts[numpy.argmax(fractions)] += n_particles - counts.sum()
 
@@ -217,8 +230,12 @@ def particles_from_descriptor(
     z, uz = numpy.empty(n_particles), numpy.empty(n_particles)
     start = 0
     for k, count in enumerate(counts):
-        quantile = rng.uniform(edges[k], edges[k + 1], count)  # a Gaussian slice by charge
-        z[start : start + count] = z_sigma * norm.ppf(numpy.clip(quantile, 1e-12, 1 - 1e-12))
+        quantile = rng.uniform(
+            edges[k], edges[k + 1], count
+        )  # a Gaussian slice by charge
+        z[start : start + count] = z_sigma * norm.ppf(
+            numpy.clip(quantile, 1e-12, 1 - 1e-12)
+        )
         uz[start : start + count] = numpy.maximum(
             rng.normal(slice_mean[k], slice_rms[k], count), 1.0
         )
@@ -231,7 +248,9 @@ def particles_from_descriptor(
     residual = covariance[numpy.ix_(transverse, transverse)] - regression @ c_tl.T
     values, vectors = numpy.linalg.eigh((residual + residual.T) / 2)
     if values.min() < -1e-9 * max(values.max(), 1e-300):
-        warnings.warn("the descriptor's 6D covariance is not positive semi-definite; clipped")
+        warnings.warn(
+            "the descriptor's 6D covariance is not positive semi-definite; clipped"
+        )
     root = vectors * numpy.sqrt(numpy.clip(values, 0.0, None))
     transverse_mean = numpy.array([0.0, mean_ux, 0.0, mean_uy])
     deviation = numpy.stack([z, uz - mean_uz], axis=-1)
@@ -271,7 +290,10 @@ def _slice_charge_fractions(
         constraints=[
             {"type": "eq", "fun": lambda f: f.sum() - 1.0},
             {"type": "eq", "fun": lambda f: f @ slice_mean - mean},
-            {"type": "eq", "fun": lambda f: (f @ second - (f @ slice_mean) ** 2) - variance},
+            {
+                "type": "eq",
+                "fun": lambda f: (f @ second - (f @ slice_mean) ** 2) - variance,
+            },
         ],
         method="SLSQP",
     )

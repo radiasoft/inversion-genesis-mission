@@ -53,7 +53,9 @@ class BunchFieldAction(WritableActionMixin[PWFASimulator], ScalarVariable):
 
     def _set(self, simulator: PWFASimulator, value: typing.Any) -> None:
         setattr(
-            simulator, self.bunch, attrs.evolve(self._bunch(simulator), **{self.field_name: value})
+            simulator,
+            self.bunch,
+            attrs.evolve(self._bunch(simulator), **{self.field_name: value}),
         )
 
 
@@ -110,12 +112,16 @@ class DopantFractionAction(WritableActionMixin[FBPICSimulator], ScalarVariable):
         """Ionization-level count of a density profile's species (the divisor `add_to_simulation`
         applies to the profile's `nominal_density`)."""
         if profile.species is None:
-            raise ValueError("A dopant fraction needs profiles with a species; got species=None.")
+            raise ValueError(
+                "A dopant fraction needs profiles with a species; got species=None."
+            )
         return _DensityProfile._get_num_ionization_levels(profile.species)
 
     def _set(self, simulator: FBPICSimulator, value: typing.Any) -> None:
         if not 0.0 < value < 1.0:
-            raise ValueError(f"Dopant fraction must be strictly between 0 and 1, got {value}.")
+            raise ValueError(
+                f"Dopant fraction must be strictly between 0 and 1, got {value}."
+            )
         host_atoms, dopant_atoms = self._atom_densities(simulator)
         total = host_atoms + dopant_atoms
         densities = list(simulator.densities)
@@ -157,7 +163,9 @@ class HyperparameterFieldAction(WritableActionMixin[FBPICSimulator], ScalarVaria
         return getattr(simulator.hyparams, self.field_name)
 
     def _set(self, simulator: FBPICSimulator, value: typing.Any) -> None:
-        simulator.hyparams = attrs.evolve(simulator.hyparams, **{self.field_name: value})
+        simulator.hyparams = attrs.evolve(
+            simulator.hyparams, **{self.field_name: value}
+        )
 
 
 class LaserFieldAction(WritableActionMixin[FBPICSimulator], ScalarVariable):
@@ -307,7 +315,9 @@ def make_pwfa_actions(simulator: PWFASimulator) -> list[Action]:
     `final_particles`.
     """
     actions: list[Action] = [
-        PlasmaFieldAction(name="plasma_density", field_name="nominal_density", unit="m^-3")
+        PlasmaFieldAction(
+            name="plasma_density", field_name="nominal_density", unit="m^-3"
+        )
     ]
     actions += _bunch_actions("driver", simulator.driver)
     if simulator.witness is not None:
@@ -315,10 +325,16 @@ def make_pwfa_actions(simulator: PWFASimulator) -> list[Action]:
     return actions + [
         StatAction(name="charge_pc", stat_name="charge_pc", unit="pC", read_only=True),
         StatAction(
-            name="energy_mean_mev", stat_name="energy_mean_mev", unit="MeV", read_only=True
+            name="energy_mean_mev",
+            stat_name="energy_mean_mev",
+            unit="MeV",
+            read_only=True,
         ),
         StatAction(
-            name="energy_std_mev", stat_name="energy_std_mev", unit="MeV", read_only=True
+            name="energy_std_mev",
+            stat_name="energy_std_mev",
+            unit="MeV",
+            read_only=True,
         ),
         FinalParticlesAction(name="final_particles", read_only=True),
     ]
@@ -337,7 +353,9 @@ def _bunch_actions(bunch: str, config: typing.Any) -> list[Action]:
             ("position", "zf", "m"),
         ]
     return [
-        BunchFieldAction(name=f"{bunch}_{name}", bunch=bunch, field_name=field, unit=unit)
+        BunchFieldAction(
+            name=f"{bunch}_{name}", bunch=bunch, field_name=field, unit=unit
+        )
         for name, field, unit in fields
     ]
 
@@ -383,7 +401,10 @@ def _descriptor(
                 phase_space, weights, central_fraction=central_fraction
             )
         result = compute_moment_descriptor(
-            phase_space, weights, longitudinal_mode=SPLINE, longitudinal_bins=longitudinal_bins
+            phase_space,
+            weights,
+            longitudinal_mode=SPLINE,
+            longitudinal_bins=longitudinal_bins,
         )
     except ValueError:  # fewer than two usable particles after the selection
         result = {}

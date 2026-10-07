@@ -48,12 +48,16 @@ def test_archive_records_the_dataset_outputs_exactly(script, dataset, tmp_path):
     outputs = _recorded_values(path)
     for name, value in record["output"].items():
         if name == "total_beam_charge_c":  # the archive has the charge in pC
-            assert outputs["descriptor_total_beam_charge_pc"] == pytest.approx(value * 1e12)
+            assert outputs["descriptor_total_beam_charge_pc"] == pytest.approx(
+                value * 1e12
+            )
         else:
             assert outputs[f"descriptor_{name}"] == value
 
 
-def test_archive_config_has_the_production_grid_and_the_runs_inputs(script, dataset, tmp_path):
+def test_archive_config_has_the_production_grid_and_the_runs_inputs(
+    script, dataset, tmp_path
+):
     record = dataset["runs"]["sim_0003"]  # zernike_astigmatism_4 = 8
 
     path = script.build_archive(record, dataset["metadata"], tmp_path / "s.h5")
@@ -74,7 +78,10 @@ def test_loaded_archive_serves_the_recorded_descriptor_and_has_no_stats(
 
     model = LUMEFBPICModel.from_archive(path, dummy_run=True)
 
-    assert model.get(["descriptor_mean_uz"])["descriptor_mean_uz"] == record["output"]["mean_uz"]
+    assert (
+        model.get(["descriptor_mean_uz"])["descriptor_mean_uz"]
+        == record["output"]["mean_uz"]
+    )
     assert math.isnan(model.get(["charge_pc"])["charge_pc"])  # the dataset has no stats
 
 

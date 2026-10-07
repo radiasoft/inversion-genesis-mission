@@ -84,7 +84,8 @@ def build_archive(
     _apply_inputs(model, record["input"])
     # The recorded outputs go where the output actions read them when there are no particles.
     model.simulator.stats = {
-        f"descriptor_{name}": value for name, value in _descriptor_outputs(record["output"]).items()
+        f"descriptor_{name}": value
+        for name, value in _descriptor_outputs(record["output"]).items()
     }
     model.archive(path)
     return path
@@ -93,7 +94,9 @@ def build_archive(
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("dataset", nargs="?", type=Path, default=DEFAULT_DATASET)
-    parser.add_argument("output_dir", nargs="?", type=Path, default=Path("initial_sample_archives"))
+    parser.add_argument(
+        "output_dir", nargs="?", type=Path, default=Path("initial_sample_archives")
+    )
     args = parser.parse_args(argv)
 
     dataset = json.loads(args.dataset.read_text())
@@ -114,7 +117,9 @@ def _apply_inputs(model: LUMEFBPICModel, inputs: dict[str, float]) -> None:
     model.set(values)
 
 
-def _check_descriptor_settings(model: LUMEFBPICModel, dataset_metadata: dict[str, typing.Any]) -> None:
+def _check_descriptor_settings(
+    model: LUMEFBPICModel, dataset_metadata: dict[str, typing.Any]
+) -> None:
     """The model's descriptor actions must select particles as the dataset's did."""
     wanted = {
         "uz_min": dataset_metadata["uz_min"],
@@ -125,7 +130,9 @@ def _check_descriptor_settings(model: LUMEFBPICModel, dataset_metadata: dict[str
         if isinstance(action, MomentDescriptorAction):
             have = {key: getattr(action, key) for key in wanted}
             if have != wanted:
-                raise ValueError(f"descriptor actions use {have}, the dataset used {wanted}")
+                raise ValueError(
+                    f"descriptor actions use {have}, the dataset used {wanted}"
+                )
 
 
 def _check_fixed_inputs(model: LUMEFBPICModel, inputs: dict[str, float]) -> None:
@@ -152,11 +159,16 @@ def _check_fixed_inputs(model: LUMEFBPICModel, inputs: dict[str, float]) -> None
                 f"input {name}={value} differs from the baseline {baseline[name]} and has no "
                 "action to set it"
             )
-    unknown = set(inputs) - set(baseline) - set(_ACTION_FOR_INPUT) - {
-        k for k in inputs if k.startswith("zernike_")
-    }
+    unknown = (
+        set(inputs)
+        - set(baseline)
+        - set(_ACTION_FOR_INPUT)
+        - {k for k in inputs if k.startswith("zernike_")}
+    )
     if unknown:
-        raise ValueError(f"inputs this script does not know how to apply: {sorted(unknown)}")
+        raise ValueError(
+            f"inputs this script does not know how to apply: {sorted(unknown)}"
+        )
 
 
 def _descriptor_outputs(output: dict[str, float]) -> dict[str, float]:
@@ -184,7 +196,8 @@ def _use_production_settings(model: LUMEFBPICModel) -> None:
         use_mpi=PRODUCTION["use_mpi"],
     )
     simulator.densities = [
-        attrs.evolve(density, p_nt=PRODUCTION["p_nt"]) for density in simulator.densities
+        attrs.evolve(density, p_nt=PRODUCTION["p_nt"])
+        for density in simulator.densities
     ]
     # LaserFieldAction._set also clears the derived energy/a0 sibling, which a plain
     # attrs.evolve of these fields would trip over.
