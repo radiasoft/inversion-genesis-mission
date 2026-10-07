@@ -1,7 +1,7 @@
 """Attrs-based serializable configuration and serialization.
 
 This module defines a base class for serializable configurations used by
-simulation setup code. Configuration objects can be serialized to and from JSON with
+simulation setup code. Configuration objects can be serialized as JSON, YAML, or HDF5 with
 schema metadata and a type tag so they can be recorded and reloaded reliably.
 """
 
@@ -9,17 +9,22 @@ from __future__ import annotations
 
 import contextvars
 import copy
+import functools
 import json
 import os
 from collections.abc import Mapping
 from contextlib import contextmanager
 import types
 import typing
+import uuid
+import warnings
 from abc import ABC
 from pathlib import Path
 from typing import Any, ClassVar
+from urllib.parse import quote, unquote
 
 import attrs
+import h5py
 
 import numpy as np
 import yaml
@@ -44,8 +49,220 @@ _parameter_descriptions_from_doc = parameter_descriptions_from_doc
 
 CONFIG_TYPE_STR = "config_type"
 SUBCLASS_STR = "subclass"
+GIT_HASH_STR = "git_hash"
 PARAMETERS_STR = "parameters"
 NULL_CONCRETE_STR = "null"
+_GIT_HASH_FILE = Path(__file__).resolve().parents[1] / "git_hash.txt"
+
+
+@functools.cache
+def _git_hash() -> str | None:
+    """Return the recorded revision captured when this module was imported."""
+    try:
+        revision = _GIT_HASH_FILE.read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeError):
+        return None
+    return revision or None
+
+
+# Prime the cache before a later commit/build can change the recorded revision.
+if _git_hash() is None:
+    warnings.warn(
+        "Recorded Git revision is unavailable; configs will use git_hash: null "
+        "for this process. Build/install the FBPIC package or run "
+        "tools/record_git_hash.py, then restart Python to capture the revision.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+
+
+_HDF5_FORMAT = "serializable_config"
+_HDF5_FORMAT_ATTR = "_config_format"
+_HDF5_VERSION_ATTR = "_config_version"
+_HDF5_KIND_ATTR = "_config_kind"
+_HDF5_VERSION = 1
+
+
+def _hdf5_key(key: str) -> str:
+    """Encode mapping keys without introducing HDF5 path components."""
+    if not key:
+        return "%"
+    if key in (".", ".."):
+        return key.replace(".", "%2E")
+    return quote(key, safe="")
+
+
+def _write_hdf5_value(group: h5py.Group, name: str, value: Any) -> None:
+    """Encode one canonical payload value as a tagged native HDF5 node."""
+    node: h5py.Group | h5py.Dataset
+    if isinstance(value, dict):
+        node = group.create_group(name, track_order=True)
+        node.attrs[_HDF5_KIND_ATTR] = "dict"
+        for key, item in value.items():
+            _write_hdf5_value(node, _hdf5_key(key), item)
+        return
+    if isinstance(value, list):
+        # Do not coerce mixed numeric types: float conversion can lose integers.
+        scalar_type = type(value[0]) if value else None
+        if (
+            value
+            and scalar_type in (bool, int, float)
+            and all(type(item) is scalar_type for item in value)
+            and (
+                scalar_type is not int
+                or all(-(2**63) <= item < 2**63 for item in value)
+            )
+        ):
+            node = group.create_dataset(name, data=value)
+            node.attrs[_HDF5_KIND_ATTR] = "array"
+            return
+        node = group.create_group(name, track_order=True)
+        node.attrs[_HDF5_KIND_ATTR] = "list"
+        node.attrs["_config_length"] = len(value)
+        for index, item in enumerate(value):
+            _write_hdf5_value(node, str(index), item)
+        return
+    if value is None:
+        # The dtype is a placeholder; the tag, not the dtype, represents None.
+        node = group.create_dataset(name, data=h5py.Empty("f8"))
+        kind = "none"
+    elif isinstance(value, str):
+        if "\0" in value:
+            node = group.create_dataset(
+                name, data=np.frombuffer(value.encode("utf-8"), dtype="u1")
+            )
+            kind = "utf8_bytes"
+        else:
+            node = group.create_dataset(
+                name, data=value, dtype=h5py.string_dtype("utf-8")
+            )
+            kind = "str"
+    elif type(value) is int and not -(2**63) <= value < 2**63:
+        node = group.create_dataset(
+            name, data=str(value), dtype=h5py.string_dtype("utf-8")
+        )
+        kind = "bigint"
+    elif type(value) in (bool, int, float):
+        node = group.create_dataset(name, data=value)
+        kind = type(value).__name__
+    else:
+        raise TypeError(
+            f"Unsupported HDF5 config value at {group.name}/{name}: {type(value).__name__}."
+        )
+    node.attrs[_HDF5_KIND_ATTR] = kind
+
+
+def _read_hdf5_value(
+    node: h5py.Group | h5py.Dataset, ancestors: frozenset[int] = frozenset()
+) -> Any:
+    """Decode and validate a tagged HDF5 node into canonical Python values."""
+    identity = hash(node.id)
+    if identity in ancestors:
+        raise ValueError(f"Cyclic HDF5 config link at {node.name}.")
+    ancestors = ancestors | {identity}
+    kind = node.attrs.get(_HDF5_KIND_ATTR)
+    if isinstance(node, h5py.Group):
+        if kind == "dict":
+            result = {}
+            for key in node:
+                decoded = "" if key == "%" else unquote(key)
+                if _hdf5_key(decoded) != key or decoded in result:
+                    raise ValueError(f"Invalid HDF5 mapping key at {node.name}/{key}.")
+                child = node.get(key)
+                if not isinstance(child, (h5py.Group, h5py.Dataset)):
+                    raise ValueError(f"Invalid HDF5 config link at {node.name}/{key}.")
+                result[decoded] = _read_hdf5_value(child, ancestors)
+            return result
+        if kind == "list":
+            length = node.attrs.get("_config_length")
+            if (
+                not isinstance(length, (int, np.integer))
+                or length < 0
+                or length != len(node)
+                or set(node) != {str(i) for i in range(int(length))}
+            ):
+                raise ValueError(f"Invalid HDF5 sequence at {node.name}.")
+            return [
+                _read_hdf5_value(node[str(i)], ancestors) for i in range(int(length))
+            ]
+    else:
+        if kind == "none" and node.shape is None:
+            return None
+        if kind == "array" and node.ndim == 1 and node.dtype.kind in "bif":
+            return node[()].tolist()
+        if kind == "utf8_bytes" and node.ndim == 1 and node.dtype == np.dtype("u1"):
+            return node[()].tobytes().decode("utf-8")
+        if node.shape == ():
+            if (
+                kind in ("str", "bigint")
+                and h5py.check_string_dtype(node.dtype) is not None
+            ):
+                text = node.asstr()[()]
+                return int(text) if kind == "bigint" else text
+            if kind == "bool" and node.dtype.kind == "b":
+                return bool(node[()])
+            if kind == "int" and node.dtype.kind in "iu":
+                return int(node[()])
+            if kind == "float" and node.dtype.kind == "f":
+                return float(node[()])
+    raise ValueError(f"Invalid or missing HDF5 node kind at {node.name}: {kind!r}.")
+
+
+def _hdf5_source(group: h5py.Group, *, require_anchor: bool = True) -> Path | None:
+    """Return a known filesystem source without guessing relative filenames.
+
+    Reads require an explicit anchor for relative-open handles. Writes can opt
+    out and leave path serialization unchanged when the source is unknown.
+    """
+    handle = group.file
+    if handle.driver == "fileobj" or not isinstance(handle.filename, (str, bytes)):
+        return None
+    path = Path(os.fsdecode(handle.filename))
+    if handle.driver == "core" and not path.is_file():
+        return None
+    if not path.is_absolute():
+        anchor = _config_path_anchor.get()
+        if anchor is None:
+            if not require_anchor:
+                return None
+            raise ValueError(
+                "Open caller-owned HDF5 files with an absolute path, or use "
+                "resolving_paths_relative_to() with the original file directory."
+            )
+        path = (anchor if anchor.is_dir() else anchor.parent) / path
+    return path.resolve() if path.is_file() else None
+
+
+def _replace_hdf5_contents(group: h5py.Group, payload: h5py.Group) -> None:
+    """Stage a complete copy, then replace child links with rollback on failure.
+
+    Keep temporary data at the file root so this also works when *group* is the
+    root itself. The existing group object and its attributes remain unchanged.
+    """
+    original_names = list(group)
+    handle = group.file
+    temporary_name = f"_config_staging_{uuid.uuid4().hex}"
+    temporary = handle.create_group(temporary_name)
+    try:
+        payload.file.copy(payload, temporary, name="incoming")
+        incoming = temporary["incoming"]
+        backup = temporary.create_group("backup")
+        installed: list[str] = []
+        try:
+            for name in original_names:
+                group.move(name, f"{backup.name}/{name}")
+            for name in list(incoming):
+                incoming.move(name, f"{group.name.rstrip('/')}/{name}")
+                installed.append(name)
+        except Exception:
+            for name in installed:
+                group.move(name, f"{incoming.name}/{name}")
+            for name in list(backup):
+                backup.move(name, f"{group.name.rstrip('/')}/{name}")
+            raise
+    finally:
+        del handle[temporary_name]
+
 
 _EXAMPLE_SIMPLE_DEFAULTS: dict[type, Any] = {
     float: 0.0,
@@ -255,7 +472,7 @@ def _missing_parameter_default(tp: Any) -> tuple[bool, Any]:
 class SerializableConfig(ABC):
     """
     Base class for serializable configurations.
-    Supports serialization to and from JSON and YAML.
+    Supports serialization to and from JSON, YAML, and native HDF5.
     """
 
     # Two-tier discriminator system:
@@ -451,7 +668,10 @@ class SerializableConfig(ABC):
         return value
 
     def to_dict(self, *, include_nones: bool = True) -> dict[str, Any]:
-        """Serialize this configuration to a JSON-friendly dictionary."""
+        """Serialize to a JSON-friendly dictionary with the import-time ``git_hash``.
+
+        The revision is None if unavailable at import, even with *include_nones=False*.
+        """
         parameters: dict[str, Any] = {}
         for field in attrs.fields(type(self)):
             if not field.init:
@@ -466,6 +686,7 @@ class SerializableConfig(ABC):
         return {
             CONFIG_TYPE_STR: self.CONFIG_TYPE,
             SUBCLASS_STR: self.SUBCLASS,
+            GIT_HASH_STR: _git_hash(),
             PARAMETERS_STR: parameters,
         }
 
@@ -478,6 +699,9 @@ class SerializableConfig(ABC):
     ) -> "SerializableConfig":
         """
         Deserialize any registered configuration subclass from a dictionary.
+
+        Incoming ``git_hash`` is ignored; output uses the import-time revision.
+        Legacy payloads without this metadata remain supported.
 
         Args:
             payload: The dictionary to deserialize.
@@ -560,6 +784,9 @@ class SerializableConfig(ABC):
         0.0, str -> "", int -> 0, etc.). Optional (union with None) fields
         without an explicit default use null.
 
+        Like instance payloads, examples include the import-time ``git_hash``
+        (or None when unavailable), regardless of *include_nones*.
+
         Returns:
             The example payload dictionary.
         """
@@ -578,6 +805,7 @@ class SerializableConfig(ABC):
         return {
             CONFIG_TYPE_STR: getattr(cls, "CONFIG_TYPE", ""),
             SUBCLASS_STR: getattr(cls, "SUBCLASS", ""),
+            GIT_HASH_STR: _git_hash(),
             PARAMETERS_STR: parameters,
         }
 
@@ -668,6 +896,138 @@ class SerializableConfig(ABC):
         finally:
             _config_serialize_relative_to.reset(token)
         return output_path
+
+    def to_hdf5(
+        self, group: h5py.Group, *, include_nones: bool = True, overwrite: bool = False
+    ) -> h5py.Group:
+        """Write native datasets/groups into a caller-owned HDF5 group.
+
+        The destination must be empty unless ``overwrite=True`` and it contains
+        only a previously written config. Other groups and caller-owned handles
+        are left untouched. Values follow :meth:`to_dict` conversion semantics;
+        YAML comments and original NumPy dtypes are not persisted.
+        Relative-open handles need no anchor for writes; without one, paths
+        retain their existing representation rather than becoming relative to
+        the file. Use :meth:`resolving_paths_relative_to` for portable paths.
+        """
+        if not isinstance(group, h5py.Group):
+            raise TypeError("HDF5 destination must be an h5py Group or File.")
+        occupied = bool(len(group) or len(group.attrs))
+        if occupied and (
+            not overwrite
+            or group.attrs.get(_HDF5_FORMAT_ATTR) != _HDF5_FORMAT
+            or group.attrs.get(_HDF5_VERSION_ATTR) != _HDF5_VERSION
+            or set(group) - {GIT_HASH_STR}
+            != {CONFIG_TYPE_STR, SUBCLASS_STR, PARAMETERS_STR}
+        ):
+            raise ValueError(f"Refusing to replace occupied HDF5 group {group.name!r}.")
+        if occupied:
+            # Reject untagged scientific data anywhere inside an existing config.
+            _read_hdf5_value(group)
+        source = _hdf5_source(group, require_anchor=False)
+        token = _config_serialize_relative_to.set(
+            source.parent if source is not None else _config_serialize_relative_to.get()
+        )
+        try:
+            # Encode completely before touching existing destination contents.
+            with h5py.File(
+                "config-staging", "w", driver="core", backing_store=False
+            ) as staging:
+                _write_hdf5_value(
+                    staging, "payload", self.to_dict(include_nones=include_nones)
+                )
+                _replace_hdf5_contents(group, staging["payload"])
+                group.attrs[_HDF5_KIND_ATTR] = "dict"
+                group.attrs[_HDF5_FORMAT_ATTR] = _HDF5_FORMAT
+                group.attrs[_HDF5_VERSION_ATTR] = _HDF5_VERSION
+        finally:
+            _config_serialize_relative_to.reset(token)
+        return group
+
+    @classmethod
+    def from_hdf5(
+        cls, group: h5py.Group, *, overrides: dict[str, Any] | None = None
+    ) -> "SerializableConfig":
+        """Read a native config from a caller-owned HDF5 group without closing it.
+
+        Filesystem-backed handles supply the source for relative input paths and
+        ``source_file``. Overrides have the same meaning as in :meth:`from_dict`.
+        Open caller-owned files with an absolute filename, or supply their
+        original directory via :meth:`resolving_paths_relative_to`.
+        """
+        if not isinstance(group, h5py.Group):
+            raise TypeError("HDF5 source must be an h5py Group or File.")
+        if group.attrs.get(_HDF5_FORMAT_ATTR) != _HDF5_FORMAT:
+            raise ValueError(f"HDF5 group {group.name!r} is not a serialized config.")
+        if group.attrs.get(_HDF5_VERSION_ATTR) != _HDF5_VERSION:
+            raise ValueError(
+                f"Unsupported HDF5 config schema version: {group.attrs.get(_HDF5_VERSION_ATTR)!r}."
+            )
+        source = _hdf5_source(group)
+        token = _config_load_source.set(source or _config_load_source.get())
+        try:
+            payload = _read_hdf5_value(group)
+            if (
+                not isinstance(payload, dict)
+                or set(payload) - {GIT_HASH_STR}
+                != {CONFIG_TYPE_STR, SUBCLASS_STR, PARAMETERS_STR}
+                or not isinstance(payload.get(PARAMETERS_STR), dict)
+            ):
+                raise ValueError(
+                    "HDF5 config payload must contain a parameters mapping."
+                )
+            obj = cls.from_dict(payload, overrides=overrides)
+            if source is not None:
+                _set_instance_attr(obj, "source_file", source)
+            return obj
+        finally:
+            _config_load_source.reset(token)
+
+    def to_hdf5_file(
+        self,
+        path: str | Path,
+        *,
+        group_path: str = "/config",
+        include_nones: bool = True,
+        overwrite: bool = False,
+    ) -> Path:
+        """Write a config under *group_path* (default ``/config``) in an HDF5 file.
+
+        Creates parent directories and preserves unrelated file content. Existing
+        configs require explicit ``overwrite=True``; unrelated occupied groups
+        cannot be replaced. Returns the resolved output path.
+        """
+        output_path = Path(path).resolve()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with h5py.File(output_path, "a") as handle:
+            self.to_hdf5(
+                handle.require_group(group_path),
+                include_nones=include_nones,
+                overwrite=overwrite,
+            )
+        return output_path
+
+    @classmethod
+    def from_hdf5_file(
+        cls,
+        path: str | Path,
+        *,
+        group_path: str = "/config",
+        relative_to: Path | None = None,
+        overrides: dict[str, Any] | None = None,
+    ) -> "SerializableConfig":
+        """Load a config from *group_path* (default ``/config``) in an HDF5 file.
+
+        Relative file paths and overrides follow :meth:`from_file` semantics.
+        Only handles opened by this method are closed.
+        """
+        resolved = cls._resolve_config_path(path, relative_to=relative_to)
+        with h5py.File(resolved, "r") as handle:
+            if group_path not in handle:
+                raise ValueError(
+                    f"Missing HDF5 config group {group_path!r} in {resolved}."
+                )
+            return cls.from_hdf5(handle[group_path], overrides=overrides)
 
     def _dump_yaml_with_comments(
         self,
@@ -945,7 +1305,8 @@ class SerializableConfig(ABC):
         references), and finally against the process working directory.
 
         Args:
-            path: Path to a ``.json``, ``.jsn``, ``.yaml``, or ``.yml`` config file.
+            path: Path to a ``.json``, ``.jsn``, ``.yaml``, ``.yml``, ``.h5``, or
+                ``.hdf5`` config file. HDF5 configs use the ``/config`` group.
             relative_to: Optional base directory for resolving a relative *path*.
             overrides: Optional values merged into the file payload before
                 deserialization. See :meth:`from_dict`.
@@ -954,6 +1315,8 @@ class SerializableConfig(ABC):
             relative_to = cls._nested_path_relative_to()
         resolved = cls._resolve_config_path(path, relative_to=relative_to)
         suffix = resolved.suffix.lower()
+        if suffix in [".h5", ".hdf5"]:
+            return cls.from_hdf5_file(resolved, overrides=overrides)
         if suffix in [".json", ".jsn"]:
             return cls._load_from_resolved_path(
                 resolved, format="json", overrides=overrides
@@ -964,7 +1327,7 @@ class SerializableConfig(ABC):
             )
         raise ValueError(
             f"Unsupported file type: {resolved.suffix}. "
-            "Must be .json, .jsn, .yaml, or .yml (case-insensitive)."
+            "Must be .json, .jsn, .yaml, .yml, .h5, or .hdf5 (case-insensitive)."
         )
 
     @staticmethod
@@ -988,7 +1351,7 @@ class SerializableConfig(ABC):
     @classmethod
     def from_any(
         cls,
-        value: "SerializableConfig | str | Path | dict[str, Any]",
+        value: "SerializableConfig | str | Path | dict[str, Any] | h5py.Group",
         *,
         relative_to: Path | None = None,
         overrides: dict[str, Any] | None = None,
@@ -1003,16 +1366,21 @@ class SerializableConfig(ABC):
         3. Deserialize from a mapping when *value* is a ``dict``.
         4. For a ``str``, try loading from a file path first; otherwise parse
            as YAML or JSON and deserialize the resulting mapping.
-        5. Raise :class:`TypeError` for unsupported types.
+        5. Read an open :class:`h5py.Group` without closing its handle.
+        6. Raise :class:`TypeError` for unsupported types.
 
         Args:
-            value: An existing config, file path, mapping, or serialized string.
+            value: An existing config, file path, mapping, serialized string,
+                or open HDF5 group containing a config.
             relative_to: Optional base directory for resolving a relative path.
             overrides: Optional values merged into the payload before
                 deserialization. See :meth:`from_dict`.
         """
         if isinstance(value, SerializableConfig):
             return value
+
+        if isinstance(value, h5py.Group):
+            return cls.from_hdf5(value, overrides=overrides)
 
         if isinstance(value, Path):
             return cls.from_file(value, relative_to=relative_to, overrides=overrides)
@@ -1025,14 +1393,14 @@ class SerializableConfig(ABC):
                 return cls.from_file(
                     value, relative_to=relative_to, overrides=overrides
                 )
-            except ValueError:
+            except (ValueError, OSError):
                 return cls.from_dict(
                     cls._resolve_string_as_dict(value), overrides=overrides
                 )
 
         raise TypeError(
             f"Cannot deserialize config from {type(value).__name__!r}; "
-            "expected SerializableConfig, path, dict, or str."
+            "expected SerializableConfig, path, dict, str, or h5py Group."
         )
 
 

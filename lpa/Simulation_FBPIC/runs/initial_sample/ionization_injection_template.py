@@ -53,14 +53,17 @@ class IonizationInjectionSimulation:
             *HighOrderLasyLaser.PHYSICAL_PARAMETER_KEYS,
         }
     )
+    _OPTIONAL_PHYSICAL_PARAMETER_KEYS = (
+        HighOrderLasyLaser.OPTIONAL_PHYSICAL_PARAMETER_KEYS
+    )
     _HYPERPARAMETER_DEFAULTS: dict[str, Any] = {
         "use_cuda": True,
         "n_order": 32,
-        "gamma_boost": 1.5,
-        "nz": 600,
+        "gamma_boost": 3.0,
+        "nz": 2500,
         "nr": 300,
         "zmax": 0.0,
-        "zmin": -70.0e-6,
+        "zmin": -100.0e-6,
         "rmax": 140.0e-6,
         "n_azimuthal_modes": 5,
         "p_zmin": 0.0,
@@ -78,6 +81,8 @@ class IonizationInjectionSimulation:
         "lasy_file": Path(__file__).with_name("experimental_laser"),
         "lasy_t_start": 0.0,
         "lasy_antenna_position": 0.0,
+        "laser_peak_delay_from_file_start_s": 200e-15,
+        "laser_maximum_pulse_duration_fwhm_s": 200e-15,
         "lab_diagnostic_directory": "lab_diags",
         "laser_polarization": (1, 0),
         "laser_n_azimuthal_modes": 5,
@@ -102,7 +107,10 @@ class IonizationInjectionSimulation:
 
     def _validate_parameters(self) -> None:
         missing_physical = self._PHYSICAL_PARAMETER_KEYS - set(self.physical_parameters)
-        unknown_physical = set(self.physical_parameters) - self._PHYSICAL_PARAMETER_KEYS
+        accepted_physical = (
+            self._PHYSICAL_PARAMETER_KEYS | self._OPTIONAL_PHYSICAL_PARAMETER_KEYS
+        )
+        unknown_physical = set(self.physical_parameters) - accepted_physical
         unknown_hyperparameters = set(self.hyperparameters) - set(
             self._HYPERPARAMETER_DEFAULTS
         )
@@ -126,7 +134,11 @@ class IonizationInjectionSimulation:
             high_order_laser = HighOrderLasyLaser(
                 {
                     key: self.physical_parameters[key]
-                    for key in HighOrderLasyLaser.PHYSICAL_PARAMETER_KEYS
+                    for key in (
+                        HighOrderLasyLaser.PHYSICAL_PARAMETER_KEYS
+                        | HighOrderLasyLaser.OPTIONAL_PHYSICAL_PARAMETER_KEYS
+                    )
+                    if key in self.physical_parameters
                 },
                 {
                     "polarization": self.hyperparameters["laser_polarization"],
@@ -140,6 +152,12 @@ class IonizationInjectionSimulation:
                     ],
                     "centering_angles": self.hyperparameters[
                         "laser_centering_angles"
+                    ],
+                    "peak_delay_from_file_start_s": self.hyperparameters[
+                        "laser_peak_delay_from_file_start_s"
+                    ],
+                    "maximum_pulse_duration_fwhm_s": self.hyperparameters[
+                        "laser_maximum_pulse_duration_fwhm_s"
                     ],
                 },
             )

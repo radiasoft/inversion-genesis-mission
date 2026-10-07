@@ -75,7 +75,7 @@ class ModifiedDensityProfile(_DensityProfile):
             ions and no ionization. This is not supported in a boosted-frame simulation (the ion background is needed there).
             Defaults to Hydrogen.
         ionization: (int|None) [int] |OPTIONAL| Initial ionization level for this species. If None or 0, the plasma is assumed to be initially unionized. If -1, the plasma is assumed to be fully ionized.
-            Defaults to unionized (ionization level 0). When `species` is None, only None, -1 or 1 are accepted and all mean fully ionized (it is stored as 1, so a saved profile loads back).
+            Defaults to unionized (ionization level 0). When `species` is None, only None, 0 (the default), -1 or 1 are accepted and all mean fully ionized (it is stored as 1, so a saved profile loads back).
         p_rmax: (float|None) [m] |OPTIONAL| Maximum radial extent of the density profile. If None, the radial extent is determined by the simulation grid.
         p_nz: (int) Number of macroparticles per gridcell along the longitudinal direction.
         p_nr: (int) Number of macroparticles per gridcell along the radial direction.
@@ -128,7 +128,7 @@ class ModifiedDensityProfile(_DensityProfile):
                 ions and no ionization. This is not supported in a boosted-frame simulation (the ion background is needed there).
                 Defaults to Hydrogen.
             ionization: (int|None) [int] |OPTIONAL| Initial ionization level for this species. If None or 0, the plasma is assumed to be initially unionized. If -1, the plasma is assumed to be fully ionized.
-                Defaults to unionized (ionization level 0). When `species` is None, only None, -1 or 1 are accepted and all mean fully ionized (it is stored as 1, so a saved profile loads back).
+                Defaults to unionized (ionization level 0). When `species` is None, only None, 0 (the default), -1 or 1 are accepted and all mean fully ionized (it is stored as 1, so a saved profile loads back).
             p_rmax: (float|None) [m] |OPTIONAL| Maximum radial extent of the density profile. If None, the radial extent is determined by the simulation grid.
             p_nz: (int) Number of macroparticles per gridcell along the longitudinal direction.
             p_nr: (int) Number of macroparticles per gridcell along the radial direction.

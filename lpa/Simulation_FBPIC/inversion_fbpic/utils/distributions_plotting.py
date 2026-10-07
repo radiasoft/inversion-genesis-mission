@@ -203,6 +203,8 @@ def plot_phase_space_moments(
         f"Beam descriptor: {len(descriptor)} parameters "
         f"(longitudinal mode={longitudinal_mode})"
     )
+    for name, value in descriptor.items():
+        print(f"  {name}: {value:.12g}")
     indices = {name: index for index, name in enumerate(COORD_NAMES)}
     figure, axes = plt.subplots(2, 2, figsize=(11, 9), constrained_layout=True)
     for axis, (x_name, y_name) in zip(axes.flat, PLOTS):
@@ -263,6 +265,8 @@ def plot_all_phase_space_moments(
         f"Beam descriptor: {len(descriptor)} parameters "
         f"(longitudinal mode={longitudinal_mode})"
     )
+    for name, value in descriptor.items():
+        print(f"  {name}: {value:.12g}")
 
     figure, axes = plt.subplots(6, 6, figsize=(16, 16), constrained_layout=True)
     for row, y_name in enumerate(COORD_NAMES):

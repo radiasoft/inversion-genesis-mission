@@ -1,9 +1,17 @@
-from setuptools import setup, find_packages
+import runpy
+from pathlib import Path
+
+from setuptools import find_packages, setup
+
+SOURCE_DIR = Path(__file__).resolve().parent
+build_helpers = runpy.run_path(str(SOURCE_DIR / "_build_provenance.py"))
 
 setup(
     name="inversion_fbpic",
     version="0.2",
     packages=find_packages(exclude=["tests", "tests.*"]),
+    package_data={"inversion_fbpic": ["git_hash.txt"]},
+    cmdclass=build_helpers["build_commands"](SOURCE_DIR),
     install_requires=[
         "attrs>=23.2",
         "numpy>=1.24",
@@ -12,13 +20,14 @@ setup(
         "matplotlib>=3.7",
         "mpi4py",
         "h5py",
-        "openpmd-viewer>=1.10",
+        "openpmd-api>=0.16.1,<0.17",
+        "openpmd-viewer>=1.11.0,<2",
         "opencv-python",
         "lasy",
         "periodictable",
     ],
     extras_require={
-        "dev": ["pytest"],
+        "dev": ["pytest", "build>=1", "setuptools>=64", "wheel"],
     },
     entry_points={
         "console_scripts": [

@@ -376,7 +376,7 @@ def compute_moment_descriptor(
         ):
             features[f"longitudinal_mean_uz_{index:02d}"] = float(mean_uz)
             features[f"longitudinal_rms_uz_{index:02d}"] = float(rms_uz)
-    features["total_beam_charge_c"] = float(ELEMENTARY_CHARGE_C * w.sum())
+    features["total_beam_charge_pc"] = float(ELEMENTARY_CHARGE_C * w.sum() * 1e12)
     if include_total_weight:
         features["log_total_weight"] = float(np.log(w.sum()))
     if include_higher_moments:

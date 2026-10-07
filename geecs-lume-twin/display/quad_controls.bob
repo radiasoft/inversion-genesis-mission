@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>$(NAME) controls</name>
+  <width>320</width>
+  <height>190</height>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <text>$(NAME)</text>
+    <x>20</x><y>10</y><width>200</width><height>28</height>
+    <font><font family="Liberation Sans" style="BOLD" size="16.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>CurLabel</name>
+    <text>Current [A]</text>
+    <x>20</x><y>50</y><width>100</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>CurSpinner</name>
+    <pv_name>pva://HTU:SIM:$(NAME)_Current</pv_name>
+    <x>130</x><y>50</y><width>120</width><height>25</height>
+    <minimum>-10</minimum>
+    <maximum>10</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.05</increment>
+  </widget>
+  <widget type="scaledslider" version="2.0.0">
+    <name>CurSlider</name>
+    <pv_name>pva://HTU:SIM:$(NAME)_Current</pv_name>
+    <x>20</x><y>85</y><width>280</width><height>55</height>
+    <minimum>-3</minimum>
+    <maximum>3</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.02</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>RBLabel</name>
+    <text>readback:</text>
+    <x>20</x><y>150</y><width>80</width><height>20</height>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>RB</name>
+    <pv_name>pva://HTU:SIM:$(NAME)_Current</pv_name>
+    <x>105</x><y>150</y><width>110</width><height>20</height>
+  </widget>
+</display>

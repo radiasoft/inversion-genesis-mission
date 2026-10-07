@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>Chicane</name>
+  <width>340</width>
+  <height>300</height>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <text>Chicane R56</text>
+    <x>20</x><y>10</y><width>200</width><height>28</height>
+    <font><font family="Liberation Sans" style="BOLD" size="16.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>R56Label</name>
+    <text>Dipole current [A]</text>
+    <x>20</x><y>50</y><width>90</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>R56Spinner</name>
+    <pv_name>pva://HTU:SIM:ChicaneDipole_Current</pv_name>
+    <x>115</x><y>50</y><width>120</width><height>25</height>
+    <minimum>0</minimum>
+    <maximum>20</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.05</increment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>RB</name>
+    <pv_name>pva://HTU:SIM:Chicane_R56_um</pv_name>
+    <x>250</x><y>53</y><width>70</width><height>20</height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Jaw1Label</name>
+    <text>Slit jaw 1 (+x) [mm]</text>
+    <x>20</x><y>90</y><width>90</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>Jaw1Spinner</name>
+    <pv_name>pva://HTU:SIM:ChicaneSlit_Jaw1_mm</pv_name>
+    <x>115</x><y>90</y><width>120</width><height>25</height>
+    <minimum>-20</minimum>
+    <maximum>20</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.05</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Jaw2Label</name>
+    <text>Slit jaw 2 (-x) [mm]</text>
+    <x>20</x><y>125</y><width>90</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>Jaw2Spinner</name>
+    <pv_name>pva://HTU:SIM:ChicaneSlit_Jaw2_mm</pv_name>
+    <x>115</x><y>125</y><width>120</width><height>25</height>
+    <minimum>-20</minimum>
+    <maximum>20</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.05</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Note</name>
+    <text>Coil current sets all 4 BEND fields via the measured B-I scan (~18.1 mT/A); R56 readback (right) is derived at the 100 MeV convention. 2.169 A = R56 200um. Slit jaw positions are LAB-frame, relative to the STRAIGHT (R56=0) axis — the chicane walks the beam to ~+6.1 mm at R56=200um/100MeV, so insert jaws near there. Low energy at +x: Jaw1 cuts the low-energy tail, Jaw2 the high. Dispersion ~6 mm per 100% dp/p.</text>
+    <x>20</x><y>165</y><width>300</width><height>125</height>
+    <wrap_words>true</wrap_words>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+</display>

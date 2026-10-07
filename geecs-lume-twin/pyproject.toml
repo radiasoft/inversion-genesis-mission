@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geecs-lume-twin"
+version = "0.1.0"
+description = "HTU transport-line virtual accelerator / digital twin (Cheetah + lume-pva)"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scipy",
+    "torch",
+    "cheetah-accelerator==0.8.4",
+    # lume-science packages are NOT on PyPI (and PyPI's `lume` is an
+    # unrelated project) — install from GitHub, pinned to the SHAs this
+    # twin was built and validated against (2026-08-25)
+    "lume-pva @ git+https://github.com/lume-science/lume-pva@ffd974c1be8d491b7bae9c38fdd190f92417fe2f",
+    "lume-cheetah @ git+https://github.com/lume-science/lume-cheetah@3aeb83bd55da7c9e22649fe91734a13ac9dc08ce",
+    "p4p",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["matplotlib", "pypdf"]
+
+[project.scripts]
+htu-twin-serve = "htu.serve:main"
+htu-twin-config = "htu.config_tool:main"
+
+[tool.setuptools.packages.find]
+include = ["htu*"]
+
+[tool.setuptools.package-data]
+htu = ["data/dutch/*.txt", "data/dutch/map/*.txt"]

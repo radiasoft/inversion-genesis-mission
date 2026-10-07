@@ -152,6 +152,10 @@ After installing the package with `pip install -e .`, the commands below can be 
       and a seven-run sample dataset: one nominal case plus six single-parameter
       variations.
 
+      Beam charge is recorded as `total_beam_charge_pc` in picocoulombs. Older
+      datasets using `total_beam_charge_c` must be converted by multiplying the
+      stored value by `1e12` and renaming the key.
+
       `plot-phase-space-moments` creates a phase-space figure from a single
       openPMD particle diagnostic. It compares weighted particle projections with
       moment-based density models; `--all` renders the full triangular set of 1D

@@ -67,7 +67,7 @@
       "longitudinal_rms_uz_02": 72.37626351159544,
       "longitudinal_mean_uz_03": 404.340171210115,
       "longitudinal_rms_uz_03": 52.4460919024795,
-      "total_beam_charge_c": 5.112799876952195e-10
+      "total_beam_charge_pc": 511.2799876952195
     }
   },
   "sim_0001": {
@@ -130,7 +130,7 @@
       "longitudinal_rms_uz_02": 34.78909206746374,
       "longitudinal_mean_uz_03": 229.3383939232117,
       "longitudinal_rms_uz_03": 92.19650635996348,
-      "total_beam_charge_c": 6.026019515929839e-10
+      "total_beam_charge_pc": 602.6019515929839
     }
   },
   "sim_0002": {
@@ -193,7 +193,7 @@
       "longitudinal_rms_uz_02": 21.894390670817227,
       "longitudinal_mean_uz_03": 122.09779598360483,
       "longitudinal_rms_uz_03": 16.59754367080787,
-      "total_beam_charge_c": 3.285733566510154e-10
+      "total_beam_charge_pc": 328.5733566510154
     }
   },
   "sim_0003": {
@@ -256,7 +256,7 @@
       "longitudinal_rms_uz_02": 65.05581466431997,
       "longitudinal_mean_uz_03": 398.0976689999162,
       "longitudinal_rms_uz_03": 49.10698575670454,
-      "total_beam_charge_c": 4.473034221559061e-10
+      "total_beam_charge_pc": 447.3034221559061
     }
   },
   "sim_0004": {
@@ -319,7 +319,7 @@
       "longitudinal_rms_uz_02": 63.24587380408105,
       "longitudinal_mean_uz_03": 368.5791455918712,
       "longitudinal_rms_uz_03": 37.34314006650293,
-      "total_beam_charge_c": 4.425560103347359e-10
+      "total_beam_charge_pc": 442.5560103347359
     }
   },
   "sim_0005": {
@@ -382,7 +382,7 @@
       "longitudinal_rms_uz_02": 107.0427114826597,
       "longitudinal_mean_uz_03": 466.1968679546748,
       "longitudinal_rms_uz_03": 52.62213714521543,
-      "total_beam_charge_c": 2.8810883308323385e-10
+      "total_beam_charge_pc": 288.10883308323385
     }
   },
   "sim_0006": {
@@ -445,7 +445,7 @@
       "longitudinal_rms_uz_02": 50.29095091319214,
       "longitudinal_mean_uz_03": 337.0178779540663,
       "longitudinal_rms_uz_03": 31.10544156938401,
-      "total_beam_charge_c": 3.358103384027779e-10
+      "total_beam_charge_pc": 335.8103384027779
     }
     }
   }

@@ -15,6 +15,7 @@ import numpy as np
 from lasy.laser import Laser
 from lasy.profiles import FromOpenPMDProfile
 from lasy.utils.laser_utils import get_full_field
+from scipy.constants import c
 from scipy.interpolate import RegularGridInterpolator
 
 from inversion_fbpic.utils.laser import transverse_fluence
@@ -24,6 +25,7 @@ Array: TypeAlias = np.ndarray
 
 N_AZIMUTHAL_MODES = 5
 N_PROPAGATION_SAMPLES = 5
+N_FIELD_RECONSTRUCTION_POINTS = 18_000
 N_TRANSVERSE_DIAGNOSTIC_ANGLES = 361
 N_EVOLUTION_METRIC_ANGLES = 73
 ZERNIKE_MAX_RADIAL_ORDER = 5
@@ -163,7 +165,7 @@ def load_saved_laser(file_path: Path) -> Laser:
     """Load an exported LASY field into a laser with the original ``rt`` grid."""
     profile = FromOpenPMDProfile(str(file_path), envelope_name="laserEnvelope")
     radius, time = profile.axes["r"], profile.axes["t"]
-    return Laser(
+    laser = Laser(
         dim="rt",
         lo=(float(radius[0]), float(time[0])),
         hi=(float(radius[-1]), float(time[-1])),
@@ -171,11 +173,13 @@ def load_saved_laser(file_path: Path) -> Laser:
         profile=profile,
         n_azimuthal_modes=N_AZIMUTHAL_MODES,
     )
+    laser.central_wavelength_m = profile.lambda0
+    return laser
 
 
 def plot_field(laser: Laser, title: str) -> None:
-    """Plot the real electric field in the radial-time plane."""
-    field_rt, extent = get_full_field(laser)
+    """Plot the real electric field on a dense temporary temporal grid."""
+    field_rt, extent = get_full_field(laser, Nt=N_FIELD_RECONSTRUCTION_POINTS)
     time_min, time_max, radius_min, radius_max = extent
     field_limit = np.abs(field_rt).max()
     plt.figure()
@@ -198,6 +202,49 @@ def plot_field(laser: Laser, title: str) -> None:
     plt.ylabel("Radius (um)")
     plt.title(title)
     plt.tight_layout()
+
+
+def plot_longitudinal_diagnostics(laser: Laser, title: str) -> None:
+    """Plot on-axis temporal intensity, phase, and spectral diagnostics."""
+    radius, time = laser.grid.axes
+    field = laser.grid.get_temporal_field()[0, 0]
+    intensity = np.abs(field) ** 2
+    phase = np.unwrap(np.angle(field))
+    dt = float(time[1] - time[0])
+    angular_frequency = 2.0 * np.pi * np.fft.fftshift(np.fft.fftfreq(len(time), dt))
+    physical_angular_frequency_offset = -angular_frequency
+    spectrum = np.abs(np.fft.fftshift(np.fft.fft(field))) ** 2
+    spectrum /= spectrum.max()
+    absolute_angular_frequency = (
+        2.0 * np.pi * c / laser.central_wavelength_m
+        + physical_angular_frequency_offset
+    )
+    positive_frequency = absolute_angular_frequency > 0.0
+    wavelength_m = 2.0 * np.pi * c / absolute_angular_frequency[positive_frequency]
+    wavelength_spectral_density = (
+        spectrum[positive_frequency] * 2.0 * np.pi * c / wavelength_m**2
+    )
+    wavelength_amplitude = np.sqrt(wavelength_spectral_density)
+    wavelength_amplitude /= wavelength_amplitude.max()
+    wavelength_order = np.argsort(wavelength_m)
+
+    figure, axes = plt.subplots(4, 1, sharex=False, figsize=(7, 7.5), constrained_layout=True)
+    axes[0].plot(time * 1e15, intensity / intensity.max())
+    axes[0].set_ylabel("Normalized intensity")
+    axes[0].set_title(f"{title}: on-axis longitudinal profile")
+    axes[1].plot(time * 1e15, phase)
+    axes[1].set_xlabel("Time (fs)")
+    axes[1].set_ylabel("Envelope phase (rad)")
+    axes[2].plot(physical_angular_frequency_offset * 1e-15, spectrum)
+    axes[2].set_xlabel("Frequency offset (rad/fs)")
+    axes[2].set_ylabel("Normalized spectral intensity")
+    axes[3].plot(
+        wavelength_m[wavelength_order] * 1e9,
+        wavelength_amplitude[wavelength_order],
+    )
+    axes[3].set_xlabel("Wavelength (nm)")
+    axes[3].set_ylabel("Normalized spectral amplitude")
+    axes[3].set_xlim(600.0, 1000.0)
 
 
 def polar_plane(
@@ -350,7 +397,7 @@ def plot_vacuum_evolution(laser_at_start: Laser, focal_position: float) -> None:
     for z_position in z_relative_to_focus:
         laser = deepcopy(laser_at_start)
         laser.propagate(
-            distance=float(z_position + focal_position), show_progress=False
+            distance=float(z_position + focal_position),
         )
         x_spot_size, y_spot_size, peak_fluence = laser_metrics(laser)
         x_spot_sizes.append(x_spot_size)
@@ -395,10 +442,12 @@ def run_propagation_diagnostics(
     saved_laser = load_saved_laser(file_path)
     plot_vacuum_evolution(saved_laser, focal_position)
     plot_field(saved_laser, "Laser at simulation entrance")
+    plot_longitudinal_diagnostics(saved_laser, "Laser at simulation entrance")
     plot_transverse_diagnostics(saved_laser, "Laser at simulation entrance")
     plot_zernike_decomposition(saved_laser, "Laser at simulation entrance")
-    saved_laser.propagate(distance=focal_position, show_progress=False)
+    saved_laser.propagate(distance=focal_position)
     plot_field(saved_laser, "Laser at nominal focus")
+    plot_longitudinal_diagnostics(saved_laser, "Laser at nominal focus")
     plot_transverse_diagnostics(saved_laser, "Laser at nominal focus")
     plot_zernike_decomposition(saved_laser, "Laser at nominal focus")
     plt.show()

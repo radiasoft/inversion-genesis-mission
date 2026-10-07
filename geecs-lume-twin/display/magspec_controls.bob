@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>MagSpec</name>
+  <width>340</width>
+  <height>190</height>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <text>Dutch MagSpec</text>
+    <x>20</x><y>10</y><width>200</width><height>28</height>
+    <font><font family="Liberation Sans" style="BOLD" size="16.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>OnLabel</name>
+    <text>Magnet on</text>
+    <x>20</x><y>50</y><width>100</width><height>25</height>
+  </widget>
+  <widget type="slide_button" version="2.0.0">
+    <name>OnToggle</name>
+    <pv_name>pva://HTU:SIM:MagSpec_On</pv_name>
+    <x>130</x><y>50</y><width>90</width><height>25</height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BLabel</name>
+    <text>Peak field [T]</text>
+    <x>20</x><y>90</y><width>100</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>BSpinner</name>
+    <pv_name>pva://HTU:SIM:MagSpec_B_T</pv_name>
+    <x>130</x><y>90</y><width>110</width><height>25</height>
+    <minimum>0</minimum>
+    <maximum>1.65</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.025</increment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>BRB</name>
+    <pv_name>pva://HTU:SIM:MagSpec_B_T</pv_name>
+    <x>255</x><y>93</y><width>65</width><height>20</height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Note</name>
+    <text>On: beam lands on the magspec screens (see camera tabs); downstream A-line goes dark. Off: drift-through.</text>
+    <x>20</x><y>130</y><width>300</width><height>50</height>
+    <wrap_words>true</wrap_words>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+</display>

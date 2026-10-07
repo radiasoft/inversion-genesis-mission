@@ -1,0 +1,1795 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>HTU Twin Synoptic</name>
+  <width>1500</width>
+  <height>960</height>
+  <widget type="label" version="2.0.0">
+    <name>lbl_HTU transport twin — synoptic (click an element for controls)_30</name>
+    <text>HTU transport twin — synoptic (click an element for controls)</text>
+    <x>30</x><y>10</y><width>900</width><height>30</height>
+    
+    <font><font family="Liberation Sans" style="BOLD" size="18.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_30_149</name>
+    <x>30</x><y>149</y><width>1440</width><height>2</height>
+    <background_color><color red="0" green="0" blue="0" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn_SRC_2</name>
+    <actions>
+      <action type="open_display">
+        <file>source_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>LPA source parameters (energy, spread, charge, spot, divergence)</description>
+      </action>
+    </actions>
+    <text>SRC</text>
+    <x>2</x><y>120</y><width>26</width><height>60</height>
+    <background_color><color red="255" green="200" blue="0" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>LPA source parameters (energy, spread, charge, spot, divergence)</tooltip>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_30_110</name>
+    <x>30</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="150" green="200" blue="180" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_PlasmaExit_24</name>
+    <text>PlasmaExit</text>
+    <x>24</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__37</name>
+    <actions>
+      <action type="open_display">
+        <file>pmq_hexapod_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>PMQ1V: PMQ triplet hexapod (rigid-unit X/Y/Z)</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>37</x><y>115</y><width>4</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>PMQ1V: PMQ triplet hexapod (rigid-unit X/Y/Z)</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_PMQ1V_31</name>
+    <text>PMQ1V</text>
+    <x>31</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__46</name>
+    <actions>
+      <action type="open_display">
+        <file>pmq_hexapod_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>PMQ2H: PMQ triplet hexapod (rigid-unit X/Y/Z)</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>46</x><y>115</y><width>4</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>PMQ2H: PMQ triplet hexapod (rigid-unit X/Y/Z)</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_PMQ2H_40</name>
+    <text>PMQ2H</text>
+    <x>40</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__57</name>
+    <actions>
+      <action type="open_display">
+        <file>pmq_hexapod_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>PMQ3V: PMQ triplet hexapod (rigid-unit X/Y/Z)</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>57</x><y>115</y><width>4</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>PMQ3V: PMQ triplet hexapod (rigid-unit X/Y/Z)</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_PMQ3V_51</name>
+    <text>PMQ3V</text>
+    <x>51</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_92_110</name>
+    <x>92</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_TCPhosphor_86</name>
+    <text>TCPhosphor</text>
+    <x>86</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__154</name>
+    <actions>
+      <action type="open_display">
+        <file>chicane_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>BEND1: chicane R56 control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>154</x><y>120</y><width>25</width><height>60</height>
+    <background_color><color red="60" green="120" blue="255" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>BEND1: chicane R56 control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_BEND1_148</name>
+    <text>BEND1</text>
+    <x>148</x><y>190</y><width>16</width><height>50</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__199</name>
+    <actions>
+      <action type="open_display">
+        <file>chicane_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>BEND2: chicane R56 control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>199</x><y>120</y><width>25</width><height>60</height>
+    <background_color><color red="60" green="120" blue="255" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>BEND2: chicane R56 control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_BEND2_193</name>
+    <text>BEND2</text>
+    <x>193</x><y>190</y><width>16</width><height>50</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_247_110</name>
+    <x>247</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_ChicaneSlit_241</name>
+    <text>ChicaneSlit</text>
+    <x>241</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__269</name>
+    <actions>
+      <action type="open_display">
+        <file>chicane_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>BEND3: chicane R56 control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>269</x><y>120</y><width>25</width><height>60</height>
+    <background_color><color red="60" green="120" blue="255" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>BEND3: chicane R56 control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_BEND3_263</name>
+    <text>BEND3</text>
+    <x>263</x><y>190</y><width>16</width><height>50</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__314</name>
+    <actions>
+      <action type="open_display">
+        <file>chicane_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>BEND4: chicane R56 control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>314</x><y>120</y><width>25</width><height>60</height>
+    <background_color><color red="60" green="120" blue="255" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>BEND4: chicane R56 control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_BEND4_308</name>
+    <text>BEND4</text>
+    <x>308</x><y>190</y><width>16</width><height>50</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_380_110</name>
+    <x>380</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_DCPhosphor_374</name>
+    <text>DCPhosphor</text>
+    <x>374</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__440</name>
+    <actions>
+      <action type="open_display">
+        <file>quad_controls.bob</file>
+        <macros><NAME>EMQ1H</NAME></macros>
+        <target>window</target>
+        <description>EMQ1H: EMQ current control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>440</x><y>105</y><width>20</width><height>90</height>
+    <background_color><color red="255" green="140" blue="0" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>EMQ1H: EMQ current control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_EMQ1H_434</name>
+    <text>EMQ1H</text>
+    <x>434</x><y>45</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__477</name>
+    <actions>
+      <action type="open_display">
+        <file>quad_controls.bob</file>
+        <macros><NAME>EMQ2V</NAME></macros>
+        <target>window</target>
+        <description>EMQ2V: EMQ current control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>477</x><y>105</y><width>41</width><height>90</height>
+    <background_color><color red="255" green="140" blue="0" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>EMQ2V: EMQ current control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_EMQ2V_471</name>
+    <text>EMQ2V</text>
+    <x>471</x><y>45</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__536</name>
+    <actions>
+      <action type="open_display">
+        <file>quad_controls.bob</file>
+        <macros><NAME>EMQ3H</NAME></macros>
+        <target>window</target>
+        <description>EMQ3H: EMQ current control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>536</x><y>105</y><width>20</width><height>90</height>
+    <background_color><color red="255" green="140" blue="0" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>EMQ3H: EMQ current control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_EMQ3H_530</name>
+    <text>EMQ3H</text>
+    <x>530</x><y>45</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_569_110</name>
+    <x>569</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_Phosphor1_563</name>
+    <text>Phosphor1</text>
+    <x>563</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__611</name>
+    <actions>
+      <action type="open_display">
+        <file>magspec_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>Dutch MagSpec: on/off + field</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>611</x><y>115</y><width>71</width><height>70</height>
+    <background_color><color red="120" green="120" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>Dutch MagSpec: on/off + field</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_MagSpec_605</name>
+    <text>MagSpec</text>
+    <x>605</x><y>195</y><width>16</width><height>60</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_742_110</name>
+    <x>742</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_ALineEbeam1_736</name>
+    <text>UC_ALineEbeam1</text>
+    <x>736</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_799_110</name>
+    <x>799</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_ALineEBeam2_793</name>
+    <text>UC_ALineEBeam2</text>
+    <x>793</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_861_110</name>
+    <x>861</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_ALineEBeam3_855</name>
+    <text>UC_ALineEBeam3</text>
+    <x>855</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_905_115</name>
+    <x>905</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ2_899</name>
+    <text>VQ2</text>
+    <x>899</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_912_115</name>
+    <x>912</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ2_906</name>
+    <text>VQ2</text>
+    <x>906</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_923_115</name>
+    <x>923</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ1_917</name>
+    <text>VQ1</text>
+    <x>917</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_930_115</name>
+    <x>930</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ1_924</name>
+    <text>VQ1</text>
+    <x>924</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_940_110</name>
+    <x>940</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_VisaEBeam1_934</name>
+    <text>UC_VisaEBeam1</text>
+    <x>934</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_940_115</name>
+    <x>940</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ2_934</name>
+    <text>VQ2</text>
+    <x>934</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_948_115</name>
+    <x>948</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ2_942</name>
+    <text>VQ2</text>
+    <x>942</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_958_115</name>
+    <x>958</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ1_952</name>
+    <text>VQ1</text>
+    <x>952</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_965_115</name>
+    <x>965</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ1_959</name>
+    <text>VQ1</text>
+    <x>959</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_976_115</name>
+    <x>976</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ2_970</name>
+    <text>VQ2</text>
+    <x>970</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_983_115</name>
+    <x>983</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ2_977</name>
+    <text>VQ2</text>
+    <x>977</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_993_115</name>
+    <x>993</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ1_987</name>
+    <text>VQ1</text>
+    <x>987</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1001_115</name>
+    <x>1001</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ1_995</name>
+    <text>VQ1</text>
+    <x>995</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1011_110</name>
+    <x>1011</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_VisaEBeam2_1005</name>
+    <text>UC_VisaEBeam2</text>
+    <x>1005</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1011_115</name>
+    <x>1011</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ2_1005</name>
+    <text>VQ2</text>
+    <x>1005</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1018_115</name>
+    <x>1018</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ2_1012</name>
+    <text>VQ2</text>
+    <x>1012</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1028_115</name>
+    <x>1028</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ1_1022</name>
+    <text>VQ1</text>
+    <x>1022</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1036_115</name>
+    <x>1036</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ1_1030</name>
+    <text>VQ1</text>
+    <x>1030</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1046_115</name>
+    <x>1046</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ4_1040</name>
+    <text>VQ4</text>
+    <x>1040</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1054_115</name>
+    <x>1054</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ4_1048</name>
+    <text>VQ4</text>
+    <x>1048</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1064_115</name>
+    <x>1064</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ3_1058</name>
+    <text>VQ3</text>
+    <x>1058</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1071_115</name>
+    <x>1071</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ3_1065</name>
+    <text>VQ3</text>
+    <x>1065</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1081_110</name>
+    <x>1081</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_VisaEBeam3_1075</name>
+    <text>UC_VisaEBeam3</text>
+    <x>1075</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1081_115</name>
+    <x>1081</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ4_1075</name>
+    <text>VQ4</text>
+    <x>1075</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1089_115</name>
+    <x>1089</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ4_1083</name>
+    <text>VQ4</text>
+    <x>1083</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1099_115</name>
+    <x>1099</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ3_1093</name>
+    <text>VQ3</text>
+    <x>1093</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1107_115</name>
+    <x>1107</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ3_1101</name>
+    <text>VQ3</text>
+    <x>1101</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1117_115</name>
+    <x>1117</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ4_1111</name>
+    <text>VQ4</text>
+    <x>1111</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1124_115</name>
+    <x>1124</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ4_1118</name>
+    <text>VQ4</text>
+    <x>1118</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1134_115</name>
+    <x>1134</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ3_1128</name>
+    <text>VQ3</text>
+    <x>1128</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1142_115</name>
+    <x>1142</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ3_1136</name>
+    <text>VQ3</text>
+    <x>1136</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1152_110</name>
+    <x>1152</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_VisaEBeam4_1146</name>
+    <text>UC_VisaEBeam4</text>
+    <x>1146</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1152_115</name>
+    <x>1152</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ4_1146</name>
+    <text>VQ4</text>
+    <x>1146</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1159_115</name>
+    <x>1159</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ4_1153</name>
+    <text>VQ4</text>
+    <x>1153</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1170_115</name>
+    <x>1170</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ3_1164</name>
+    <text>VQ3</text>
+    <x>1164</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1177_115</name>
+    <x>1177</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ3_1171</name>
+    <text>VQ3</text>
+    <x>1171</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1187_115</name>
+    <x>1187</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ6_1181</name>
+    <text>VQ6</text>
+    <x>1181</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1195_115</name>
+    <x>1195</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ6_1189</name>
+    <text>VQ6</text>
+    <x>1189</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1205_115</name>
+    <x>1205</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ5_1199</name>
+    <text>VQ5</text>
+    <x>1199</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1212_115</name>
+    <x>1212</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ5_1206</name>
+    <text>VQ5</text>
+    <x>1206</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1223_110</name>
+    <x>1223</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_VisaEBeam5_1217</name>
+    <text>UC_VisaEBeam5</text>
+    <x>1217</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1223_115</name>
+    <x>1223</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ6_1217</name>
+    <text>VQ6</text>
+    <x>1217</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1230_115</name>
+    <x>1230</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ6_1224</name>
+    <text>VQ6</text>
+    <x>1224</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1240_115</name>
+    <x>1240</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ5_1234</name>
+    <text>VQ5</text>
+    <x>1234</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1248_115</name>
+    <x>1248</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ5_1242</name>
+    <text>VQ5</text>
+    <x>1242</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1258_115</name>
+    <x>1258</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ6_1252</name>
+    <text>VQ6</text>
+    <x>1252</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1265_115</name>
+    <x>1265</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ6_1259</name>
+    <text>VQ6</text>
+    <x>1259</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1275_115</name>
+    <x>1275</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ5_1269</name>
+    <text>VQ5</text>
+    <x>1269</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1283_115</name>
+    <x>1283</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ5_1277</name>
+    <text>VQ5</text>
+    <x>1277</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1293_110</name>
+    <x>1293</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_VisaEBeam6_1287</name>
+    <text>UC_VisaEBeam6</text>
+    <x>1287</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1293_115</name>
+    <x>1293</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ6_1287</name>
+    <text>VQ6</text>
+    <x>1287</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1301_115</name>
+    <x>1301</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ6_1295</name>
+    <text>VQ6</text>
+    <x>1295</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1311_115</name>
+    <x>1311</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ5_1305</name>
+    <text>VQ5</text>
+    <x>1305</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1318_115</name>
+    <x>1318</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ5_1312</name>
+    <text>VQ5</text>
+    <x>1312</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1328_115</name>
+    <x>1328</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ8_1322</name>
+    <text>VQ8</text>
+    <x>1322</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1336_115</name>
+    <x>1336</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ8_1330</name>
+    <text>VQ8</text>
+    <x>1330</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1346_115</name>
+    <x>1346</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ7_1340</name>
+    <text>VQ7</text>
+    <x>1340</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1353_115</name>
+    <x>1353</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ7_1347</name>
+    <text>VQ7</text>
+    <x>1347</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1364_110</name>
+    <x>1364</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_VisaEBeam7_1358</name>
+    <text>UC_VisaEBeam7</text>
+    <x>1358</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1364_115</name>
+    <x>1364</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ8_1358</name>
+    <text>VQ8</text>
+    <x>1358</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1371_115</name>
+    <x>1371</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ8_1365</name>
+    <text>VQ8</text>
+    <x>1365</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1381_115</name>
+    <x>1381</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ7_1375</name>
+    <text>VQ7</text>
+    <x>1375</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1389_115</name>
+    <x>1389</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ7_1383</name>
+    <text>VQ7</text>
+    <x>1383</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1399_115</name>
+    <x>1399</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ8_1393</name>
+    <text>VQ8</text>
+    <x>1393</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1406_115</name>
+    <x>1406</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ8_1400</name>
+    <text>VQ8</text>
+    <x>1400</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1417_115</name>
+    <x>1417</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ7_1411</name>
+    <text>VQ7</text>
+    <x>1411</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1424_115</name>
+    <x>1424</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ7_1418</name>
+    <text>VQ7</text>
+    <x>1418</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1434_110</name>
+    <x>1434</x><y>110</y><width>4</width><height>80</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_UC_VisaEBeam8_1428</name>
+    <text>UC_VisaEBeam8</text>
+    <x>1428</x><y>20</y><width>16</width><height>86</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1434_115</name>
+    <x>1434</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ8_1428</name>
+    <text>VQ8</text>
+    <x>1428</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1442_115</name>
+    <x>1442</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ8_1436</name>
+    <text>VQ8</text>
+    <x>1436</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1452_115</name>
+    <x>1452</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ7_1446</name>
+    <text>VQ7</text>
+    <x>1446</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_1459_115</name>
+    <x>1459</x><y>115</y><width>7</width><height>70</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VQ7_1453</name>
+    <text>VQ7</text>
+    <x>1453</x><y>55</y><width>16</width><height>56</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__154</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>S1</S></macros>
+        <target>window</target>
+        <description>S1: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>154</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>S1: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_S1_150</name>
+    <text>S1</text>
+    <x>150</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__340</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>S2</S></macros>
+        <target>window</target>
+        <description>S2: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>340</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>S2: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_S2_336</name>
+    <text>S2</text>
+    <x>336</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__557</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>S3</S></macros>
+        <target>window</target>
+        <description>S3: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>557</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>S3: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_S3_553</name>
+    <text>S3</text>
+    <x>553</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__683</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>S4</S></macros>
+        <target>window</target>
+        <description>S4: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>683</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>S4: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_S4_679</name>
+    <text>S4</text>
+    <x>679</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn_BMP_874</name>
+    <actions>
+      <action type="open_display">
+        <file>visa_bump_controls.bob</file>
+        <macros></macros>
+        <target>window</target>
+        <description>VISA entrance bumps: position/angle via S3+S4</description>
+      </action>
+    </actions>
+    <text>BMP</text>
+    <x>874</x><y>82</y><width>30</width><height>24</height>
+    <background_color><color red="255" green="200" blue="0" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VISA entrance bumps: position/angle via S3+S4</tooltip>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__940</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>VS1</S></macros>
+        <target>window</target>
+        <description>VS1: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>940</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VS1: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VS1_936</name>
+    <text>VS1</text>
+    <x>936</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__1011</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>VS2</S></macros>
+        <target>window</target>
+        <description>VS2: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>1011</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VS2: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VS2_1007</name>
+    <text>VS2</text>
+    <x>1007</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__1081</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>VS3</S></macros>
+        <target>window</target>
+        <description>VS3: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>1081</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VS3: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VS3_1077</name>
+    <text>VS3</text>
+    <x>1077</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__1152</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>VS4</S></macros>
+        <target>window</target>
+        <description>VS4: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>1152</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VS4: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VS4_1148</name>
+    <text>VS4</text>
+    <x>1148</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__1223</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>VS5</S></macros>
+        <target>window</target>
+        <description>VS5: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>1223</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VS5: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VS5_1219</name>
+    <text>VS5</text>
+    <x>1219</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__1293</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>VS6</S></macros>
+        <target>window</target>
+        <description>VS6: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>1293</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VS6: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VS6_1289</name>
+    <text>VS6</text>
+    <x>1289</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__1364</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>VS7</S></macros>
+        <target>window</target>
+        <description>VS7: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>1364</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VS7: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VS7_1360</name>
+    <text>VS7</text>
+    <x>1360</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn__1434</name>
+    <actions>
+      <action type="open_display">
+        <file>steering_controls.bob</file>
+        <macros><S>VS8</S></macros>
+        <target>window</target>
+        <description>VS8: H/V steering control</description>
+      </action>
+    </actions>
+    <text></text>
+    <x>1434</x><y>125</y><width>8</width><height>50</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <font><font family="Liberation Sans" style="REGULAR" size="8.0"/></font>
+    <tooltip>VS8: H/V steering control</tooltip>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_VS8_1430</name>
+    <text>VS8</text>
+    <x>1430</x><y>180</y><width>16</width><height>36</height>
+    <rotation_step>90.0</rotation_step>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_30_260</name>
+    <x>30</x><y>260</y><width>14</width><height>14</height>
+    <background_color><color red="255" green="140" blue="0" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_EMQ (click)_50</name>
+    <text>EMQ (click)</text>
+    <x>50</x><y>260</y><width>140</width><height>16</height>
+    
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_200_260</name>
+    <x>200</x><y>260</y><width>14</width><height>14</height>
+    <background_color><color red="170" green="170" blue="170" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_PMQ/fixed_220</name>
+    <text>PMQ/fixed</text>
+    <x>220</x><y>260</y><width>140</width><height>16</height>
+    
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_370_260</name>
+    <x>370</x><y>260</y><width>14</width><height>14</height>
+    <background_color><color red="60" green="120" blue="255" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_chicane (click)_390</name>
+    <text>chicane (click)</text>
+    <x>390</x><y>260</y><width>140</width><height>16</height>
+    
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_540_260</name>
+    <x>540</x><y>260</y><width>14</width><height>14</height>
+    <background_color><color red="200" green="60" blue="200" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_steering (click)_560</name>
+    <text>steering (click)</text>
+    <x>560</x><y>260</y><width>140</width><height>16</height>
+    
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="rectangle" version="2.0.0">
+    <name>rect_710_260</name>
+    <x>710</x><y>260</y><width>14</width><height>14</height>
+    <background_color><color red="0" green="190" blue="120" alpha="255"/></background_color>
+    <line_width>1</line_width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lbl_screen_730</name>
+    <text>screen</text>
+    <x>730</x><y>260</y><width>140</width><height>16</height>
+    
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+  <widget type="navtabs" version="2.0.0">
+    <name>CameraTabs</name>
+    <tabs>
+      <tab>
+        <name>TCPhosphor</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>TCPhosphor</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>ChicaneSlit</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>ChicaneSlit</CAM><XMIN>-10.24</XMIN><XMAX>10.24</XMAX><YMIN>-10.24</YMIN><YMAX>10.24</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>DCPhosphor</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>DCPhosphor</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>Phosphor1</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>Phosphor1</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_ALineEbeam1</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_ALineEbeam1</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_ALineEBeam2</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_ALineEBeam2</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_ALineEBeam3</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_ALineEBeam3</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>MagSpec_FrontScreen</name>
+        <file>magspec_front_view.bob</file>
+        <macros><CAM>MagSpec_FrontScreen</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>MagSpec_SideScreen</name>
+        <file>magspec_side_view.bob</file>
+        <macros><CAM>MagSpec_SideScreen</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_VisaEBeam1</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_VisaEBeam1</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_VisaEBeam2</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_VisaEBeam2</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_VisaEBeam3</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_VisaEBeam3</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_VisaEBeam4</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_VisaEBeam4</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_VisaEBeam5</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_VisaEBeam5</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_VisaEBeam6</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_VisaEBeam6</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_VisaEBeam7</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_VisaEBeam7</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+      <tab>
+        <name>UC_VisaEBeam8</name>
+        <file>camera_view.bob</file>
+        <macros><CAM>UC_VisaEBeam8</CAM><XMIN>-3.58</XMIN><XMAX>3.58</XMAX><YMIN>-3.58</YMIN><YMAX>3.58</YMAX></macros>
+        <group_name></group_name>
+      </tab>
+    </tabs>
+    <x>30</x><y>300</y><width>900</width><height>640</height>
+    <tab_width>150</tab_width>
+    <tab_height>30</tab_height>
+  </widget>
+</display>

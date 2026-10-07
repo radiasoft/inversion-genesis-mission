@@ -124,11 +124,22 @@ parameters:
 The [demos](../demos) directory contains runnable examples. Start with the core wrapper demos; the `miscellaneous/` entries are related density-modeling workflows rather than minimal simulation templates.
 
 - [Building blocks](../demos/demo_building_blocks/README.md): generates a library of YAML components, selects active components in a directory, and runs `Simulation(elements=cfg_active)`.
-- [Density profiles](../demos/demo_densities): generates and plots YAML configurations for some concrete density-profile types.
-- [Laser pulses](../demos/demo_lasers): generates and plots Gaussian-laser YAML configurations for supported polarization variants.
+- [Density profiles](../demos/demo_densities): generates and plots YAML, JSON, or HDF5 configurations for some concrete density-profile types.
+- [Laser pulses](../demos/demo_lasers): generates and plots Gaussian-laser YAML, JSON, or HDF5 configurations for supported polarization variants.
 - [Downramp simulation](../demos/demo_downramp_simulation/README.md): script-assembled hydrogen flattop/downramp LPA simulation, with recorded configuration, diagnostics, and density movie output.
 - [Ionization simulation](../demos/demo_ionization_simulation/README.md): helium plasma with nitrogen doping, showing species-specific macroparticle settings and ionization injection.
 - [LASY laser simulation](../demos/demo_lasy_laser_simulation/README.md): hydrogen flattop driven by an aberrated super-Gaussian `LasyLaserPulse`, showing the rank-0 LASY build, antenna emission, and the numerically measured `a0`.
+
+The density demo uses [create_density_configs.py](../demos/demo_densities/create_density_configs.py)
+and [plot_density_configs.py](../demos/demo_densities/plot_density_configs.py);
+the laser demo uses [create_laser_configs.py](../demos/demo_lasers/create_laser_configs.py)
+and [plot_laser_configs.py](../demos/demo_lasers/plot_laser_configs.py).
+All four scripts accept `--format json` or `--format hdf5` to write or read
+JSON or native HDF5 configs; omit the option for the existing YAML workflow.
+All formats can coexist in each demo's `cfg` directory. JSON plots go to
+`plots/json` and HDF5 plots to `plots/hdf5`, leaving YAML plots unchanged.
+Re-running a generator explicitly
+replaces its existing HDF5 configurations while preserving unrelated data.
 
 ## Skipping Runs if Complete
 
@@ -140,7 +151,7 @@ The wrapper hashes normalized hyperparameters, density profiles, and laser pulse
 
 The public configuration classes inherit shared domain behavior rather than repeating FBPIC setup logic:
 
-- `SerializableConfig` provides JSON/YAML I/O, relative-path handling, example generation, and tagged type dispatch.
+- `SerializableConfig` provides JSON/YAML/HDF5 I/O, relative-path handling, example generation, and tagged type dispatch.
 - `_DensityProfile` supplies particle-loading settings, species and ionization handling, diagnostic selections, plotting, plasma-wavelength calculation, and FBPIC species creation. Concrete profiles only define spatial shape and extent.
 - `_DensityModifier` transforms a density function. `ModifiedDensityProfile` applies modifiers in order while inheriting loading and species settings from its base profile.
 - `_LaserPulse` enforces the energy/$a_0$ contract, derives the companion value, and defines the interface for physical extents and FBPIC profile construction.
@@ -155,6 +166,49 @@ This wrapper incorporates simulation policy as well as object wiring, things tha
 `SerializableConfig` maintains a two-level registry: `config_type` maps to a domain base class, then `subclass` maps to a concrete class in that domain. Importing `inversion_fbpic.lib` imports the public domains and registers their concrete types, so `from_dict()`, `from_yaml()`, and `from_file()` reconstruct components without caller-specific dispatch code.
 
 The type tags and serialized parameter names are part of the persisted run interface. Unknown, missing, or duplicate tags fail early; changing them can make existing configurations unloadable. Derived `attrs` fields are excluded from serialization, while input fields are retained for reconstruction.
+
+### Native HDF5 configurations
+
+`config.to_hdf5_file(path)` writes a native configuration into `/config` in an
+HDF5 file. `SerializableConfig.from_file(path)` and `from_any(path)` recognize
+`.h5` and `.hdf5` extensions, case-insensitively. To select a different group,
+use `to_hdf5_file(path, group_path="/metadata/config")` and
+`from_hdf5_file(path, group_path="/metadata/config")`.
+
+For embedding in an already-open file, pass an empty `h5py.Group` to
+`config.to_hdf5(group)`. Read it with `SerializableConfig.from_hdf5(group)` or
+`from_any(group)`. These methods never close caller-owned handles. File writers
+open in append mode and preserve unrelated datasets and metadata. Replacing a
+previously written configuration requires `overwrite=True`; unrelated occupied
+groups cannot be replaced, even with that flag. Encoding is staged before any
+existing configuration is replaced, so unsupported values leave it intact.
+
+The versioned schema retains `config_type`, `subclass`, and `parameters` as native
+datasets/groups, rather than an opaque JSON document. Mapping keys are escaped
+when necessary. Tags distinguish mappings, ordered sequences, empty containers,
+and `None`; homogeneous numeric lists use native array datasets. `None` is stored
+as a tagged null dataset (no shape or value), with a float64 placeholder dtype
+regardless of the optional parameter's type. Values follow the existing
+`to_dict()` semantics: NumPy arrays and tuples become lists, complex
+values become real/imaginary pairs, and YAML comments and original NumPy dtypes
+are not preserved. `include_nones` and deserialization `overrides` behave as in
+the text serializers. Filesystem-backed group handles also supply `source_file`
+and the anchor for portable relative input-file paths.
+Writes to relative-open handles also work without an anchor; paths retain their
+existing representation (absolute input paths stay absolute) instead of guessing
+the file's original directory. For portable relative paths, open the file with an
+absolute filename or wrap writes in
+`SerializableConfig.resolving_paths_relative_to(directory)`.
+Reads from relative-open handles still require that context with the original
+file directory, so later working-directory changes cannot silently select the
+wrong input files.
+All serialized configs and examples include `git_hash`, cached from [git_hash.txt](git_hash.txt) when `serializable_config` is imported. Later commits or builds do not change a running process's provenance; restart to capture a new revision. Serialization never calls Git or preserves an incoming config's hash.
+
+Builds/installs and Git hooks update the Git-ignored file, which is bundled in distributions. **Existing clones must re-run `pre-commit install`** to add the new stages. Amend/rebase are covered by `post-rewrite`; `git reset` is not. After resets or for uninstalled source use, run [tools/record_git_hash.py](../../../tools/record_git_hash.py) (or rebuild/reinstall) before importing. Runtime does not validate Git HEAD.
+
+Unavailable provenance warns once at import and stays `null`, even with `include_nones=False`. It identifies committed code, not local edits; legacy configs remain supported.
+
+The cached revision contributes to `Simulation.config_hash()`: a new process using a different revision invalidates completed-run skipping, while an existing process's hash stays stable.
 
 ## Internal Maintenance Layers
 

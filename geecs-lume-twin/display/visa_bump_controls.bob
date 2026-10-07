@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>VISA entrance bumps</name>
+  <width>360</width>
+  <height>260</height>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <text>VISA entrance bumps (S3 + S4)</text>
+    <x>20</x><y>10</y><width>280</width><height>28</height>
+    <font><font family="Liberation Sans" style="BOLD" size="16.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>XLabel</name>
+    <text>X position [mm]</text>
+    <x>20</x><y>50</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>XSpinner</name>
+    <pv_name>pva://HTU:SIM:VisaBump_X_mm</pv_name>
+    <x>180</x><y>50</y><width>120</width><height>25</height>
+    <minimum>-4</minimum>
+    <maximum>4</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.05</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>XpLabel</name>
+    <text>X angle [mrad]</text>
+    <x>20</x><y>85</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>XpSpinner</name>
+    <pv_name>pva://HTU:SIM:VisaBump_Xp_mrad</pv_name>
+    <x>180</x><y>85</y><width>120</width><height>25</height>
+    <minimum>-2</minimum>
+    <maximum>2</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.02</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>YLabel</name>
+    <text>Y position [mm]</text>
+    <x>20</x><y>120</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>YSpinner</name>
+    <pv_name>pva://HTU:SIM:VisaBump_Y_mm</pv_name>
+    <x>180</x><y>120</y><width>120</width><height>25</height>
+    <minimum>-4</minimum>
+    <maximum>4</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.05</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>YpLabel</name>
+    <text>Y angle [mrad]</text>
+    <x>20</x><y>155</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>YpSpinner</name>
+    <pv_name>pva://HTU:SIM:VisaBump_Yp_mrad</pv_name>
+    <x>180</x><y>155</y><width>120</width><height>25</height>
+    <minimum>-2</minimum>
+    <maximum>2</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.02</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Note</name>
+    <text>Composite views over the raw S3/S4 currents (exact drift-space 2-corrector bump; position and angle orthogonal at the VISA entrance). Hand-tuning S3/S4 shows up here; requests beyond the +/-5A supplies are clamped and the readback shows what was achieved.</text>
+    <x>20</x><y>190</y><width>320</width><height>66</height>
+    <wrap_words>true</wrap_words>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+</display>

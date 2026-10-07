@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>LPA source</name>
+  <width>360</width>
+  <height>700</height>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <text>LPA source parameters</text>
+    <x>20</x><y>10</y><width>250</width><height>28</height>
+    <font><font family="Liberation Sans" style="BOLD" size="16.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>ELabel</name>
+    <text>Energy [MeV]</text>
+    <x>20</x><y>50</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>ESpinner</name>
+    <pv_name>pva://HTU:SIM:Source_Energy_MeV</pv_name>
+    <x>180</x><y>50</y><width>120</width><height>25</height>
+    <minimum>20</minimum>
+    <maximum>1000</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>SpreadLabel</name>
+    <text>Energy spread [% rms]</text>
+    <x>20</x><y>85</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>SpreadSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_EnergySpread_pct</pv_name>
+    <x>180</x><y>85</y><width>120</width><height>25</height>
+    <minimum>0</minimum>
+    <maximum>30</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.5</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>QLabel</name>
+    <text>Charge [pC]</text>
+    <x>20</x><y>120</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>QSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_Charge_pC</pv_name>
+    <x>180</x><y>120</y><width>120</width><height>25</height>
+    <minimum>0</minimum>
+    <maximum>1000</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>5</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>XPlaneHeader</name>
+    <text>X plane (Twiss at source)</text>
+    <x>20</x><y>158</y><width>250</width><height>22</height>
+    <font><font family="Liberation Sans" style="BOLD" size="12.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BetaXLabel</name>
+    <text>Beta x [mm]</text>
+    <x>20</x><y>184</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>BetaXSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_BetaX_mm</pv_name>
+    <x>180</x><y>184</y><width>120</width><height>25</height>
+    <minimum>0</minimum>
+    <maximum>1000</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.5</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>AlphaXLabel</name>
+    <text>Alpha x (+ = converging)</text>
+    <x>20</x><y>219</y><width>155</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>AlphaXSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_AlphaX</pv_name>
+    <x>180</x><y>219</y><width>120</width><height>25</height>
+    <minimum>-20</minimum>
+    <maximum>20</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>EmitXLabel</name>
+    <text>Norm emit x [mm mrad]</text>
+    <x>20</x><y>254</y><width>155</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>EmitXSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_NormEmitX_um</pv_name>
+    <x>180</x><y>254</y><width>120</width><height>25</height>
+    <minimum>0</minimum>
+    <maximum>100</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>YPlaneHeader</name>
+    <text>Y plane (Twiss at source)</text>
+    <x>20</x><y>292</y><width>250</width><height>22</height>
+    <font><font family="Liberation Sans" style="BOLD" size="12.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>BetaYLabel</name>
+    <text>Beta y [mm]</text>
+    <x>20</x><y>318</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>BetaYSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_BetaY_mm</pv_name>
+    <x>180</x><y>318</y><width>120</width><height>25</height>
+    <minimum>0</minimum>
+    <maximum>1000</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.5</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>AlphaYLabel</name>
+    <text>Alpha y (+ = converging)</text>
+    <x>20</x><y>353</y><width>155</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>AlphaYSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_AlphaY</pv_name>
+    <x>180</x><y>353</y><width>120</width><height>25</height>
+    <minimum>-20</minimum>
+    <maximum>20</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>EmitYLabel</name>
+    <text>Norm emit y [mm mrad]</text>
+    <x>20</x><y>388</y><width>155</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>EmitYSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_NormEmitY_um</pv_name>
+    <x>180</x><y>388</y><width>120</width><height>25</height>
+    <minimum>0</minimum>
+    <maximum>100</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>OffsetHeader</name>
+    <text>Centroid / pointing offsets</text>
+    <x>20</x><y>426</y><width>250</width><height>22</height>
+    <font><font family="Liberation Sans" style="BOLD" size="12.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>XOffLabel</name>
+    <text>X offset [um]</text>
+    <x>20</x><y>452</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>XOffSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_X_um</pv_name>
+    <x>180</x><y>452</y><width>120</width><height>25</height>
+    <minimum>-500</minimum>
+    <maximum>500</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>5</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>YOffLabel</name>
+    <text>Y offset [um]</text>
+    <x>20</x><y>487</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>YOffSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_Y_um</pv_name>
+    <x>180</x><y>487</y><width>120</width><height>25</height>
+    <minimum>-500</minimum>
+    <maximum>500</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>5</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>XpLabel</name>
+    <text>X pointing [mrad]</text>
+    <x>20</x><y>522</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>XpSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_Xp_mrad</pv_name>
+    <x>180</x><y>522</y><width>120</width><height>25</height>
+    <minimum>-10</minimum>
+    <maximum>10</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>YpLabel</name>
+    <text>Y pointing [mrad]</text>
+    <x>20</x><y>557</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>YpSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_Yp_mrad</pv_name>
+    <x>180</x><y>557</y><width>120</width><height>25</height>
+    <minimum>-10</minimum>
+    <maximum>10</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>NLabel</name>
+    <text>Macro particles</text>
+    <x>20</x><y>592</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>NSpinner</name>
+    <pv_name>pva://HTU:SIM:Source_NumParticles</pv_name>
+    <x>180</x><y>592</y><width>120</width><height>25</height>
+    <minimum>100</minimum>
+    <maximum>500000</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>5000</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Note</name>
+    <text>Magnet PVs hold coil amps: changing energy shifts the optics at fixed currents (jitter physics). Emittance is NORMALIZED (geometric = emit_n / gamma). Particle count trades statistics vs re-track speed (0.2s @ 20k, 1s @ 200k).</text>
+    <x>20</x><y>627</y><width>320</width><height>56</height>
+    <wrap_words>true</wrap_words>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+</display>

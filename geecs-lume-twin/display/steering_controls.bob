@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>$(S) steering</name>
+  <width>320</width>
+  <height>160</height>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <text>$(S) steering [A]</text>
+    <x>20</x><y>10</y><width>200</width><height>28</height>
+    <font><font family="Liberation Sans" style="BOLD" size="16.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>HLabel</name>
+    <text>$(S)H</text>
+    <x>20</x><y>55</y><width>60</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>HSpinner</name>
+    <pv_name>pva://HTU:SIM:$(S)H_Current</pv_name>
+    <x>90</x><y>55</y><width>120</width><height>25</height>
+    <minimum>-5</minimum>
+    <maximum>5</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.1</increment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>HRB</name>
+    <pv_name>pva://HTU:SIM:$(S)H_Current</pv_name>
+    <x>225</x><y>58</y><width>80</width><height>20</height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>VLabel</name>
+    <text>$(S)V</text>
+    <x>20</x><y>95</y><width>60</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>VSpinner</name>
+    <pv_name>pva://HTU:SIM:$(S)V_Current</pv_name>
+    <x>90</x><y>95</y><width>120</width><height>25</height>
+    <minimum>-5</minimum>
+    <maximum>5</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.1</increment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>VRB</name>
+    <pv_name>pva://HTU:SIM:$(S)V_Current</pv_name>
+    <x>225</x><y>98</y><width>80</width><height>20</height>
+  </widget>
+</display>

@@ -38,8 +38,9 @@ mpirun -n 2 python run_simulation.py
 
 The run writes the following artifacts in the demo directory:
 
-- `cfgs/` contains YAML records of the hyperparameters, calculated grid
-   parameters, laser, and both density profiles.
+- `cfgs/` contains records of the hyperparameters, calculated grid
+   parameters (YAML format), laser, and both density profiles in the selected
+   format.
 - `plots/density_profiles.png` shows the longitudinal flattop and downramp
    density profiles.
 - `diags/` contains the FBPIC diagnostic dumps.

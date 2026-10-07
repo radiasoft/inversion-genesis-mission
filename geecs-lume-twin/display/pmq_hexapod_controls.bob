@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>PMQ triplet hexapod</name>
+  <width>360</width>
+  <height>360</height>
+  <widget type="label" version="2.0.0">
+    <name>Title</name>
+    <text>PMQ triplet (hexapod / rail)</text>
+    <x>20</x><y>10</y><width>260</width><height>28</height>
+    <font><font family="Liberation Sans" style="BOLD" size="16.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>XLabel</name>
+    <text>X (transverse) [mm]</text>
+    <x>20</x><y>50</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>XSpinner</name>
+    <pv_name>pva://HTU:SIM:PMQTriplet_X_mm</pv_name>
+    <x>180</x><y>50</y><width>120</width><height>25</height>
+    <minimum>-5</minimum>
+    <maximum>5</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.01</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>YLabel</name>
+    <text>Y (vertical) [mm]</text>
+    <x>20</x><y>85</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>YSpinner</name>
+    <pv_name>pva://HTU:SIM:PMQTriplet_Y_mm</pv_name>
+    <x>180</x><y>85</y><width>120</width><height>25</height>
+    <minimum>-5</minimum>
+    <maximum>5</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.01</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>ZLabel</name>
+    <text>Z (+ = downstream) [mm]</text>
+    <x>20</x><y>120</y><width>160</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>ZSpinner</name>
+    <pv_name>pva://HTU:SIM:PMQTriplet_Z_mm</pv_name>
+    <x>180</x><y>120</y><width>120</width><height>25</height>
+    <minimum>-25</minimum>
+    <maximum>25</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>0.5</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>TiltHeader</name>
+    <text>Individual tilt [mrad]</text>
+    <x>20</x><y>158</y><width>250</width><height>22</height>
+    <font><font family="Liberation Sans" style="BOLD" size="12.0"/></font>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Tilt1Label</name>
+    <text>PMQ1V tilt</text>
+    <x>20</x><y>184</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>Tilt1Spinner</name>
+    <pv_name>pva://HTU:SIM:PMQ1V_Tilt_mrad</pv_name>
+    <x>180</x><y>184</y><width>120</width><height>25</height>
+    <minimum>-200</minimum>
+    <maximum>200</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Tilt2Label</name>
+    <text>PMQ2H tilt</text>
+    <x>20</x><y>219</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>Tilt2Spinner</name>
+    <pv_name>pva://HTU:SIM:PMQ2H_Tilt_mrad</pv_name>
+    <x>180</x><y>219</y><width>120</width><height>25</height>
+    <minimum>-200</minimum>
+    <maximum>200</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Tilt3Label</name>
+    <text>PMQ3V tilt</text>
+    <x>20</x><y>254</y><width>150</width><height>25</height>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>Tilt3Spinner</name>
+    <pv_name>pva://HTU:SIM:PMQ3V_Tilt_mrad</pv_name>
+    <x>180</x><y>254</y><width>120</width><height>25</height>
+    <minimum>-200</minimum>
+    <maximum>200</maximum>
+    <limits_from_pv>false</limits_from_pv>
+    <increment>1</increment>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Note</name>
+    <text>X/Y/Z move all three PMQs as a rigid unit (alignment sensitivity ~11 mm/mm at ALine1; 0.5 mm off-axis scrapes the pipe). Tilt rotates each magnet about the beam axis (skew coupling).</text>
+    <x>20</x><y>292</y><width>320</width><height>60</height>
+    <wrap_words>true</wrap_words>
+    <font><font family="Liberation Sans" style="REGULAR" size="10.0"/></font>
+  </widget>
+</display>

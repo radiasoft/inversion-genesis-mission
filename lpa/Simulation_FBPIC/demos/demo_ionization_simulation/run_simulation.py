@@ -4,6 +4,7 @@ import numpy as np
 from scipy.constants import c
 import matplotlib.pyplot as plt
 import os
+from typing import Literal
 from pathlib import Path
 from inversion_fbpic.utils.simulation_setup_tools import (
     calculate_acceleration_gradient,
@@ -16,6 +17,8 @@ from inversion_fbpic.utils import analysis
 
 MPI_SIZE = MPI.COMM_WORLD.Get_size()
 MPI_RANK = MPI.COMM_WORLD.Get_rank()
+
+CONFIG_TYPE: Literal["h5", "yaml", "json"] = "h5"
 
 if MPI_SIZE <= 1:
     USE_MPI = False
@@ -101,15 +104,6 @@ if __name__ == "__main__":
         field_diagnostics=["E", "B", "rho"],
     )
 
-    # save yamls
-    if not USE_MPI or MPI_RANK == 0:
-        os.makedirs("cfgs", exist_ok=True)
-        hyparams.to_yaml_file("cfgs/hyparams.yaml")
-        hyparams.grid_parameters_yaml("cfgs/grid_parameters.yaml")
-        laser.to_yaml_file("cfgs/laser.yaml")
-        background_profile.to_yaml_file("cfgs/flattop_profile.yaml")
-        dopant_profile.to_yaml_file("cfgs/downramp_profile.yaml")
-
     # plot density profiles
     if not USE_MPI or MPI_RANK == 0:
         os.makedirs(PLOTS_DIR, exist_ok=True)
@@ -124,6 +118,22 @@ if __name__ == "__main__":
         plt.savefig("plots/density_profiles.png")
 
     sim = sm.Simulation(elements=[hyparams, laser, background_profile, dopant_profile])
+
+    # save configs
+    if not USE_MPI or MPI_RANK == 0:
+        os.makedirs("cfgs", exist_ok=True)
+        hyparams.grid_parameters_yaml("cfgs/grid_parameters.yaml")
+        if CONFIG_TYPE == "yaml":
+            hyparams.to_yaml_file("cfgs/hyparams.yaml")
+            laser.to_yaml_file("cfgs/laser.yaml")
+            background_profile.to_yaml_file("cfgs/flattop_profile.yaml")
+            dopant_profile.to_yaml_file("cfgs/downramp_profile.yaml")
+        elif CONFIG_TYPE == "h5":
+            sim.to_hdf5_file("cfgs/simulation.h5", include_nones=False, overwrite=True)
+        elif CONFIG_TYPE == "json":
+            sim.to_json_file("cfgs/simulation.json", include_nones=False)
+        else:
+            raise ValueError(f"Unknown config type: {CONFIG_TYPE}")
 
     sim.setup_simulation(working_directory=Path(__file__).parent)
     sim.run_simulation()

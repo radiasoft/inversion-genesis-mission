@@ -1,0 +1,2 @@
+include _build_provenance.py
+include inversion_fbpic/git_hash.txt

@@ -1,7 +1,17 @@
+default_install_hook_types: [pre-commit, post-commit, post-checkout, post-merge, post-rewrite]
+default_stages: [pre-commit]
+
 repos:
   # lpa/Simulation_FBPIC/inversion_fbpic/lib stub generation for inheriting docstrings (Cursor pyright << pylance :/ )
   - repo: local
     hooks:
+      - id: record-git-hash
+        name: record Git revision for serialized configs
+        entry: python tools/record_git_hash.py
+        language: system
+        stages: [post-commit, post-checkout, post-merge, post-rewrite]
+        always_run: true
+        pass_filenames: false
       - id: sync-config-docstrings
         name: sync config docstring stubs
         entry: python lpa/Simulation_FBPIC/tools/sync_config_docstrings.py

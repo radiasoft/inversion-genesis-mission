@@ -42,6 +42,15 @@ _SPECIES_IONIZATION_CASES: list[pytest.param] = [
     ),
     pytest.param(
         None,
+        0,
+        None,
+        1,
+        False,
+        False,
+        id="species_none-ionization_zero_is_the_default",
+    ),
+    pytest.param(
+        None,
         -1,
         None,
         1,
@@ -196,6 +205,13 @@ def test_species_ionization_outer_product(
         assert "assuming Hydrogen" in captured.out
     else:
         assert "assuming Hydrogen" not in captured.out
+
+
+def test_species_none_without_explicit_ionization_is_bare_electrons() -> None:
+    """The default `ionization` (0) must not make `species=None` raise."""
+    profile = ExampleDensityProfile(species=None, **_MINIMAL_PROFILE_KWARGS)
+    assert profile.species is None
+    assert profile.ionization == 1
 
 
 @pytest.mark.parametrize(

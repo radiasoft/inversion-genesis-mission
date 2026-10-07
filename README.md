@@ -26,6 +26,29 @@ pre-commit install
 
 Python baseline: 3.12.x (min 3.11, tests also run on 3.13)
 
+### Recorded Git revision
+
+`pre-commit install` installs the pre-commit checks and the post-commit,
+post-checkout, post-merge, and post-rewrite hooks in [.pre-commit-config.yaml](.pre-commit-config.yaml).
+**Existing clones must re-run `pre-commit install` after merging these changes**;
+updating the configuration does not install new hook stages automatically.
+These and FBPIC package builds (including editable pip installs) record `HEAD` in
+[lpa/Simulation_FBPIC/inversion_fbpic/git_hash.txt](lpa/Simulation_FBPIC/inversion_fbpic/git_hash.txt).
+Build/install the FBPIC subproject, not the repo-root shared-utilities package.
+Conda recipes using pip/setuptools use the same hooks; environment creation alone does not.
+
+The file is Git-ignored but bundled in wheels and source distributions. Builds
+without Git preserve bundled provenance. For direct, uninstalled source use,
+run [tools/record_git_hash.py](tools/record_git_hash.py) before importing.
+The rewrite hook covers amend/rebase, but `git reset` (including fetch + reset
+workflows) does not run a recording hook. After a reset, run the recorder or
+rebuild/reinstall before starting simulations; runtime does not check Git HEAD.
+
+`SerializableConfig` caches the revision at import, keeping running processes
+independent of later commits or file updates. Missing, unreadable, or empty files
+warn once and yield `git_hash: null` for that process. Refresh before starting a new process;
+restart to capture a new revision. The hash identifies committed code, not local edits.
+
 ## Development workflow
 
 | Step                        | Command / action                                            |

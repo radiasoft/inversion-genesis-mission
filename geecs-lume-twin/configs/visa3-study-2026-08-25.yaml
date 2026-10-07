@@ -1,0 +1,57 @@
+saved: '2026-08-25T19:31:14-07:00'
+note: Sam's dialed config matching puzzling experimental data; VISA3 vs VisaBump_X
+  scan figure made from this state
+prefix: 'HTU:SIM:'
+pvs:
+  EMQ1H_Current: 1.5
+  EMQ2V_Current: -0.7799999713897705
+  EMQ3H_Current: 0.0
+  ChicaneDipole_Current: 2.168800115585327
+  ChicaneSlit_Jaw1_mm: 20.0
+  ChicaneSlit_Jaw2_mm: -20.0
+  S1H_Current: 0.0
+  S1V_Current: 0.0
+  S2H_Current: 0.0
+  S2V_Current: 0.0
+  S3H_Current: 0.09996142983436584
+  S3V_Current: 0.0
+  S4H_Current: -0.09996142983436584
+  S4V_Current: 0.0
+  VS1H_Current: 0.0
+  VS1V_Current: 0.0
+  VS2H_Current: 0.0
+  VS2V_Current: 0.0
+  VS3H_Current: 0.0
+  VS3V_Current: 0.0
+  VS4H_Current: 0.0
+  VS4V_Current: 0.0
+  VS5H_Current: 0.0
+  VS5V_Current: 0.0
+  VS6H_Current: 0.0
+  VS6V_Current: 0.0
+  VS7H_Current: 0.0
+  VS7V_Current: 0.0
+  VS8H_Current: 0.0
+  VS8V_Current: 0.0
+  PMQTriplet_X_mm: 0.05000000074505806
+  PMQTriplet_Y_mm: 0.0
+  PMQTriplet_Z_mm: 0.0
+  PMQ1V_Tilt_mrad: 0.0
+  PMQ2H_Tilt_mrad: 0.0
+  PMQ3V_Tilt_mrad: 0.0
+  MagSpec_On: false
+  MagSpec_B_T: 0.824999988079071
+  Source_Energy_MeV: 100.0
+  Source_EnergySpread_pct: 5.0
+  Source_Charge_pC: 30.0
+  Source_BetaX_mm: 1.0
+  Source_AlphaX: 0.0
+  Source_NormEmitX_um: 0.5
+  Source_BetaY_mm: 5.0
+  Source_AlphaY: 0.0
+  Source_NormEmitY_um: 0.5
+  Source_X_um: 0.0
+  Source_Y_um: 0.0
+  Source_Xp_mrad: 2.0
+  Source_Yp_mrad: 0.0
+  Source_NumParticles: 100000
