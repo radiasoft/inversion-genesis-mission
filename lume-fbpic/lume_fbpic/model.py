@@ -54,6 +54,7 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
         h5=None,
         *,
         save_final_particles: bool = False,
+        input_dirs: str | Path | typing.Sequence[str | Path] | None = None,
     ):
         """Archive the simulator config and the actions into one HDF5 file.
 
@@ -69,13 +70,15 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
             Destination. If None, a fingerprint-based filename is used.
         save_final_particles : bool, optional
             Also store the final particles and `stats`; see `BaseSimulator.archive()`.
+        input_dirs : str, Path or list of them, optional
+            Where the input files are; see `BaseSimulator.archive()`.
 
         Returns
         -------
         The h5 argument, or the generated filename if it was None.
         """
         h5 = self.simulator.archive(
-            h5, save_final_particles=save_final_particles
+            h5, save_final_particles=save_final_particles, input_dirs=input_dirs
         )  # names the file
         if isinstance(h5, (str, Path)):
             with h5py.File(h5, "a") as g:
@@ -96,12 +99,15 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
         *,
         dummy_run: bool = False,
         working_directory: str | Path | None = None,
+        input_dirs: str | Path | typing.Sequence[str | Path] | None = None,
     ) -> "LUMEFBPICModel":
         """Rebuild a model, actions included, from a file written by `archive()`.
 
         The simulator is restored with `BaseSimulator.from_archive()` (so the final particles
         and `stats` are back if they were saved), and each action is rebuilt from its stored
-        class and parameters; the class must be one defined in `lume_fbpic.actions`.
+        class and parameters; the class must be one defined in `lume_fbpic.actions`. `input_dirs`
+        is where the simulator looks for the input files the archive refers to; see
+        `BaseSimulator.from_archive()`.
 
         Raises:
             ValueError: If the archive has no `actions` group (it was written by
@@ -113,6 +119,7 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
                     g,
                     dummy_run=dummy_run,
                     working_directory=working_directory,
+                    input_dirs=input_dirs,
                 )
         if "actions" not in h5:
             raise ValueError(
@@ -125,6 +132,7 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
             BaseSimulator.from_archive(
                 h5,
                 working_directory=working_directory,
+                input_dirs=input_dirs,
                 stats={
                     name: value
                     for name, value in _read_output_values(h5).items()
@@ -168,7 +176,9 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
         entry.attrs["class"] = config["class"]
         parameters = entry.create_group("parameters")
         for key, value in config["parameters"].items():
-            if value is None or key == "variable_class":  # unset, or the class name again
+            if (
+                value is None or key == "variable_class"
+            ):  # unset, or the class name again
                 continue
             if not isinstance(value, (bool, int, float, str)):
                 raise TypeError(
@@ -176,12 +186,15 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
                     f"{type(value).__name__}, which an archive cannot store"
                 )
             parameters.attrs[key] = value
-        if isinstance(action, ReadOnlyActionMixin) and isinstance(action, ScalarVariable):
+        if isinstance(action, ReadOnlyActionMixin) and isinstance(
+            action, ScalarVariable
+        ):
             entry.attrs["value"] = float(self.get([action.name])[action.name])
 
     def _archive_actions(self, g) -> None:
         """Write the `actions` group to the open archive `g`: one numbered entry per action, in
-        registration order. The inputs are not stored as values; they are in the config."""
+        registration order. The inputs are not stored as values; they are in the config.
+        """
         actions_group = g.create_group("actions")
         for index, action in enumerate(self.supported_variables.values()):
             self._archive_action(actions_group.create_group(f"{index:04d}"), action)

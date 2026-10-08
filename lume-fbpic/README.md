@@ -48,8 +48,14 @@ model = LUMEFBPICModel.from_archive("run.h5")      # actions come back with it
 - The **actions** are the model's inputs and outputs: laser and density fields, Zernike
   coefficients, the dopant fraction, run statistics, the 33-scalar moment descriptor and the final
   particles.
-- An archive holds the config, the actions, the input values at execution, the output values and
-  optionally the final particles (as a `ParticleGroup`).
+- An archive holds the config (as native HDF5 groups, written by `SerializableConfig.to_hdf5()`),
+  the actions, the output values and optionally the final particles (as a `ParticleGroup`). It
+  holds no paths. Output directories are decided when a run starts, and an input data file a
+  config reads (such as a gas-jet density table) is recorded by basename and md5: pass
+  `input_dirs` to `archive()` and `from_archive()` to say where those files are. A file that is not
+  in `input_dirs` when archiving is embedded in the archive (with a warning over 10 MB), and a
+  loaded archive uses the embedded copy. A referenced file missing from `input_dirs` raises
+  `FileNotFoundError`, and one with a different md5 gives a warning.
 
 To serve the outputs as PVs, or to feed the HTU twin, see `docs/htu-twin/README.md`.
 
@@ -59,6 +65,7 @@ To serve the outputs as PVs, or to feed the HTU twin, see `docs/htu-twin/README.
 |------|---------|
 | `lume_fbpic/model.py` | `LUMEFBPICModel`: the LUME model, with `archive()` / `from_archive()` |
 | `lume_fbpic/simulator.py` | `BaseSimulator` (lifecycle, results, archive I/O), `FBPICSimulator` (LWFA, wraps `inversion_fbpic`'s `Simulation`) and `PWFASimulator` (beam-driven, built directly on fbpic) |
+| `lume_fbpic/archive_config.py` | How an archive stores the config: native HDF5 with no paths, input data files by basename and md5 |
 | `lume_fbpic/pwfa_config.py` | PWFA configs: `PWFAGrid` and the electron bunches (`FlatTopBunch`, `GaussianBunch`) |
 | `lume_fbpic/actions.py` | The input and output actions; `make_descriptor_actions()` and `make_pwfa_actions()` |
 | `lume_fbpic/density_profiles.py` | Density profiles for the examples (`LinearRampFlattop`, `GeneralizedGaussianProfile`, `UpDownRampProfile`) |
