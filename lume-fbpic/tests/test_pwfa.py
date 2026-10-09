@@ -100,6 +100,22 @@ def test_the_model_gets_the_pwfa_actions(pwfa_model):
     assert "laser_energy" not in pwfa_model.supported_variables
 
 
+def test_the_descriptor_actions_work_on_a_pwfa_simulator(pwfa_model, particle_group):
+    from lume_fbpic.actions import make_descriptor_actions
+
+    model = LUMEFBPICModel(
+        pwfa_model.simulator, make_descriptor_actions(uz_min=1.0), dummy_run=True
+    )
+    pwfa_model.simulator.final_particles = particle_group
+
+    values = model.get(["descriptor_mean_uz", "descriptor_total_beam_charge_pc"])
+
+    assert (
+        100 < values["descriptor_mean_uz"] < 200
+    )  # the synthetic bunch's mean uz is ~150
+    assert values["descriptor_total_beam_charge_pc"] > 0
+
+
 def test_a_witness_adds_witness_actions(pwfa_model):
     simulator = pwfa_model.simulator
     witness = FlatTopBunch(
@@ -390,6 +406,18 @@ def test_the_clara_example_resolution(arguments, nz, n_steps, time_step, plasma_
         simulator.plasma.p_nt,
     ) == plasma_ppc
     assert simulator.grid.write_plasma is False
+
+
+def test_a_seeded_run_restores_the_global_random_state(tmp_path):
+    simulator = _short_run_simulator(tmp_path / "seeded", random_seed=7)
+    numpy.random.seed(123)
+    before = numpy.random.get_state()
+
+    simulator.run()
+
+    after = numpy.random.get_state()
+    assert after[0] == before[0] and after[2:] == before[2:]
+    assert numpy.array_equal(after[1], before[1])
 
 
 def test_a_grid_without_plasma_output_still_runs(tmp_path):

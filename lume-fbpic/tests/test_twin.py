@@ -1,4 +1,4 @@
-"""Tests for `TwinStage` (docs/htu-twin/twin/twin.py) against the real HTU twin.
+"""Tests for `TwinStage` (docs/htu-twin/twin/twin_stage.py) against the real HTU twin.
 
 Need `htu` (geecs-lume-twin) importable, for example with `PYTHONPATH` pointing at its checkout;
 they are skipped otherwise. The twin builds slowly (about a second), so one is shared per module.
@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import numpy
 import pytest
-from scipy.constants import c, e, m_e
+from scipy.constants import e
+from lume_fbpic.simulator import ELECTRON_MC2_EV
 
 pytest.importorskip("htu")
 pytest.importorskip("lume_pva")
@@ -17,9 +18,9 @@ from lume.exceptions import ReadOnlyError  # noqa: E402
 from lume.staged_model import StagedModel  # noqa: E402
 
 from htu.model import build_htu_model  # noqa: E402
-from tests.downramp_actions import make_actions  # noqa: E402
+from downramp_actions import make_actions  # noqa: E402
 from lume_fbpic.model import LUMEFBPICModel  # noqa: E402
-from twin import (  # noqa: E402
+from twin_stage import (  # noqa: E402
     TwinStage,
     beam_moments,
     binned_screen_geometries,
@@ -30,8 +31,6 @@ from twin import (  # noqa: E402
 
 from beamphysics import ParticleGroup
 
-_MC2_EV = m_e * c**2 / e
-
 
 def _lab_snapshot(n=4000, seed=0, uz_mean=150.0, uz_std=20.0) -> ParticleGroup:
     rng = numpy.random.default_rng(seed)
@@ -40,9 +39,9 @@ def _lab_snapshot(n=4000, seed=0, uz_mean=150.0, uz_std=20.0) -> ParticleGroup:
             "x": rng.normal(0.0, 3.0e-6, n),
             "y": rng.normal(0.0, 1.5e-6, n),
             "z": rng.normal(0.003, 4.0e-6, n),
-            "px": rng.normal(0.0, 2.0, n) * _MC2_EV,
-            "py": rng.normal(0.0, 1.0, n) * _MC2_EV,
-            "pz": rng.normal(uz_mean, uz_std, n) * _MC2_EV,
+            "px": rng.normal(0.0, 2.0, n) * ELECTRON_MC2_EV,
+            "py": rng.normal(0.0, 1.0, n) * ELECTRON_MC2_EV,
+            "pz": rng.normal(uz_mean, uz_std, n) * ELECTRON_MC2_EV,
             "t": numpy.zeros(n),
             "status": numpy.ones(n, dtype=int),
             "weight": numpy.full(n, 1.0e3 * e),
@@ -86,7 +85,7 @@ def test_source_pvs_read_the_injected_bunchs_moments(stage):
 
     gamma = numpy.sqrt(1 + 150.0**2)
     assert _get(stage, "Source_Energy_MeV") == pytest.approx(
-        gamma * _MC2_EV / 1e6, rel=0.02
+        gamma * ELECTRON_MC2_EV / 1e6, rel=0.02
     )
     assert _get(stage, "Source_EnergySpread_pct") == pytest.approx(13.0, abs=2.0)
 
@@ -292,7 +291,7 @@ def test_the_served_chain_exposes_the_twin_controls_and_keeps_the_source_read_on
         assert modes["EMQ1H_Current"] == "rw"  # a twin control, served read-write
         assert modes["Source_Energy_MeV"] == "ro"  # the LPA is the source
         assert modes["charge_pc"] == "ro"  # an LPA output
-        assert "laser_energy" not in modes  # an LPA input is not served
+        assert modes["laser_energy"] == "ro"  # an LPA input is served read-only
         assert config["put_mode"] == PutMode.Complete
         assert config["prefix"] == "HTU:SIM:"
     finally:
@@ -336,9 +335,9 @@ def test_screens_are_current_when_read_right_after_an_injection(stage):
 def test_switching_the_lpa_run_changes_the_twins_source(
     simulator, twin_model, tmp_path
 ):
-    from tests.downramp_actions import make_actions
+    from downramp_actions import make_actions
     from lume_fbpic.actions import make_descriptor_actions
-    from selector import ArchiveSelector
+    from archive_selector import ArchiveSelector
     from inversion_fbpic.utils import distributions
 
     models = {}
@@ -346,7 +345,14 @@ def test_switching_the_lpa_run_changes_the_twins_source(
     for name, uz, charge_pc in (("low", 100.0, 200.0), ("high", 200.0, 400.0)):
         pg = _lab_snapshot(uz_mean=uz)
         phase_space = numpy.stack(
-            [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV],
+            [
+                pg.x,
+                pg.px / ELECTRON_MC2_EV,
+                pg.y,
+                pg.py / ELECTRON_MC2_EV,
+                pg.z,
+                pg.pz / ELECTRON_MC2_EV,
+            ],
             axis=-1,
         )
         weights = numpy.full(len(pg), charge_pc * 1e-12 / len(pg)) / e
@@ -371,7 +377,8 @@ def test_switching_the_lpa_run_changes_the_twins_source(
         low = (_get(stage, "Source_Charge_pC"), _get(stage, "Source_Energy_MeV"))
         assert len(stage.initial_particles) == 4000  # the selected bunch: no second cut
         assert low[1] == pytest.approx(
-            numpy.sqrt(1 + descriptors["low"]["mean_uz"] ** 2) * _MC2_EV / 1e6, rel=0.05
+            numpy.sqrt(1 + descriptors["low"]["mean_uz"] ** 2) * ELECTRON_MC2_EV / 1e6,
+            rel=0.05,
         )
 
         chain.set({"LPA_Archive": "high"})  # only the selector: the twin must follow

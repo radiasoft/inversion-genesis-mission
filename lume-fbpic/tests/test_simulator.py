@@ -25,10 +25,25 @@ def test_configure_rejects_missing_densities(hyparams, laser, tmp_path):
         simulator.configure()
 
 
-def test_run_without_configure_is_a_noop(simulator):
+def test_run_configures_the_simulator_first(simulator, mocker):
+    run_simulation = mocker.patch.object(simulator, "run_simulation")
+    mocker.patch.object(simulator, "load_results")
+    assert simulator.configured is False
+
     simulator.run()
-    assert simulator.finished is False
-    assert simulator.final_particles is None
+
+    assert simulator.configured is True
+    run_simulation.assert_called_once()
+
+
+def test_run_with_an_incomplete_config_raises_and_runs_nothing(simulator, mocker):
+    run_simulation = mocker.patch.object(simulator, "run_simulation")
+    simulator.densities = []
+
+    with pytest.raises(ValueError, match="density"):
+        simulator.run()
+
+    run_simulation.assert_not_called()
 
 
 def test_reset_restores_the_starting_state_without_rerunning(simulator):
@@ -103,6 +118,33 @@ def test_reset_needs_a_starting_state(simulator):
         simulator.reset()
 
 
+def test_the_default_archive_name_comes_from_the_fingerprint(
+    simulator, tmp_path, monkeypatch
+):
+    monkeypatch.chdir(tmp_path)
+
+    written = simulator.archive()
+
+    assert (
+        written
+        == simulator.archive_name()
+        == f"lume_fbpic_{simulator.fingerprint()}.h5"
+    )
+    assert (tmp_path / written).is_file()
+
+
+def test_the_fingerprint_depends_on_the_target_species(simulator):
+    other = FBPICSimulator(
+        simulator.hyparams,
+        simulator.laser,
+        simulator.densities,
+        target_species="electrons_downramp",
+    )
+
+    assert simulator.target_species != other.target_species
+    assert simulator.fingerprint() != other.fingerprint()
+
+
 def test_fingerprint_is_stable_for_the_same_config(simulator):
     assert simulator.fingerprint() == simulator.fingerprint()
 
@@ -120,7 +162,7 @@ def test_archive_round_trips_config_only(simulator, tmp_path):
     for original, loaded in zip(simulator.densities, restored.densities):
         assert loaded.to_dict() == original.to_dict()
 
-    # A loaded simulator has to be configured before it runs.
+    # A loaded simulator is configured when `configure()` or `run()` does it.
     assert restored.configured is False
     assert restored.final_particles is None
 

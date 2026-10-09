@@ -127,6 +127,5 @@ def build_model(working_directory: str | None = None) -> LUMEFBPICModel:
 
 if __name__ == "__main__":
     model = build_model()
-    model.simulator.configure()
     model.set({"laser_a0": 4.0})  # set() applies the value, then runs the simulation
     print(model.get(["charge_pc", "energy_mean_mev"]))

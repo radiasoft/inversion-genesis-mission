@@ -77,8 +77,14 @@ OFFAXIS_R = 15.0e-6
 
 WINDOW_LENGTH = 150.0e-6  # the paper's window, longitudinal and transverse (Table 1)
 DZ = 1.5e-6  # paper (Table 1): 0.30 um, i.e. 500 cells; here 100 cells and 5x fewer steps
-PLASMA_PPC = (2, 2, 4)  # paper (Table 1): (4, 4, 4) plasma macroparticles per cell (z, r, theta)
-N_STEPS_FULL = int(round(CELL_LENGTH / DZ))  # the cell at one cell of light travel per step
+PLASMA_PPC = (
+    2,
+    2,
+    4,
+)  # paper (Table 1): (4, 4, 4) plasma macroparticles per cell (z, r, theta)
+N_STEPS_FULL = int(
+    round(CELL_LENGTH / DZ)
+)  # the cell at one cell of light travel per step
 
 # Table 2: the two witness cases; the values are the paper's.
 CASES = {
@@ -118,7 +124,8 @@ def build_model(
     sets the longitudinal cell size (the window stays 150 um, so `nz = 150 um / dz`, and the time
     step is `dz / c`), `plasma_ppc` the plasma macroparticles per cell (z, r, theta). The paper's
     own are `dz=0.30e-6` and `plasma_ppc=(4, 4, 4)`. `n_steps` defaults to the whole 20 cm cell at
-    that `dz`; `write_period` to an eightieth of the steps (80 dumps for `plot_results`)."""
+    that `dz`; `write_period` to an eightieth of the steps (80 dumps for `plot_results`).
+    """
     case = CASES[witness]
     nz = int(round(WINDOW_LENGTH / dz))
     n_steps = n_steps if n_steps is not None else int(round(CELL_LENGTH / dz))
@@ -144,7 +151,8 @@ def build_model(
         p_nz=plasma_ppc[0],  # paper: 4
         p_nr=plasma_ppc[1],  # paper: 4
         p_nt=plasma_ppc[2],  # paper: 4
-        base_fraction=case["n0_cm3"] / N_MAX_CM3,  # n0 / n_max: paper 2.8 / 4.2 or 1.9 / 4.2
+        base_fraction=case["n0_cm3"]
+        / N_MAX_CM3,  # n0 / n_max: paper 2.8 / 4.2 or 1.9 / 4.2
         z_up=case["z_up"],
         up_length=0.01,  # paper: 1 cm ramps, L_up = L_down
         z_down=case["z_down"],
@@ -172,12 +180,17 @@ def build_model(
         n_macroparticles=20_000,  # not in the paper
         zf=DRIVER_POSITION - SEPARATION,  # paper: 90 um behind the driver
     )
-    simulator = PWFASimulator(grid, plasma, driver, witness_bunch, target_species="witness")
+    simulator = PWFASimulator(
+        grid, plasma, driver, witness_bunch, target_species="witness"
+    )
     return LUMEFBPICModel(simulator, make_pwfa_actions(simulator), dummy_run=dummy_run)
 
 
 def plot_results(
-    directory: str | pathlib.Path, *, witness: str = "longer", output: str | pathlib.Path = "."
+    directory: str | pathlib.Path,
+    *,
+    witness: str = "longer",
+    output: str | pathlib.Path = ".",
 ) -> list[pathlib.Path]:
     """Plot the run in `directory` (its working directory, holding `diags/hdf5`) from its dumps,
     and return the files written to `output`:
@@ -210,18 +223,26 @@ def plot_results(
     density = plasma.build_density_function()
 
     def plasma_density(z):  # [m^-3]
-        return float(plasma.nominal_density * density(numpy.array([z]), numpy.array([0.0]))[0])
+        return float(
+            plasma.nominal_density * density(numpy.array([z]), numpy.array([0.0]))[0]
+        )
 
     return [
         _plot_transverse_size(pyplot, rows, output),
         _plot_beam_quality(pyplot, rows, case, witness, output),
-        _plot_beam_density_and_wakefield(pyplot, paths, case, plasma_density, witness, output),
+        _plot_beam_density_and_wakefield(
+            pyplot, paths, case, plasma_density, witness, output
+        ),
         _plot_offaxis_transverse_wakefield(pyplot, paths, witness, output),
     ]
 
 
 def _beam_density(
-    snapshot: dict, zeta_edges, x_edges, species=("driver", "witness"), slab: float = 4.0e-6
+    snapshot: dict,
+    zeta_edges,
+    x_edges,
+    species=("driver", "witness"),
+    slab: float = 4.0e-6,
 ):
     """The density [m^-3] of `species` in the slab |y| < `slab`, on a (zeta, x) grid [um], from the
     macroparticles, lightly smoothed."""
@@ -235,7 +256,13 @@ def _beam_density(
             bins=[zeta_edges, x_edges],
             weights=beam["weight"][inside],
         )[0]
-    volume = numpy.diff(zeta_edges)[:, None] * numpy.diff(x_edges)[None, :] * 1.0e-12 * 2.0 * slab
+    volume = (
+        numpy.diff(zeta_edges)[:, None]
+        * numpy.diff(x_edges)[None, :]
+        * 1.0e-12
+        * 2.0
+        * slab
+    )
     return gaussian_filter(counts / volume, 1.0)
 
 
@@ -269,7 +296,9 @@ def _dump_metrics(path: pathlib.Path, case: dict) -> list[float]:
 
     def emittance(position, momentum):
         dp, du = position - mean(position), momentum - mean(momentum)
-        return numpy.sqrt(max(mean(dp**2) * mean(du**2) - mean(dp * du) ** 2, 0.0)) * 1.0e6
+        return (
+            numpy.sqrt(max(mean(dp**2) * mean(du**2) - mean(dp * du) ** 2, 0.0)) * 1.0e6
+        )
 
     energy = numpy.sqrt(1.0 + ux**2 + uy**2 + uz**2) * m_e * c**2 / e / 1.0e6
     mean_energy = mean(energy)
@@ -357,17 +386,27 @@ def _plot_beam_quality(
     for axis, (values, ylabel) in zip(axes.flat, panels):
         axis.plot(distance_cm, values, "b-")
         axis.set(xlabel="Propagating distance (cm)", ylabel=ylabel, xlim=(0, 20))
-        for ramp in (case["z_up"], case["z_up"] + 0.01, case["z_down"], case["z_down"] + 0.01):
+        for ramp in (
+            case["z_up"],
+            case["z_up"] + 0.01,
+            case["z_down"],
+            case["z_down"] + 0.01,
+        ):
             axis.axvline(ramp * 100.0, color="0.85", lw=0.8, zorder=0)
     doubled = 2.0 * energy[0]
     axes[0, 0].axhline(doubled, color="gray", ls=":")
     peak = int(numpy.argmax(energy)) + 1
-    if energy.max() >= doubled:  # the energy is rising, so interpolate where it first crosses
+    if (
+        energy.max() >= doubled
+    ):  # the energy is rising, so interpolate where it first crosses
         axes[0, 0].axvline(
-            numpy.interp(doubled, energy[:peak], distance_cm[:peak]), color="gray", ls=":"
+            numpy.interp(doubled, energy[:peak], distance_cm[:peak]),
+            color="gray",
+            ls=":",
         )
     figure.suptitle(
-        f"{witness} witness, ramping plasma; within the paper's 5-sigma particle cut", fontsize=9
+        f"{witness} witness, ramping plasma; within the paper's 5-sigma particle cut",
+        fontsize=9,
     )
     figure.tight_layout()
     file = output / "beam_quality_with_ramp_and_500MeV_markers.png"
@@ -381,7 +420,9 @@ def _plot_offaxis_transverse_wakefield(
 ) -> pathlib.Path:
     """The transverse wakefield at r = 15 um along the bunch, at z = 17.97 mm."""
     distances = numpy.array([_distance(path) for path in paths])
-    snapshot = _read_snapshot(paths[int(numpy.argmin(numpy.abs(distances - OFFAXIS_Z)))])
+    snapshot = _read_snapshot(
+        paths[int(numpy.argmin(numpy.abs(distances - OFFAXIS_Z)))]
+    )
     row = int(numpy.argmin(numpy.abs(snapshot["r"] - OFFAXIS_R * 1.0e6)))
     figure, axes = pyplot.subplots(figsize=(9, 4))
     axes.plot(snapshot["zeta"], snapshot["F_r"][row], "b-")
@@ -397,7 +438,11 @@ def _plot_offaxis_transverse_wakefield(
         centre = numpy.average(zeta, weights=beam["weight"])
         sigma = numpy.sqrt(numpy.cov(zeta, aweights=beam["weight"]))
         axes.axvspan(
-            centre - sigma, centre + sigma, color=colour, alpha=0.12, label=f"{name} (+/- 1 sigma_z)"
+            centre - sigma,
+            centre + sigma,
+            color=colour,
+            alpha=0.12,
+            label=f"{name} (+/- 1 sigma_z)",
         )
     axes.legend(fontsize=8)
     axes.set_title(
@@ -416,7 +461,9 @@ def _plot_transverse_size(pyplot, rows, output: pathlib.Path) -> pathlib.Path:
     """The witness's transverse size along the run."""
     figure, axes = pyplot.subplots(figsize=(5.5, 3.6))
     axes.plot(rows[0], rows[5], "b-")
-    axes.set(xlabel="Propagating distance (cm)", ylabel="Transverse size (um)", xlim=(0, 20))
+    axes.set(
+        xlabel="Propagating distance (cm)", ylabel="Transverse size (um)", xlim=(0, 20)
+    )
     figure.tight_layout()
     file = output / "transverse_size.png"
     figure.savefig(file, dpi=150)
@@ -434,7 +481,11 @@ def _read_snapshot(path: pathlib.Path) -> dict:
         mesh = step["fields/E"]
         dr, dz = mesh.attrs["gridSpacing"]
         z0 = mesh.attrs["gridGlobalOffset"][1]
-        e_z, e_r, b_t = step["fields/E/z"][0], step["fields/E/r"][0], step["fields/B/t"][0]
+        e_z, e_r, b_t = (
+            step["fields/E/z"][0],
+            step["fields/E/r"][0],
+            step["fields/B/t"][0],
+        )
         particles = {
             name: {
                 "x": step[f"particles/{name}/position/x"][:],
@@ -445,7 +496,9 @@ def _read_snapshot(path: pathlib.Path) -> dict:
             for name in ("driver", "witness")
         }
         distance = c * float(step.attrs["time"])
-    z_driver = numpy.average(particles["driver"]["z"], weights=particles["driver"]["weight"])
+    z_driver = numpy.average(
+        particles["driver"]["z"], weights=particles["driver"]["weight"]
+    )
     n_r, n_z = e_z.shape
     return {
         "distance": distance,
@@ -461,17 +514,30 @@ def _read_snapshot(path: pathlib.Path) -> dict:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--witness", choices=sorted(CASES), default="longer")
-    parser.add_argument("--steps", type=int, help=f"number of steps (default 2000; full cell: {N_STEPS_FULL})")
     parser.add_argument(
-        "--dz", type=float, default=DZ * 1e6, help="longitudinal cell size [um] (the paper's: 0.30)"
+        "--steps",
+        type=int,
+        help=f"number of steps (default 2000; full cell: {N_STEPS_FULL})",
     )
     parser.add_argument(
-        "--ppc", type=int, nargs=3, default=PLASMA_PPC, metavar=("NZ", "NR", "NT"),
+        "--dz",
+        type=float,
+        default=DZ * 1e6,
+        help="longitudinal cell size [um] (the paper's: 0.30)",
+    )
+    parser.add_argument(
+        "--ppc",
+        type=int,
+        nargs=3,
+        default=PLASMA_PPC,
+        metavar=("NZ", "NR", "NT"),
         help="plasma macroparticles per cell (the paper's: 4 4 4)",
     )
     parser.add_argument("--plot", action="store_true", help="plot the run when it ends")
     parser.add_argument(
-        "--plot-only", type=pathlib.Path, metavar="DIR",
+        "--plot-only",
+        type=pathlib.Path,
+        metavar="DIR",
         help="do not run; plot the dumps of the earlier run in DIR (its working directory)",
     )
     args = parser.parse_args()
@@ -488,9 +554,12 @@ if __name__ == "__main__":
         n_steps=args.steps or 2000,
         plasma_ppc=tuple(args.ppc),
     )
-    model.simulator.configure()
-    model.set({"driver_charge": 150.0e-12})  # set() applies the value, then runs the simulation
+    model.set(
+        {"driver_charge": 150.0e-12}
+    )  # set() applies the value, then runs the simulation
     print(model.get(["charge_pc", "energy_mean_mev", "energy_std_mev"]))
     if args.plot:
-        for path in plot_results(model.simulator.working_directory, witness=args.witness):
+        for path in plot_results(
+            model.simulator.working_directory, witness=args.witness
+        ):
             print(f"wrote {path}")

@@ -203,6 +203,5 @@ def build_model(working_directory: str | None = None) -> LUMEFBPICModel:
 
 if __name__ == "__main__":
     model = build_model()
-    model.simulator.configure()
     model.set({"laser_energy": LASER_ENERGY_J})  # set() applies the value, then runs
     print(model.get(["charge_pc", "energy_mean_mev"]))

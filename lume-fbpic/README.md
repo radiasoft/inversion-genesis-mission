@@ -79,8 +79,8 @@ To serve the outputs as PVs, or to feed the HTU twin, see `docs/htu-twin/README.
 | `lume_fbpic/density_profiles.py` | Density profiles for the examples (`LinearRampFlattop`, `GeneralizedGaussianProfile`, `UpDownRampProfile`) |
 | `docs/examples/` | runnable examples: LWFA, two beam-driven PWFA setups (FACET-II type, and CLARA FEBE energy doubling), ionization injection |
 | `docs/htu-twin/` | The HTU twin demo, with the LPA archive as the twin's source (own README), in three parts: |
-| &nbsp;&nbsp;`twin/` | `twin.py`: `TwinStage` and `build_chain()`, the HTU twin with the LPA bunch as its source, and its helpers (bunch moments, ballistic drift); `lpa_to_twin.py`: an example running the LPA-to-twin chain; `initial_sample_archives.py`: builds the archives (from the NERSC dataset) that the twin demo serves |
-| &nbsp;&nbsp;`serving/` | `serve.py`: serve archives as EPICS PVs, optionally with the twin; `selector.py`: `ArchiveSelector`, several archived runs behind one enum variable (`LPA_Archive`) |
+| &nbsp;&nbsp;`twin/` | `twin_stage.py`: `TwinStage` and `build_chain()`, the HTU twin with the LPA bunch as its source, and its helpers (bunch moments, ballistic drift); `lpa_to_twin.py`: an example running the LPA-to-twin chain; `initial_sample_archives.py`: builds the archives (from the NERSC dataset) that the twin demo serves |
+| &nbsp;&nbsp;`serving/` | `serve.py`: serve archives as EPICS PVs, optionally with the twin; `archive_selector.py`: `ArchiveSelector`, several archived runs behind one enum variable (`LPA_Archive`) |
 | &nbsp;&nbsp;`phoebus/` | Phoebus displays for the twin chain and the scripts that generate them (own README) |
 | `tests/` | Tests for this package; `downramp_actions.py` is the HTU downramp action set their fixtures use |
 

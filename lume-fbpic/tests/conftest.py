@@ -13,19 +13,23 @@ from pathlib import Path
 
 import pytest
 
-# The example scripts (docs/examples), serve.py and selector.py (docs/htu-twin/serving) and twin.py
+# The example scripts (docs/examples), serve.py and archive_selector.py (docs/htu-twin/serving) and twin_stage.py
 # (docs/htu-twin/twin) are scripts, not package modules.
 _DOCS = Path(__file__).resolve().parents[1] / "docs"
-for _directory in (_DOCS / "examples", _DOCS / "htu-twin" / "serving", _DOCS / "htu-twin" / "twin"):
+for _directory in (
+    _DOCS / "examples",
+    _DOCS / "htu-twin" / "serving",
+    _DOCS / "htu-twin" / "twin",
+):
     sys.path.insert(0, str(_directory))
 
-from inversion_fbpic.lib.simulation import SimulationHyperparameters
-from inversion_fbpic.lib.laser import GaussianLaserPulse
-from inversion_fbpic.lib.density_profiles import SmoothSineFlattop
+from inversion_fbpic.lib.simulation import SimulationHyperparameters  # noqa: E402
+from inversion_fbpic.lib.laser import GaussianLaserPulse  # noqa: E402
+from inversion_fbpic.lib.density_profiles import SmoothSineFlattop  # noqa: E402
 
-from tests.downramp_actions import make_actions
-from lume_fbpic.model import LUMEFBPICModel
-from lume_fbpic.simulator import FBPICSimulator
+from downramp_actions import make_actions  # noqa: E402
+from lume_fbpic.model import LUMEFBPICModel  # noqa: E402
+from lume_fbpic.simulator import FBPICSimulator  # noqa: E402
 
 HYPERPARAMETERS_KWARGS: dict = {
     "zmin": -1.0e-5,

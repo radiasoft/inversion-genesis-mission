@@ -118,6 +118,22 @@ def test_an_archive_with_input_files_holds_no_path_string(tmp_path):
         assert f["densities/0/parameters/filename"][()] == b"table.h5"
 
 
+def test_an_embedded_input_file_does_not_replace_a_path_changed_on_purpose(tmp_path):
+    simulator, _ = _referenced(tmp_path)
+    simulator.archive(tmp_path / "a.h5", input_dirs=tmp_path / "empty")
+    loaded = FBPICSimulator.from_archive(
+        tmp_path / "a.h5", working_directory=tmp_path / "wd"
+    )
+    other = tmp_path / "other" / "table.h5"
+    other.parent.mkdir()
+    _write_table(other, scale=2.0)
+    loaded.densities = [attrs.evolve(loaded.densities[0], filename=other)]
+
+    loaded.configure()
+
+    assert loaded.densities[0].filename == other  # not the embedded copy
+
+
 def test_an_embedded_input_file_is_used_instead_of_one_in_input_dirs(tmp_path):
     simulator, _ = _referenced(tmp_path)
     simulator.archive(tmp_path / "a.h5", input_dirs=tmp_path / "empty")

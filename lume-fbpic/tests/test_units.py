@@ -113,6 +113,26 @@ def test_a_zernike_coefficient_is_in_radians():
     assert _unit(model, "nitrogen_dopant_fraction") == "1"
 
 
+def test_an_explicit_none_unit_survives_an_archive(simulator, tmp_path):
+    model = LUMEFBPICModel(
+        simulator,
+        [
+            LaserFieldAction(name="energy", field_name="energy", unit=None),
+            LaserFieldAction(name="focus", field_name="focal_position"),
+            StatAction(name="charge", stat_name="charge_pc", unit=None, read_only=True),
+        ],
+        dummy_run=True,
+    )
+    assert _unit(model, "energy") is None and _unit(model, "focus") == "m"
+    model.archive(tmp_path / "a.h5")
+
+    loaded = LUMEFBPICModel.from_archive(tmp_path / "a.h5")
+
+    assert _unit(loaded, "energy") is None  # given as None: not replaced by the default
+    assert _unit(loaded, "charge") is None
+    assert _unit(loaded, "focus") == "m"  # left unset: the default, as before
+
+
 def test_the_derived_units_are_valid_and_survive_an_archive(model, tmp_path):
     from beamphysics.units import pmd_unit
 

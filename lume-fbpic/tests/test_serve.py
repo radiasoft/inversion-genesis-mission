@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from tests.downramp_actions import make_actions
+from downramp_actions import make_actions
 from lume_fbpic.actions import make_descriptor_actions
 from lume_fbpic.model import LUMEFBPICModel
 from serve import build_config, expand_archives
@@ -15,7 +15,9 @@ from serve import build_config, expand_archives
 @pytest.fixture()
 def full_model(simulator) -> LUMEFBPICModel:
     return LUMEFBPICModel(
-        simulator, [*make_actions(simulator), *make_descriptor_actions()], dummy_run=True
+        simulator,
+        [*make_actions(simulator), *make_descriptor_actions()],
+        dummy_run=True,
     )
 
 
@@ -27,14 +29,15 @@ def test_building_a_config_without_lume_pva_says_so(full_model, monkeypatch):
         build_config(full_model)
 
 
-def test_config_serves_only_read_only_variables_by_default(full_model):
+def test_config_serves_every_variable_with_the_writable_ones_read_only_by_default(
+    full_model,
+):
     pytest.importorskip("lume_pva")
 
     config = build_config(full_model)
 
-    names = set(config["variables"])
-    assert "charge_pc" in names and "descriptor_mean_uz" in names
-    assert "laser_energy" not in names
+    assert set(config["variables"]) == set(full_model.supported_variables)
+    assert "laser_energy" in config["variables"] and "charge_pc" in config["variables"]
     assert all(str(entry["mode"]) == "ro" for entry in config["variables"].values())
 
 
@@ -66,7 +69,9 @@ def test_synthesizing_a_bunch_needs_the_twin(full_model, tmp_path):
         main([str(tmp_path / "a.h5"), "--synthesize-bunch"])
 
 
-def test_the_twin_needs_particles_or_the_flag_to_synthesize_them(full_model, tmp_path, capsys):
+def test_the_twin_needs_particles_or_the_flag_to_synthesize_them(
+    full_model, tmp_path, capsys
+):
     pytest.importorskip("lume_pva")
     from serve import main
 
@@ -119,7 +124,9 @@ def test_archives_with_the_same_file_name_are_refused(full_model, tmp_path, caps
     assert "unique" in capsys.readouterr().err
 
 
-def test_the_twin_names_every_archive_that_lacks_particles(full_model, tmp_path, capsys):
+def test_the_twin_names_every_archive_that_lacks_particles(
+    full_model, tmp_path, capsys
+):
     pytest.importorskip("lume_pva")
     from serve import main
 
@@ -135,11 +142,13 @@ def test_the_twin_names_every_archive_that_lacks_particles(full_model, tmp_path,
 
 def test_the_selector_is_served_read_write(full_model):
     pytest.importorskip("lume_pva")
-    from selector import ArchiveSelector
+    from archive_selector import ArchiveSelector
 
     selector = ArchiveSelector({"a": full_model})
 
     config = build_config(selector, serve_always={"LPA_Archive"}, prefix="X:")
 
     assert str(config["variables"]["LPA_Archive"]["mode"]) == "rw"
-    assert "laser_energy" not in config["variables"]  # an LPA input is still not served
+    assert (
+        str(config["variables"]["laser_energy"]["mode"]) == "ro"
+    )  # an LPA input: read-only

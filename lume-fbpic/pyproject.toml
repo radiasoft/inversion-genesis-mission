@@ -9,7 +9,7 @@ description = "LUMEModel implementation wrapping inversion_fbpic for virtual acc
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "lume-base",
+    "lume-base>=0.5.0",  # the oldest tested; the code uses lume.actions and lume.staged_model
     "inversion_fbpic",
     "attrs>=23.2",
     "numpy",

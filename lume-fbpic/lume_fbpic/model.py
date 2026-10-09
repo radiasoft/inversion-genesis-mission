@@ -6,6 +6,7 @@ from beamphysics import ParticleGroup
 from lume.actions import Action, ActionModel, ReadOnlyActionMixin
 from lume.staged_model import FinalParticlesMixIn
 from lume.variables import ScalarVariable
+from lume_fbpic import archive_config
 from lume_fbpic.simulator import BaseSimulator
 from pathlib import Path
 import h5py
@@ -24,7 +25,8 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
     externally-supplied one. It is the first stage of a `StagedModel` chain.
 
     Like `LUMECheetahModel` and `LUMEImpactModel`, `set()` applies the new parameter values and
-    then runs the simulation, so `get()` afterwards returns outputs for those inputs. A real
+    then runs the simulation (configuring the simulator first if it is not yet), so `get()`
+    afterwards returns outputs for those inputs. A real
     fbpic run costs minutes to hours, so pass `dummy_run=True` (as `LUMEImpactModel` allows) to
     make `set()` only update parameters without running -- useful for building up a
     configuration, or in tests.
@@ -33,7 +35,8 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
     read-only scalar actions (the outputs); the inputs are in the config. `from_archive()`
     rebuilds the model, actions included. For an archive written without the final particles, the
     recorded output values are put in the simulator's `stats`, where the output actions find
-    them; setting an input makes them stale, and they read NaN until `reset()`.
+    them. The outputs are the last results, recorded or computed: with `dummy_run=True`, setting
+    an input changes the config only and they stay as they are, and a run replaces them.
 
     `reset()` restores the simulator's starting state (for a model loaded from an archive, the
     archived config and results); it never runs the simulation.
@@ -66,6 +69,10 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
         its current value (NaN where there is no result yet). The inputs are not stored as
         values; they are in the config, which is the current one.
 
+        An action whose parameters an archive cannot store raises `TypeError` before anything is
+        written. An archive written to a path is complete or not there: see
+        `BaseSimulator.archive()`.
+
         Parameters
         ----------
         h5 : str, Path, or h5py.File, optional
@@ -79,13 +86,20 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
         -------
         The h5 argument, or the generated filename if it was None.
         """
-        h5 = self.simulator.archive(
-            h5, save_final_particles=save_final_particles, input_dirs=input_dirs
-        )  # names the file
+        for action in self.supported_variables.values():
+            _storable_parameters(action)  # raises before anything is written
+        if h5 is None:
+            h5 = self.simulator.archive_name()
         if isinstance(h5, (str, Path)):
-            with h5py.File(h5, "a") as g:
+            with archive_config.atomic_h5(h5) as g:
+                self.simulator.archive(
+                    g, save_final_particles=save_final_particles, input_dirs=input_dirs
+                )
                 self._archive_actions(g)
         else:
+            self.simulator.archive(
+                h5, save_final_particles=save_final_particles, input_dirs=input_dirs
+            )
             self._archive_actions(h5)
         return h5
 
@@ -146,8 +160,11 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
                     {
                         "class": str(g[key].attrs["class"]),
                         "parameters": {
-                            name: value.item() if hasattr(value, "item") else value
-                            for name, value in g[key]["parameters"].attrs.items()
+                            **{name: None for name in _explicit_nones(g[key])},
+                            **{
+                                name: value.item() if hasattr(value, "item") else value
+                                for name, value in g[key]["parameters"].attrs.items()
+                            },
                         },
                     }
                 )
@@ -169,6 +186,9 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
         """Write one action to `entry`, a group of an open archive: its name and class, its
         parameters as the attributes of a `parameters` group (those that are set), and, for a
         read-only scalar action, its current value as `value` (NaN where there is no result).
+        A parameter that was given as `None`, and not left unset, is listed by name in the
+        `explicit_nones` attribute, so that it is `None` again when the archive is loaded (an
+        unset `unit` would get its default).
 
         Raises:
             TypeError: If a parameter is not a bool, int, float or string.
@@ -177,17 +197,15 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
         entry.attrs["name"] = action.name
         entry.attrs["class"] = config["class"]
         parameters = entry.create_group("parameters")
-        for key, value in config["parameters"].items():
-            if (
-                value is None or key == "variable_class"
-            ):  # unset, or the class name again
-                continue
-            if not isinstance(value, (bool, int, float, str)):
-                raise TypeError(
-                    f"parameter {key!r} of action {action.name!r} is a "
-                    f"{type(value).__name__}, which an archive cannot store"
-                )
+        for key, value in _storable_parameters(action).items():
             parameters.attrs[key] = value
+        explicit_nones = sorted(
+            key
+            for key in action.model_fields_set
+            if config["parameters"].get(key) is None
+        )
+        if explicit_nones:
+            entry.attrs["explicit_nones"] = explicit_nones
         if isinstance(action, ReadOnlyActionMixin) and isinstance(
             action, ScalarVariable
         ):
@@ -203,8 +221,6 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
 
     def _set(self, values: dict[str, typing.Any]) -> None:
         super()._set(values)
-        if values and self.simulator.final_particles is None:
-            self.simulator.stats = {}  # the recorded outputs belonged to the old inputs
         if self.dummy_run:
             return
         self.simulator.run()
@@ -236,6 +252,14 @@ def _action_to_config(action: Action) -> dict[str, typing.Any]:
     }
 
 
+def _explicit_nones(entry) -> list[str]:
+    """The names of the parameters of the archived action `entry` that were given as `None`."""
+    return [
+        name.decode() if isinstance(name, bytes) else str(name)
+        for name in entry.attrs.get("explicit_nones", [])
+    ]
+
+
 def _read_output_values(h5) -> dict[str, float]:
     """Read the recorded output values, by action name, from an open file written by
     `LUMEFBPICModel.archive()`; read-only actions without a scalar value (the final-particles
@@ -259,3 +283,23 @@ def _set_default_units(simulator: BaseSimulator, actions: list[Action]) -> None:
             unit = default_unit(simulator)
             if unit is not None:
                 action.unit = unit
+
+
+def _storable_parameters(action: Action) -> dict[str, typing.Any]:
+    """The parameters of `action` that an archive stores: those that are set (not `None`), apart
+    from `variable_class`, the class name again.
+
+    Raises:
+        TypeError: If one is not a bool, int, float or string.
+    """
+    stored = {}
+    for key, value in _action_to_config(action)["parameters"].items():
+        if value is None or key == "variable_class":
+            continue
+        if not isinstance(value, (bool, int, float, str)):
+            raise TypeError(
+                f"parameter {key!r} of action {action.name!r} is a "
+                f"{type(value).__name__}, which an archive cannot store"
+            )
+        stored[key] = value
+    return stored

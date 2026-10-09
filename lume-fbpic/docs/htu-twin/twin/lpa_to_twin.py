@@ -1,7 +1,7 @@
 """Make a `lume-fbpic` bunch the source of the HTU transport twin (`geecs-lume-twin`).
 
 `build_chain(lpa_model)` is `StagedModel([lpa_model, TwinStage(twin_model)])`: it hands the LPA
-stage's `final_particles` to the twin's `initial_particles` (see `docs/htu-twin/twin/twin.py`), and the
+stage's `final_particles` to the twin's `initial_particles` (see `docs/htu-twin/twin/twin_stage.py`), and the
 twin's own `Source_*` variables become read-only readbacks of that bunch. The bunch comes from either
 
 - `--archive`: an archive written with `LUMEFBPICModel.archive(save_final_particles=True)`, or
@@ -33,7 +33,9 @@ from lume_fbpic.model import LUMEFBPICModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "examples"))
 import ionization_injection  # noqa: E402  (docs/examples/ionization_injection.py)
-from twin import build_chain  # noqa: E402  (docs/htu-twin/twin/twin.py, this directory)
+from twin_stage import (
+    build_chain,
+)  # noqa: E402  (docs/htu-twin/twin/twin_stage.py, this directory)
 
 SCREENS = (
     "TCPhosphor",

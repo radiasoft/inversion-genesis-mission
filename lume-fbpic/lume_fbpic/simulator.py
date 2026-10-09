@@ -47,7 +47,7 @@ from beamphysics.writers import pmd_init
 # not SI kg*m/s. Verified directly against the installed beamphysics source
 # (ParticleGroup.energy = sqrt(px**2+py**2+pz**2+mass**2), mass in eV) and a synthetic
 # uz=100 check (expected ~50.6 MeV kinetic energy, confirmed numerically).
-_MC2_EV = m_e * c**2 / e
+ELECTRON_MC2_EV = m_e * c**2 / e
 
 # Groups of an archive that are not config: the model's actions, the input files, and the results.
 _RESERVED_GROUPS = {"actions", "final_particles", "inputs", "stats"}
@@ -136,6 +136,10 @@ class BaseSimulator(ABC):
             directory. An input file in one of them with another md5 than the one the config
             names gets a warning, and is referred to, not embedded.
 
+        An archive written to a path is written to a temporary file first and moved into place
+        when it is complete, so an error leaves no partial file and a file that was there stays
+        as it was. (A file passed in as a handle is written to directly.)
+
         Returns
         -------
         The h5 argument (or generated filename) passed in.
@@ -153,43 +157,17 @@ class BaseSimulator(ABC):
         config = self.config()
         refs = archive_config.collect_inputs(config, self._embedded)
         if h5 is None:
-            h5 = f"lume_fbpic_{self.fingerprint()}.h5"
-
+            h5 = self.archive_name()
         if isinstance(h5, (str, Path)):
-            new_h5file = True
-            g = h5py.File(h5, "w")
+            with archive_config.atomic_h5(h5) as g:
+                self._write_archive(g, config, refs, save_final_particles, input_dirs)
         else:
-            new_h5file = False
-            g = h5
-
-        g.attrs["dataType"] = "lume-fbpic"
-        g.attrs["software"] = "lume-fbpic"
-        g.attrs["config_kind"] = self.CONFIG_KIND
-        g.attrs["target_species"] = self.target_species
-
-        for name, value in config.items():
-            if isinstance(value, (list, tuple)):
-                group = g.create_group(name)
-                group.attrs["list"] = True
-                for i, item in enumerate(value):
-                    archive_config.write_config(group, str(i), item)
-            else:
-                archive_config.write_config(g, name, value)
-        if refs:
-            archive_config.store_inputs(g.create_group("inputs"), refs, input_dirs)
-
-        if save_final_particles:
-            # openPMD root attributes pointing at the `final_particles` group make the archive
-            # itself readable as a particle file: `ParticleGroup(h5=<archive path>)`.
-            pmd_init(g, basePath="/", particlesPath="final_particles")
-            self.final_particles.write(g.create_group("final_particles"))
-            stats_group = g.create_group("stats")
-            for name, value in self.stats.items():
-                stats_group.attrs[name] = value
-
-        if new_h5file:
-            g.close()
+            self._write_archive(h5, config, refs, save_final_particles, input_dirs)
         return h5
+
+    def archive_name(self) -> str:
+        """The file name `archive()` uses by default: from the fingerprint of the config."""
+        return f"lume_fbpic_{self.fingerprint()}.h5"
 
     @abstractmethod
     def config(self) -> dict[str, typing.Any]:
@@ -209,7 +187,8 @@ class BaseSimulator(ABC):
         """Stable hash of the current config: the same on any machine, and for any
         `save_directory`.
 
-        It is of the config without paths (see `archive()`) and the md5 of each input file.
+        It is of the kind of simulator, the target species, the config without paths (see
+        `archive()`) and the md5 of each input file.
         """
         configs = {
             name: [
@@ -226,7 +205,11 @@ class BaseSimulator(ABC):
             (ref.key, ref.file.md5)
             for ref in archive_config.collect_inputs(self.config(), self._embedded)
         ]
-        text = json.dumps([configs, inputs], sort_keys=True, default=str)
+        text = json.dumps(
+            [self.CONFIG_KIND, self.target_species, configs, inputs],
+            sort_keys=True,
+            default=str,
+        )
         return hashlib.sha256(text.encode()).hexdigest()[:16]
 
     @classmethod
@@ -328,12 +311,15 @@ class BaseSimulator(ABC):
     def run(self) -> None:
         """Run the simulation from the current config, then read the results back.
 
+        A simulator that has not been configured is configured first (see `configure()`, which
+        raises `ValueError` if the config is incomplete).
+
         A `run()` call means "run this now", not "skip if a previous run in this working
         directory already matches this config" (that skip-if-hashed default is meant for
         repeated script invocations, not a live model's `set()`).
         """
         if not self.configured:
-            return
+            self.configure()
         self.run_simulation()
         self.load_results()
 
@@ -352,13 +338,21 @@ class BaseSimulator(ABC):
     def _prepare_inputs(self) -> None:
         """Write the embedded input files under `working_directory/inputs/` and point the config
         at them, for those not already there. `configure()` calls it, so that a run in another
-        working directory than the one the archive was loaded in finds them."""
+        working directory than the one the archive was loaded in finds them. A field that was
+        pointed at another existing file since is left as it is."""
         if not self._embedded:
             return
         config = self.config()
         changed = False
         for (name, index, field), file in self._embedded.items():
             item = config[name] if index is None else config[name][index]
+            current = Path(getattr(item, field))
+            if (
+                file.extracted is not None
+                and current != file.extracted
+                and current.is_file()
+            ):
+                continue  # the config was pointed at another file on purpose
             target = file.write_to(self.working_directory / "inputs")
             if Path(getattr(item, field)) == target:
                 continue
@@ -394,9 +388,9 @@ class BaseSimulator(ABC):
                 "x": x,
                 "y": y,
                 "z": z,
-                "px": ux * _MC2_EV,
-                "py": uy * _MC2_EV,
-                "pz": uz * _MC2_EV,
+                "px": ux * ELECTRON_MC2_EV,
+                "py": uy * ELECTRON_MC2_EV,
+                "pz": uz * ELECTRON_MC2_EV,
                 "t": numpy.zeros_like(x),
                 "status": numpy.ones_like(x, dtype=int),
                 "weight": w * e,
@@ -418,6 +412,40 @@ class BaseSimulator(ABC):
             "energy_mean_mev": energy_mean,
             "energy_std_mev": energy_std,
         }
+
+    def _write_archive(
+        self,
+        g,
+        config: dict[str, typing.Any],
+        refs: list[archive_config.InputRef],
+        save_final_particles: bool,
+        input_dirs: typing.Any,
+    ) -> None:
+        """Write the archive of `config` into the open file or group `g`; see `archive()`."""
+        g.attrs["dataType"] = "lume-fbpic"
+        g.attrs["software"] = "lume-fbpic"
+        g.attrs["config_kind"] = self.CONFIG_KIND
+        g.attrs["target_species"] = self.target_species
+
+        for name, value in config.items():
+            if isinstance(value, (list, tuple)):
+                group = g.create_group(name)
+                group.attrs["list"] = True
+                for i, item in enumerate(value):
+                    archive_config.write_config(group, str(i), item)
+            else:
+                archive_config.write_config(g, name, value)
+        if refs:
+            archive_config.store_inputs(g.create_group("inputs"), refs, input_dirs)
+
+        if save_final_particles:
+            # openPMD root attributes pointing at the `final_particles` group make the archive
+            # itself readable as a particle file: `ParticleGroup(h5=<archive path>)`.
+            pmd_init(g, basePath="/", particlesPath="final_particles")
+            self.final_particles.write(g.create_group("final_particles"))
+            stats_group = g.create_group("stats")
+            for name, value in self.stats.items():
+                stats_group.attrs[name] = value
 
 
 class FBPICSimulator(BaseSimulator):
@@ -597,7 +625,26 @@ class PWFASimulator(BaseSimulator):
         )
 
     def run_simulation(self) -> typing.Any:
-        """Build a fresh fbpic `Simulation` and run it, WITHOUT reading any output back."""
+        """Build a fresh fbpic `Simulation` and run it, WITHOUT reading any output back.
+
+        A `random_seed` seeds numpy's global generator, which draws the bunches; the state of the
+        generator from before the run is restored when it ends.
+        """
+        state = numpy.random.get_state() if self.grid.random_seed is not None else None
+        try:
+            return self._run_seeded()
+        finally:
+            if state is not None:
+                numpy.random.set_state(state)
+
+    def set_config(self, config: dict[str, typing.Any]) -> None:
+        self.grid = config["grid"]
+        self.plasma = config["plasma"]
+        self.driver = config["driver"]
+        self.witness = config.get("witness")
+
+    def _run_seeded(self) -> typing.Any:
+        """Seed the generator, then build a fresh fbpic `Simulation` and run it."""
         from fbpic.fields.smoothing import BinomialSmoother
         from fbpic.main import Simulation
         from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
@@ -654,12 +701,6 @@ class PWFASimulator(BaseSimulator):
         ]
         simulation.step(grid.n_steps)
         return simulation
-
-    def set_config(self, config: dict[str, typing.Any]) -> None:
-        self.grid = config["grid"]
-        self.plasma = config["plasma"]
-        self.driver = config["driver"]
-        self.witness = config.get("witness")
 
     def _species_names(self) -> list[str]:
         return ["driver", "witness"] if self.witness is not None else ["driver"]

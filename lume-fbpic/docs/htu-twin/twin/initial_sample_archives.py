@@ -41,6 +41,8 @@ import attrs
 from lume_fbpic.actions import LaserFieldAction, MomentDescriptorAction
 from lume_fbpic.model import LUMEFBPICModel
 
+from inversion_fbpic.lib.density_core import _DensityProfile
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "examples"))
 import ionization_injection  # noqa: E402  (docs/examples/ionization_injection.py)
 
@@ -150,7 +152,11 @@ def _check_fixed_inputs(model: LUMEFBPICModel, inputs: dict[str, float]) -> None
         # n_plasma = 2 * n_gas, and n_gas is the He + N atom density (each profile's
         # nominal_density is its atom density times its ionization-level count).
         "peak_plasma_density_cm3": 2.0
-        * (he.nominal_density / 2 + nitrogen.nominal_density / 7)
+        * (
+            he.nominal_density / _DensityProfile._get_num_ionization_levels(he.species)
+            + nitrogen.nominal_density
+            / _DensityProfile._get_num_ionization_levels(nitrogen.species)
+        )
         / 1.0e6,
     }
     for name, value in inputs.items():

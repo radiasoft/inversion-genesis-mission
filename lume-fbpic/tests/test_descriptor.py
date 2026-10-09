@@ -7,9 +7,10 @@ import math
 
 import numpy
 import pytest
-from scipy.constants import c, e, m_e
+from scipy.constants import e
+from lume_fbpic.simulator import ELECTRON_MC2_EV
 
-from tests.downramp_actions import make_actions
+from downramp_actions import make_actions
 from lume_fbpic.actions import make_descriptor_actions
 from lume_fbpic.model import LUMEFBPICModel
 
@@ -17,7 +18,6 @@ from inversion_fbpic.utils import distributions
 
 from beamphysics import ParticleGroup
 
-_MC2_EV = m_e * c**2 / e
 _ELECTRONS_PER_MACROPARTICLE = 1.0e3
 
 
@@ -28,9 +28,9 @@ def _particle_group(n=3000, seed=0, uz_mean=150.0, uz_std=30.0) -> ParticleGroup
             "x": rng.normal(1.0e-6, 3.0e-6, n),
             "y": rng.normal(0.0, 1.5e-6, n),
             "z": rng.normal(0.003, 4.0e-6, n),
-            "px": rng.normal(0.5, 2.0, n) * _MC2_EV,
-            "py": rng.normal(0.0, 1.0, n) * _MC2_EV,
-            "pz": rng.normal(uz_mean, uz_std, n) * _MC2_EV,
+            "px": rng.normal(0.5, 2.0, n) * ELECTRON_MC2_EV,
+            "py": rng.normal(0.0, 1.0, n) * ELECTRON_MC2_EV,
+            "pz": rng.normal(uz_mean, uz_std, n) * ELECTRON_MC2_EV,
             "t": numpy.zeros(n),
             "status": numpy.ones(n, dtype=int),
             "weight": numpy.full(n, _ELECTRONS_PER_MACROPARTICLE * e),
@@ -48,7 +48,15 @@ def descriptor_model(simulator) -> LUMEFBPICModel:
 def _reference(pg, uz_min=30.0, central_fraction=0.95) -> dict[str, float]:
     """The descriptor computed directly with the library, as `build_dataset.py` would."""
     phase_space = numpy.stack(
-        [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
+        [
+            pg.x,
+            pg.px / ELECTRON_MC2_EV,
+            pg.y,
+            pg.py / ELECTRON_MC2_EV,
+            pg.z,
+            pg.pz / ELECTRON_MC2_EV,
+        ],
+        axis=-1,
     )
     weights = numpy.asarray(pg.weight) / e
     phase_space, weights = distributions.select_by_uz(
@@ -95,7 +103,7 @@ def test_charge_is_the_selected_weights_in_picocoulombs(descriptor_model, simula
         "descriptor_total_beam_charge_pc"
     ]
 
-    selected = numpy.count_nonzero(numpy.asarray(pg.pz) / _MC2_EV >= 30.0)
+    selected = numpy.count_nonzero(numpy.asarray(pg.pz) / ELECTRON_MC2_EV >= 30.0)
     assert charge == pytest.approx(_reference(pg)["total_beam_charge_pc"], rel=1e-12)
     assert (
         0 < charge <= selected * _ELECTRONS_PER_MACROPARTICLE * e * 1e12

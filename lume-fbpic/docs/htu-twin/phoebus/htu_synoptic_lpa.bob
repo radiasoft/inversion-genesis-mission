@@ -2,7 +2,7 @@
 <display version="2.0.0">
   <name>HTU Twin Synoptic</name>
   <width>1500</width>
-  <height>1004</height>
+  <height>1064</height>
   <widget type="label" version="2.0.0">
     <name>lbl_HTU transport twin — synoptic (click an element for controls)_30</name>
     <text>HTU transport twin — synoptic (click an element for controls)</text>
@@ -3067,14 +3067,14 @@
     <x>30</x>
     <y>300</y>
     <width>900</width>
-    <height>640</height>
+    <height>700</height>
     <tab_width>150</tab_width>
     <tab_height>30</tab_height>
   </widget>
   <widget type="rectangle" version="2.0.0">
     <name>lpa_strip_rule</name>
     <x>30</x>
-    <y>962</y>
+    <y>1022</y>
     <width>1440</width>
     <height>1</height>
     <line_width>0</line_width>
@@ -3086,7 +3086,7 @@
     <name>lpa_strip_title</name>
     <text>LPA bunch (twin source):</text>
     <x>30</x>
-    <y>968</y>
+    <y>1028</y>
     <width>190</width>
     <height>24</height>
     <font>
@@ -3097,7 +3097,7 @@
     <name>lpa_strip_run_label</name>
     <text>Run:</text>
     <x>225</x>
-    <y>968</y>
+    <y>1028</y>
     <width>40</width>
     <height>24</height>
   </widget>
@@ -3105,7 +3105,7 @@
     <name>lpa_strip_run</name>
     <pv_name>pva://HTU:SIM:LPA_Archive</pv_name>
     <x>267</x>
-    <y>968</y>
+    <y>1028</y>
     <width>170</width>
     <height>24</height>
     <items_from_pv>true</items_from_pv>
@@ -3114,7 +3114,7 @@
     <name>lpa_strip_label0</name>
     <text>Energy [MeV]</text>
     <x>453</x>
-    <y>968</y>
+    <y>1028</y>
     <width>90</width>
     <height>24</height>
   </widget>
@@ -3122,7 +3122,7 @@
     <name>lpa_strip_value0</name>
     <pv_name>pva://HTU:SIM:Source_Energy_MeV</pv_name>
     <x>543</x>
-    <y>968</y>
+    <y>1028</y>
     <width>70</width>
     <height>24</height>
     <precision>2</precision>
@@ -3133,7 +3133,7 @@
     <name>lpa_strip_label1</name>
     <text>Spread [%]</text>
     <x>627</x>
-    <y>968</y>
+    <y>1028</y>
     <width>80</width>
     <height>24</height>
   </widget>
@@ -3141,7 +3141,7 @@
     <name>lpa_strip_value1</name>
     <pv_name>pva://HTU:SIM:Source_EnergySpread_pct</pv_name>
     <x>707</x>
-    <y>968</y>
+    <y>1028</y>
     <width>60</width>
     <height>24</height>
     <precision>1</precision>
@@ -3152,7 +3152,7 @@
     <name>lpa_strip_label2</name>
     <text>Charge [pC]</text>
     <x>781</x>
-    <y>968</y>
+    <y>1028</y>
     <width>85</width>
     <height>24</height>
   </widget>
@@ -3160,7 +3160,7 @@
     <name>lpa_strip_value2</name>
     <pv_name>pva://HTU:SIM:Source_Charge_pC</pv_name>
     <x>866</x>
-    <y>968</y>
+    <y>1028</y>
     <width>70</width>
     <height>24</height>
     <precision>1</precision>
@@ -3171,7 +3171,7 @@
     <name>lpa_strip_label3</name>
     <text>Macroparticles</text>
     <x>950</x>
-    <y>968</y>
+    <y>1028</y>
     <width>100</width>
     <height>24</height>
   </widget>
@@ -3179,7 +3179,7 @@
     <name>lpa_strip_value3</name>
     <pv_name>pva://HTU:SIM:Source_NumParticles</pv_name>
     <x>1050</x>
-    <y>968</y>
+    <y>1028</y>
     <width>70</width>
     <height>24</height>
     <precision>0</precision>
@@ -3198,7 +3198,7 @@
     </actions>
     <text>LPA bunch...</text>
     <x>1134</x>
-    <y>967</y>
+    <y>1027</y>
     <width>130</width>
     <height>26</height>
   </widget>
@@ -3206,7 +3206,7 @@
     <name>lpa_strip_status_label</name>
     <text>Twin:</text>
     <x>1288</x>
-    <y>968</y>
+    <y>1028</y>
     <width>45</width>
     <height>24</height>
     <font>
@@ -3217,7 +3217,7 @@
     <name>lpa_strip_status_led</name>
     <pv_name>pva://HTU:SIM:STATUS</pv_name>
     <x>1336</x>
-    <y>970</y>
+    <y>1030</y>
     <width>20</width>
     <height>20</height>
     <off_color>
@@ -3231,7 +3231,7 @@
     <name>lpa_strip_status_text</name>
     <pv_name>pva://HTU:SIM:STATUS</pv_name>
     <x>1362</x>
-    <y>968</y>
+    <y>1028</y>
     <width>90</width>
     <height>24</height>
   </widget>

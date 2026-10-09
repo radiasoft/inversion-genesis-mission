@@ -22,7 +22,8 @@ import typing
 import warnings
 
 import numpy
-from scipy.constants import c, e, m_e
+from scipy.constants import c
+from lume_fbpic.simulator import ELECTRON_MC2_EV
 from scipy.optimize import minimize
 from scipy.stats import norm
 
@@ -36,9 +37,6 @@ from lume_fbpic.model import LUMEFBPICModel
 from beamphysics import ParticleGroup
 
 DEFAULT_SELECTOR_NAME = "LPA_Archive"
-
-# Electron rest energy [eV]; ParticleGroup momenta are in eV/c.
-_MC2_EV = m_e * c**2 / e
 
 
 class ArchiveSelector(FinalParticlesMixIn, LUMEModel):
@@ -264,9 +262,9 @@ def particles_from_descriptor(
             "x": sample[:, 0],
             "y": sample[:, 2],
             "z": z,
-            "px": sample[:, 1] * _MC2_EV,
-            "py": sample[:, 3] * _MC2_EV,
-            "pz": uz * _MC2_EV,
+            "px": sample[:, 1] * ELECTRON_MC2_EV,
+            "py": sample[:, 3] * ELECTRON_MC2_EV,
+            "pz": uz * ELECTRON_MC2_EV,
             "t": -z / c,
             "status": numpy.ones(n_particles, dtype=int),
             "weight": numpy.full(n_particles, charge / n_particles),

@@ -44,16 +44,14 @@ import typing
 
 import numpy
 import torch
-from scipy.constants import c, e, m_e
+from scipy.constants import c
+from lume_fbpic.simulator import ELECTRON_MC2_EV
 
 from lume.model import LUMEModel
 from lume.staged_model import InitialParticlesMixIn
 
 
 from beamphysics import ParticleGroup
-
-# Electron rest energy [eV]; ParticleGroup momenta are in eV/c.
-_MC2_EV = m_e * c**2 / e
 
 # Names of the twin's source-parameter variables.
 _SOURCE_PREFIX = "Source_"
@@ -115,10 +113,16 @@ class TwinStage(InitialParticlesMixIn, LUMEModel):
     ) -> None:
         super().__init__()
         if model is None:
-            geometries = binned_screen_geometries(screen_binning) if screen_binning != 1 else None
+            geometries = (
+                binned_screen_geometries(screen_binning)
+                if screen_binning != 1
+                else None
+            )
             model = _import_htu().build_htu_model(screen_geometries=geometries)
         elif screen_binning != 1:
-            raise ValueError("screen_binning only applies when the stage builds the twin model")
+            raise ValueError(
+                "screen_binning only applies when the stage builds the twin model"
+            )
         self.screen_binning = screen_binning
         self._model = model
         self.central_fraction = central_fraction
@@ -134,9 +138,13 @@ class TwinStage(InitialParticlesMixIn, LUMEModel):
             for name, variable in model.supported_variables.items()
         }
         self._drift_m: float | None = None
-        self._tracking_pending = False  # a bunch was injected and the twin not yet re-tracked
+        self._tracking_pending = (
+            False  # a bunch was injected and the twin not yet re-tracked
+        )
         self._particles: ParticleGroup | None = None
-        self._injected_beam = None  # the beam object put into the twin by the last injection
+        self._injected_beam = (
+            None  # the beam object put into the twin by the last injection
+        )
         simulator = model.simulator
         self._original_beam = simulator.initial_beam_distribution.clone()
         self._original_source_params = dataclasses.replace(simulator.source_params)
@@ -168,13 +176,17 @@ class TwinStage(InitialParticlesMixIn, LUMEModel):
         htu_model = _import_htu()
         from cheetah import ParticleBeam
 
-        if float(_spread(particles.t)) == 0.0:  # a lab snapshot: all particles at one instant
+        if (
+            float(_spread(particles.t)) == 0.0
+        ):  # a lab snapshot: all particles at one instant
             particles = bunch_frame_particles(
                 particles, central_fraction=self.central_fraction, uz_min=self.uz_min
             )
         drift_m = None
         if self.plasma_exit_z is not None:
-            z_mean = float(numpy.average(particles.z, weights=numpy.abs(particles.weight)))
+            z_mean = float(
+                numpy.average(particles.z, weights=numpy.abs(particles.weight))
+            )
             drift_m = float(self.plasma_exit_z) - z_mean
             if drift_m > 0:
                 warnings.warn(
@@ -187,10 +199,13 @@ class TwinStage(InitialParticlesMixIn, LUMEModel):
         dtype = simulator.beam_distribution.particles.dtype
         weights = particles.weight
         energy = torch.tensor(
-            float((particles.energy * abs(weights)).sum() / abs(weights).sum()), dtype=dtype
+            float((particles.energy * abs(weights)).sum() / abs(weights).sum()),
+            dtype=dtype,
         )
         # Everything that can raise runs before any state is touched.
-        beam = ParticleBeam.from_openpmd_particlegroup(particles, energy=energy, dtype=dtype)
+        beam = ParticleBeam.from_openpmd_particlegroup(
+            particles, energy=energy, dtype=dtype
+        )
         moments = beam_moments(particles)
         source_params = dataclasses.replace(
             simulator.source_params,
@@ -235,7 +250,9 @@ class TwinStage(InitialParticlesMixIn, LUMEModel):
         simulator = self._model.simulator
         simulator.source_params = dataclasses.replace(self._original_source_params)
         simulator.initial_beam_distribution = self._original_beam.clone()
-        simulator.initial_beam_distribution_charge = self._original_beam.particle_charges.clone()
+        simulator.initial_beam_distribution_charge = (
+            self._original_beam.particle_charges.clone()
+        )
         self._model.reset()  # clones the (restored) initial beam, re-tracks, refreshes the state
         self._tracking_pending = False
         self._particles = None
@@ -284,24 +301,30 @@ def beam_moments(particles: ParticleGroup) -> dict[str, float]:
 
     energy = numpy.asarray(particles.energy, dtype=numpy.float64)
     mean_energy = mean(energy)
-    p0c = float(numpy.sqrt(mean_energy**2 - _MC2_EV**2))
+    p0c = float(numpy.sqrt(mean_energy**2 - ELECTRON_MC2_EV**2))
     moments = {
         "energy_mev": mean_energy / 1.0e6,
-        "energy_spread_pct": 100.0 * float(numpy.sqrt(mean((energy - mean_energy) ** 2))) / mean_energy,
+        "energy_spread_pct": 100.0
+        * float(numpy.sqrt(mean((energy - mean_energy) ** 2)))
+        / mean_energy,
         "charge_pc": float(numpy.sum(numpy.abs(particles.weight))) * 1.0e12,
         "num_particles": float(len(weights)),
     }
     for plane in ("x", "y"):
         position = numpy.asarray(getattr(particles, plane), dtype=numpy.float64)
-        angle = numpy.asarray(getattr(particles, f"p{plane}"), dtype=numpy.float64) / p0c
+        angle = (
+            numpy.asarray(getattr(particles, f"p{plane}"), dtype=numpy.float64) / p0c
+        )
         centroid, mean_angle = mean(position), mean(angle)
         dx, da = position - centroid, angle - mean_angle
         sxx, sxa, saa = mean(dx * dx), mean(dx * da), mean(da * da)
         emittance = float(numpy.sqrt(max(sxx * saa - sxa * sxa, 0.0)))
-        beta, alpha = (sxx / emittance, -sxa / emittance) if emittance > 0 else (0.0, 0.0)
+        beta, alpha = (
+            (sxx / emittance, -sxa / emittance) if emittance > 0 else (0.0, 0.0)
+        )
         moments[f"beta_{plane}_mm"] = beta * 1.0e3
         moments[f"alpha_{plane}"] = alpha
-        moments[f"norm_emit_{plane}_um"] = emittance * (p0c / _MC2_EV) * 1.0e6
+        moments[f"norm_emit_{plane}_um"] = emittance * (p0c / ELECTRON_MC2_EV) * 1.0e6
         moments[f"{plane}_um"] = centroid * 1.0e6
         moments[f"{plane}p_mrad"] = mean_angle * 1.0e3
     return moments
@@ -371,9 +394,13 @@ def bunch_frame_particles(
     Raises:
         ValueError: If fewer than two particles remain after the selection.
     """
-    x, y, z = (numpy.asarray(getattr(particles, name), dtype=numpy.float64) for name in "xyz")
+    x, y, z = (
+        numpy.asarray(getattr(particles, name), dtype=numpy.float64) for name in "xyz"
+    )
     ux, uy, uz = (
-        numpy.asarray(getattr(particles, f"p{name}"), dtype=numpy.float64) / _MC2_EV for name in "xyz"
+        numpy.asarray(getattr(particles, f"p{name}"), dtype=numpy.float64)
+        / ELECTRON_MC2_EV
+        for name in "xyz"
     )
     weight = numpy.asarray(particles.weight, dtype=numpy.float64)
 
@@ -424,11 +451,13 @@ def drift_particles(particles: ParticleGroup, length: float) -> ParticleGroup:
     `Drift` with `tracking_method="drift_kick_drift"`; there are no fields, no space charge and no
     scattering. Momenta, charges and `status` are unchanged.
     """
-    px, py, pz = (numpy.asarray(getattr(particles, f"p{n}"), dtype=numpy.float64) for n in "xyz")
+    px, py, pz = (
+        numpy.asarray(getattr(particles, f"p{n}"), dtype=numpy.float64) for n in "xyz"
+    )
     energy = numpy.asarray(particles.energy, dtype=numpy.float64)
     weight = numpy.abs(numpy.asarray(particles.weight, dtype=numpy.float64))
     e0 = float(numpy.average(energy, weights=weight))
-    p0c = float(numpy.sqrt(e0**2 - _MC2_EV**2))
+    p0c = float(numpy.sqrt(e0**2 - ELECTRON_MC2_EV**2))
     return ParticleGroup(
         data={
             "x": numpy.asarray(particles.x, dtype=numpy.float64) + length * px / pz,
@@ -437,7 +466,8 @@ def drift_particles(particles: ParticleGroup, length: float) -> ParticleGroup:
             "px": px,
             "py": py,
             "pz": pz,
-            "t": numpy.asarray(particles.t, dtype=numpy.float64) + (length / c) * (energy / pz - e0 / p0c),
+            "t": numpy.asarray(particles.t, dtype=numpy.float64)
+            + (length / c) * (energy / pz - e0 / p0c),
             "status": numpy.asarray(particles.status),
             "weight": numpy.asarray(particles.weight, dtype=numpy.float64),
             "species": particles.species,
@@ -468,6 +498,5 @@ def _import_htu():
 
 
 def _spread(values) -> float:
-    import numpy
     values = numpy.asarray(values, dtype=numpy.float64)
     return float(values.max() - values.min()) if len(values) else 0.0

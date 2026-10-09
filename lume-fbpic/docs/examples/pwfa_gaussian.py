@@ -141,7 +141,9 @@ def plot_results(
 
     def field_map(name, data, label, cmap, norm=None):
         figure, axis = pyplot.subplots()
-        image = axis.imshow(data, extent=extent, cmap=cmap, origin="lower", norm=norm, aspect="auto")
+        image = axis.imshow(
+            data, extent=extent, cmap=cmap, origin="lower", norm=norm, aspect="auto"
+        )
         axis.set(xlabel=r"$k_p \zeta$", ylabel=r"$k_p r$")
         figure.colorbar(image, ax=axis, orientation="horizontal", label=label)
         figure.tight_layout()
@@ -150,10 +152,18 @@ def plot_results(
         pyplot.close(figure)
 
     def centred(data):
-        return TwoSlopeNorm(0.0, vmin=min(data.min(), -1e-30), vmax=max(data.max(), 1e-30))
+        return TwoSlopeNorm(
+            0.0, vmin=min(data.min(), -1e-30), vmax=max(data.max(), 1e-30)
+        )
 
     field_map("electron_density", snapshot["n_e"], r"$n_e$ [cm$^{-3}$]", "viridis")
-    field_map("longitudinal_field", snapshot["E_z"], r"$E_z$ [GV/m]", "RdBu", centred(snapshot["E_z"]))
+    field_map(
+        "longitudinal_field",
+        snapshot["E_z"],
+        r"$E_z$ [GV/m]",
+        "RdBu",
+        centred(snapshot["E_z"]),
+    )
     field_map(
         "transverse_force",
         snapshot["F_r"],
@@ -183,16 +193,23 @@ def _read_last_dump(directory: pathlib.Path) -> dict:
         mesh = step["fields/E"]
         dr, dz = mesh.attrs["gridSpacing"]
         z0 = mesh.attrs["gridGlobalOffset"][1]
-        e_z, e_r, b_t = step["fields/E/z"][0], step["fields/E/r"][0], step["fields/B/t"][0]
+        e_z, e_r, b_t = (
+            step["fields/E/z"][0],
+            step["fields/E/r"][0],
+            step["fields/B/t"][0],
+        )
         rho = step["fields/rho"][0]
         z_driver = numpy.average(
-            step["particles/driver/position/z"][:], weights=step["particles/driver/weighting"][:]
+            step["particles/driver/position/z"][:],
+            weights=step["particles/driver/weighting"][:],
         )
     n_r, n_z = e_z.shape
     return {
         "zeta": z0 + dz * numpy.arange(n_z) - z_driver,
         "r": dr * (numpy.arange(n_r) + 0.5),
-        "n_e": -rho / e / 100.0**3,  # rho is the charge density of everything: plasma and bunches
+        "n_e": -rho
+        / e
+        / 100.0**3,  # rho is the charge density of everything: plasma and bunches
         "E_z": e_z * 1.0e-9,
         "F_r": (e_r - c * b_t) * 1.0e-9,
     }
@@ -200,8 +217,11 @@ def _read_last_dump(directory: pathlib.Path) -> dict:
 
 if __name__ == "__main__":
     model = build_model()
-    model.simulator.configure()
-    model.set({"driver_charge": DRIVE_Q})  # set() applies the value, then runs the simulation
+    model.set(
+        {"driver_charge": DRIVE_Q}
+    )  # set() applies the value, then runs the simulation
     print(model.get(["charge_pc", "energy_mean_mev", "energy_std_mev"]))
-    for path in plot_results(model.simulator.working_directory, output=model.simulator.working_directory):
+    for path in plot_results(
+        model.simulator.working_directory, output=model.simulator.working_directory
+    ):
         print(f"wrote {path}")

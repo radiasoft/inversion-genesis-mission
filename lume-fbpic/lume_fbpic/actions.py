@@ -19,13 +19,18 @@ import typing
 import attrs
 import numpy
 from beamphysics.units import pmd_unit
-from scipy.constants import c, e, m_e
+from scipy.constants import e
 
 from lume.actions import Action, ReadOnlyActionMixin, WritableActionMixin
 from lume.variables import ParticleGroupVariable, ScalarVariable
 
 from lume_fbpic.pwfa_config import FlatTopBunch, GaussianBunch
-from lume_fbpic.simulator import BaseSimulator, FBPICSimulator, PWFASimulator
+from lume_fbpic.simulator import (
+    ELECTRON_MC2_EV,
+    BaseSimulator,
+    FBPICSimulator,
+    PWFASimulator,
+)
 
 from inversion_fbpic.lib.density_core import _DensityProfile
 from inversion_fbpic.utils.distributions import (
@@ -37,8 +42,6 @@ from inversion_fbpic.utils.distributions import (
     select_by_uz,
 )
 
-# Electron rest energy [eV]: converts a ParticleGroup's px/py/pz [eV/c] to normalized u = p/(m c).
-_MC2_EV = m_e * c**2 / e
 
 # Units of the statistics a simulator keeps in `stats`, by name.
 STAT_UNITS = {"charge_pc": "pC", "energy_mean_mev": "MeV", "energy_std_mev": "MeV"}
@@ -221,7 +224,7 @@ class LaserFieldAction(WritableActionMixin[FBPICSimulator], ScalarVariable):
         simulator.laser = attrs.evolve(laser, **changes)
 
 
-class MomentDescriptorAction(ReadOnlyActionMixin[FBPICSimulator], ScalarVariable):
+class MomentDescriptorAction(ReadOnlyActionMixin[BaseSimulator], ScalarVariable):
     """Read-only scalar: ONE feature of the moment descriptor of `simulator.final_particles`.
 
     The descriptor is `inversion_fbpic.utils.distributions.compute_moment_descriptor` -- the
@@ -244,7 +247,7 @@ class MomentDescriptorAction(ReadOnlyActionMixin[FBPICSimulator], ScalarVariable
     longitudinal_bins: int = LONGITUDINAL_PROFILE_BINS
     uz_min: float | None = 30.0
 
-    def _get(self, simulator: FBPICSimulator) -> typing.Any:
+    def _get(self, simulator: BaseSimulator) -> typing.Any:
         if simulator.final_particles is None:
             return simulator.stats.get(self.name, float("nan"))
         descriptor = _descriptor(
@@ -400,7 +403,7 @@ def _config_unit(config: typing.Any, field_name: str) -> str | None:
 
 
 def _descriptor(
-    simulator: FBPICSimulator,
+    simulator: BaseSimulator,
     uz_min: float | None,
     central_fraction: float | None,
     longitudinal_bins: int,
@@ -421,11 +424,11 @@ def _descriptor(
     phase_space = numpy.stack(
         [
             particles.x,
-            particles.px / _MC2_EV,
+            particles.px / ELECTRON_MC2_EV,
             particles.y,
-            particles.py / _MC2_EV,
+            particles.py / ELECTRON_MC2_EV,
             particles.z,
-            particles.pz / _MC2_EV,
+            particles.pz / ELECTRON_MC2_EV,
         ],
         axis=-1,
     )

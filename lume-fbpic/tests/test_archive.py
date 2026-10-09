@@ -10,7 +10,7 @@ import h5py
 import numpy
 import pytest
 
-from tests.downramp_actions import make_actions
+from downramp_actions import make_actions
 from lume_fbpic.actions import LaserFieldAction, make_descriptor_actions
 from lume_fbpic.model import LUMEFBPICModel, _read_output_values
 from lume_fbpic.simulator import FBPICSimulator
@@ -123,7 +123,7 @@ def test_restored_model_sees_the_archived_config(full_model, tmp_path):
 
     restored = LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True)
 
-    assert restored.get("laser_energy") == 6.0
+    assert restored.get(["laser_energy"])["laser_energy"] == 6.0
 
 
 def test_restored_model_returns_outputs_when_particles_were_saved(
@@ -167,8 +167,8 @@ def test_archive_stores_the_current_input_and_output_values(
     # the config holds the current input, not the 6.0 that ran
     assert (
         LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True).get(
-            "laser_energy"
-        )
+            ["laser_energy"]
+        )["laser_energy"]
         == 9.0
     )
 
@@ -183,8 +183,8 @@ def test_model_that_never_ran_stores_its_inputs_in_the_config_and_nan_outputs(
 
     assert (
         LUMEFBPICModel.from_archive(tmp_path / "m.h5", dummy_run=True).get(
-            "laser_energy"
-        )
+            ["laser_energy"]
+        )["laser_energy"]
         == 4.0
     )
     assert math.isnan(values["charge_pc"])
@@ -273,6 +273,38 @@ def test_an_action_with_an_unstorable_parameter_cannot_be_archived(simulator, tm
         model.archive(tmp_path / "m.h5")
 
 
+def test_a_failed_archive_leaves_no_file_and_an_existing_one_as_it_was(
+    simulator, tmp_path, mocker
+):
+    class ListAction(LaserFieldAction):
+        tags: list[str] = []
+
+    bad = LUMEFBPICModel(
+        simulator,
+        [ListAction(name="x", field_name="waist", unit="m", tags=["a"])],
+        dummy_run=True,
+    )
+    path = tmp_path / "m.h5"
+
+    with pytest.raises(TypeError):
+        bad.archive(path)
+    assert not path.exists()  # nothing was written
+
+    path.write_bytes(b"an earlier archive")
+    with pytest.raises(TypeError):
+        bad.archive(path)
+    assert path.read_bytes() == b"an earlier archive"
+
+    good = LUMEFBPICModel(simulator, make_actions(simulator), dummy_run=True)
+    mocker.patch.object(good, "_archive_actions", side_effect=RuntimeError("midway"))
+    with pytest.raises(
+        RuntimeError, match="midway"
+    ):  # an error after the config is written
+        good.archive(path)
+    assert path.read_bytes() == b"an earlier archive"
+    assert [p.name for p in tmp_path.iterdir()] == ["m.h5"]  # no partial file either
+
+
 def test_outputs_recorded_in_the_simulators_stats_are_archived(full_model, tmp_path):
     full_model.set({"laser_energy": 4.0})
 
@@ -313,10 +345,11 @@ def test_loaded_model_serves_the_recorded_outputs_when_there_are_no_particles(
     )
 
 
-def test_recorded_outputs_go_stale_once_an_input_is_set(recorded_model):
+def test_recorded_outputs_stay_when_an_input_is_set(recorded_model):
     recorded_model.set({"laser_energy": 3.0})
 
-    assert math.isnan(recorded_model.get(["descriptor_mean_uz"])["descriptor_mean_uz"])
+    assert recorded_model.get(["laser_energy"])["laser_energy"] == 3.0
+    assert recorded_model.get(["descriptor_mean_uz"])["descriptor_mean_uz"] == 171.6
 
 
 def test_live_values_win_over_recorded_ones(recorded_model, particle_group):
@@ -336,19 +369,22 @@ def test_recorded_outputs_survive_archiving_again(recorded_model, tmp_path):
 
 def test_reset_restores_the_initial_config_without_running(recorded_model, mocker):
     run = mocker.patch.object(recorded_model.simulator, "run")
-    energy = recorded_model.get("laser_energy")
+    energy = recorded_model.get(["laser_energy"])["laser_energy"]
     recorded_model.set({"laser_energy": 9.0})
-    assert recorded_model.get("laser_energy") == 9.0
+    assert recorded_model.get(["laser_energy"])["laser_energy"] == 9.0
 
     recorded_model.reset()  # ActionModel.reset() would fail here: default_value is None
 
-    assert recorded_model.get("laser_energy") == energy
+    assert recorded_model.get(["laser_energy"])["laser_energy"] == energy
     run.assert_not_called()
 
 
 def test_reset_brings_back_the_recorded_outputs(recorded_model):
     recorded_model.set({"laser_energy": 9.0})
-    assert math.isnan(recorded_model.get(["descriptor_mean_uz"])["descriptor_mean_uz"])
+    recorded_model.simulator.stats = {
+        "descriptor_mean_uz": 1.0
+    }  # a run replaced the results
+    assert recorded_model.get(["descriptor_mean_uz"])["descriptor_mean_uz"] == 1.0
 
     recorded_model.reset()
 

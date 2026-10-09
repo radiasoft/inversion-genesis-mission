@@ -18,8 +18,10 @@ here.
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import hashlib
+import os
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -56,7 +58,7 @@ class InputFile:
     """An input file of a config: its basename and md5, and where the bytes are.
 
     The bytes are on disk at `path`, or in memory as `data` for a file that was embedded in an
-    archive and has not been written out.
+    archive and has not been written out. `extracted` is where `write_to()` last wrote them.
     """
 
     basename: str
@@ -64,6 +66,7 @@ class InputFile:
     size: int
     path: Path | None = None
     data: numpy.ndarray | None = None
+    extracted: Path | None = None
 
     def copy_into(self, dataset: h5py.Dataset) -> None:
         """Fill `dataset` (uint8, `size` long) with the bytes of the file."""
@@ -84,7 +87,8 @@ class InputFile:
         target.parent.mkdir(parents=True, exist_ok=True)
         if not target.is_file() or checksum(target) != self.md5:
             target.write_bytes(self.data.tobytes())
-        return target.resolve()
+        self.extracted = target.resolve()
+        return self.extracted
 
 
 @dataclass
@@ -99,6 +103,25 @@ class InputRef:
     @property
     def key(self) -> tuple[str, int | None, str]:
         return (self.config, self.index, self.field)
+
+
+@contextlib.contextmanager
+def atomic_h5(path: Path | str) -> typing.Iterator[h5py.File]:
+    """An HDF5 file open for writing at `path`.
+
+    It is written to a temporary file next to `path` and moved into place when the block ends
+    without an error. After an error `path` is as it was (a file that existed stays as it was)
+    and no partial file is left.
+    """
+    path = Path(path)
+    temporary = path.with_name(path.name + ".partial")
+    try:
+        with h5py.File(temporary, "w") as handle:
+            yield handle
+        os.replace(temporary, path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def checksum(path: Path | str) -> str:

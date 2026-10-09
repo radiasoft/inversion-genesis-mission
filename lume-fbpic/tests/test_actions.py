@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from tests.downramp_actions import make_actions
+from downramp_actions import make_actions
 from lume_fbpic.actions import HyperparameterFieldAction, LaserFieldAction
 
 

@@ -14,11 +14,12 @@ holds the final particles, otherwise the recorded output values (as in the archi
 handler for a particle group.
 
 The model is always loaded with `dummy_run=True`, so a put can change a parameter but can never
-start a simulation. Input actions are not served unless `--include-inputs` is given; putting one
-makes the recorded outputs stale (they read NaN until `RESET`).
+start a simulation. The input actions (laser energy, ...) are served read-only, or read-write with
+`--include-inputs`; a put then changes the model's config only, and the outputs stay the recorded
+results.
 
 With `--twin` the archive's final particles are the source of the HTU transport twin
-(`build_chain` in `docs/htu-twin/twin/twin.py`): the twin's own variables (magnets, steering, chicane, slit,
+(`build_chain` in `docs/htu-twin/twin/twin_stage.py`): the twin's own variables (magnets, steering, chicane, slit,
 magspec, ...) are served read-write and re-track on every put, its `Source_*` variables read the
 LPA bunch read-only, and the archive's outputs are served read-only next to them. The archive must
 hold the final particles (`save_final_particles=True`) unless `--synthesize-bunch` is given (below).
@@ -39,7 +40,7 @@ An archive without final particles (one reconstructed from a dataset, as
 variances and main correlations, not its tails. The served descriptor values stay the recorded ones.
 
 Needs `lume-pva` (not a dependency of this package); it is imported only when serving. Run it from
-this directory or by path; it imports `selector.py` beside it and the `lume_fbpic` package.
+this directory or by path; it imports `archive_selector.py` beside it and the `lume_fbpic` package.
 """
 
 from __future__ import annotations
@@ -51,7 +52,7 @@ from pathlib import Path
 import typing
 
 from lume_fbpic.model import LUMEFBPICModel
-from selector import DEFAULT_SELECTOR_NAME, ArchiveSelector
+from archive_selector import DEFAULT_SELECTOR_NAME, ArchiveSelector
 
 
 def build_config(
@@ -63,10 +64,14 @@ def build_config(
     serve_always: set[str] | None = None,
     wait_for_puts: bool = False,
 ) -> dict[str, typing.Any]:
-    """The `lume_pva.runner.Runner` config for `model`: read-only variables only, unless
-    `include_inputs`, in which case the writable ones are served read-write. Variables named in
-    `serve_always` are served in their natural mode either way. `wait_for_puts` makes a put
-    acknowledge only after the model has finished (`PutMode.Complete`)."""
+    """The `lume_pva.runner.Runner` config for `model`: every variable of the model, with the
+    writable ones served read-only, unless `include_inputs`, in which case they are served
+    read-write. Variables named in `serve_always` are served in their natural mode either way.
+    `wait_for_puts` makes a put acknowledge only after the model has finished
+    (`PutMode.Complete`).
+
+    The config holds every variable of the model: the `Runner` of the `lume-pva` the twin pins
+    looks up each of them in it."""
     runner = _import_runner()
     config = runner.Runner.generate_config(
         model,
@@ -75,9 +80,12 @@ def build_config(
     )
     always = serve_always or set()
     config["variables"] = {
-        name: entry
+        name: (
+            entry
+            if include_inputs or name in always or str(entry["mode"]) == "ro"
+            else {**entry, "mode": type(entry["mode"]).RO}
+        )
         for name, entry in config["variables"].items()
-        if include_inputs or name in always or str(entry["mode"]) == "ro"
     }
     if protocol:
         config["protocol"] = list(protocol)
@@ -127,7 +135,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--include-inputs",
         action="store_true",
-        help="also serve the writable actions (puts change the config but never run it)",
+        help="serve the writable actions read-write, not read-only (a put changes the config but "
+        "never runs it, and the outputs stay the recorded results)",
     )
     parser.add_argument(
         "--protocol",
@@ -216,7 +225,7 @@ def main(argv: list[str] | None = None) -> None:
     serve_always = {args.selector_name}
     if args.twin:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "twin"))
-        from twin import build_chain
+        from twin_stage import build_chain
 
         try:
             served = build_chain(selector, screen_binning=args.screen_binning)

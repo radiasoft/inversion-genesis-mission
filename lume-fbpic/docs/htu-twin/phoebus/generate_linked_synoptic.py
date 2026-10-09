@@ -42,6 +42,9 @@ from pathlib import Path
 # Phoebus's `rotation_step` enum, by ordinal: 0 none, 1 = 90 degrees, 2 = 180, 3 = 270.
 ROTATION_ORDINAL = {0.0: 0, 90.0: 1, 180.0: 2, 270.0: 3, -90.0: 3}
 
+CAMERA_TABS_HEIGHT = (
+    700  # the 680 px camera view plus room, so its bottom axis label is not clipped
+)
 STRIP_HEIGHT = 44
 LPA_DISPLAY = "lpa_bunch.bob"
 SELECTOR = "LPA_Archive"  # the enum PV `serve.py` serves, one option per archive
@@ -82,6 +85,12 @@ def build(twin_display_dir: Path, output_dir: Path | None = None) -> str:
     for file in root.iter("file"):
         if file.text and not file.text.startswith("$("):
             file.text = f"$(TWIN_DISPLAYS={default})/{file.text}"
+
+    for tabs in root.findall("widget"):
+        if tabs.findtext("name") == "CameraTabs":
+            growth = CAMERA_TABS_HEIGHT - int(tabs.findtext("height"))
+            tabs.find("height").text = str(CAMERA_TABS_HEIGHT)
+            root.find("height").text = str(int(root.findtext("height")) + growth)
 
     src_buttons = [
         w

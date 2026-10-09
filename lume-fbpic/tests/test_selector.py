@@ -1,4 +1,4 @@
-"""Tests for `ArchiveSelector` (docs/htu-twin/serving/selector.py)."""
+"""Tests for `ArchiveSelector` (docs/htu-twin/serving/archive_selector.py)."""
 
 from __future__ import annotations
 
@@ -6,18 +6,21 @@ import math
 
 import numpy
 import pytest
-from scipy.constants import c, e, m_e
+from scipy.constants import c, e
+from lume_fbpic.simulator import ELECTRON_MC2_EV
 
-from tests.downramp_actions import make_actions
+from downramp_actions import make_actions
 from lume_fbpic.actions import make_descriptor_actions
 from lume_fbpic.model import LUMEFBPICModel
-from selector import ArchiveSelector, _slice_charge_fractions, particles_from_descriptor
+from archive_selector import (
+    ArchiveSelector,
+    _slice_charge_fractions,
+    particles_from_descriptor,
+)
 
 from inversion_fbpic.utils import distributions
 
 from beamphysics import ParticleGroup
-
-_MC2_EV = m_e * c**2 / e
 
 
 def _bunch(
@@ -29,9 +32,9 @@ def _bunch(
             "x": rng.normal(0.0, 3.0e-6, n),
             "y": rng.normal(0.0, 1.5e-6, n),
             "z": rng.normal(0.003, 4.0e-6, n),
-            "px": rng.normal(0.0, 2.0, n) * _MC2_EV,
-            "py": rng.normal(0.0, 1.0, n) * _MC2_EV,
-            "pz": rng.normal(uz_mean, 30.0, n) * _MC2_EV,
+            "px": rng.normal(0.0, 2.0, n) * ELECTRON_MC2_EV,
+            "py": rng.normal(0.0, 1.0, n) * ELECTRON_MC2_EV,
+            "pz": rng.normal(uz_mean, 30.0, n) * ELECTRON_MC2_EV,
             "t": numpy.zeros(n),
             "status": numpy.ones(n, dtype=int),
             "weight": numpy.full(n, charge_pc * 1.0e-12 / n),
@@ -42,7 +45,15 @@ def _bunch(
 
 def _descriptor_outputs(pg) -> dict[str, float]:
     phase_space = numpy.stack(
-        [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
+        [
+            pg.x,
+            pg.px / ELECTRON_MC2_EV,
+            pg.y,
+            pg.py / ELECTRON_MC2_EV,
+            pg.z,
+            pg.pz / ELECTRON_MC2_EV,
+        ],
+        axis=-1,
     )
     descriptor = distributions.compute_moment_descriptor(
         phase_space, numpy.asarray(pg.weight) / e
@@ -126,19 +137,30 @@ def test_the_variables_are_the_active_runs_plus_the_selector(selector):
 
 
 def test_an_input_goes_to_the_active_run_only(selector):
-    other_energy = selector.models["run_b"].get("laser_energy")
+    other_energy = selector.models["run_b"].get(["laser_energy"])["laser_energy"]
 
     selector.set({"laser_energy": 3.3})
 
-    assert selector.models["run_a"].get("laser_energy") == 3.3
-    assert selector.models["run_b"].get("laser_energy") == other_energy
+    assert selector.models["run_a"].get(["laser_energy"])["laser_energy"] == 3.3
+    assert (
+        selector.models["run_b"].get(["laser_energy"])["laser_energy"] == other_energy
+    )
+
+
+def test_an_input_put_keeps_the_recorded_outputs_and_the_synthetic_bunch(selector):
+    before = float(selector.get(["descriptor_mean_uz"])["descriptor_mean_uz"])
+
+    selector.set({"laser_energy": 3.0})
+
+    assert selector.get(["descriptor_mean_uz"])["descriptor_mean_uz"] == before
+    assert selector.final_particles is not None  # the twin keeps its source
 
 
 def test_a_selection_and_an_input_can_be_set_together(selector):
     selector.set({"LPA_Archive": "run_b", "laser_energy": 4.4})
 
     assert selector.active == "run_b"
-    assert selector.models["run_b"].get("laser_energy") == 4.4
+    assert selector.models["run_b"].get(["laser_energy"])["laser_energy"] == 4.4
 
 
 def test_reset_makes_the_first_run_active_and_resets_every_run(selector):
@@ -148,7 +170,7 @@ def test_reset_makes_the_first_run_active_and_resets_every_run(selector):
     selector.reset()
 
     assert selector.active == "run_a"
-    assert selector.models["run_b"].get("laser_energy") != 9.0
+    assert selector.models["run_b"].get(["laser_energy"])["laser_energy"] != 9.0
     assert _charge(selector) == pytest.approx(200.0)
 
 
@@ -283,9 +305,9 @@ def _lab_snapshot(n=4000, seed=0) -> ParticleGroup:
             "x": rng.normal(0.0, 3.0e-6, n),
             "y": rng.normal(0.0, 1.5e-6, n),
             "z": rng.normal(0.003, 4.0e-6, n),
-            "px": rng.normal(0.0, 2.0, n) * _MC2_EV,
-            "py": rng.normal(0.0, 1.0, n) * _MC2_EV,
-            "pz": rng.normal(150.0, 40.0, n) * _MC2_EV,
+            "px": rng.normal(0.0, 2.0, n) * ELECTRON_MC2_EV,
+            "py": rng.normal(0.0, 1.0, n) * ELECTRON_MC2_EV,
+            "pz": rng.normal(150.0, 40.0, n) * ELECTRON_MC2_EV,
             "t": numpy.zeros(n),
             "status": numpy.ones(n, dtype=int),
             "weight": numpy.full(n, 1.0e3 * e),
@@ -296,7 +318,15 @@ def _lab_snapshot(n=4000, seed=0) -> ParticleGroup:
 
 def _descriptor_of(pg) -> dict[str, float]:
     phase_space = numpy.stack(
-        [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
+        [
+            pg.x,
+            pg.px / ELECTRON_MC2_EV,
+            pg.y,
+            pg.py / ELECTRON_MC2_EV,
+            pg.z,
+            pg.pz / ELECTRON_MC2_EV,
+        ],
+        axis=-1,
     )
     return distributions.compute_moment_descriptor(
         phase_space, numpy.asarray(pg.weight) / e
@@ -305,7 +335,15 @@ def _descriptor_of(pg) -> dict[str, float]:
 
 def _phase_space(pg):
     return numpy.stack(
-        [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
+        [
+            pg.x,
+            pg.px / ELECTRON_MC2_EV,
+            pg.y,
+            pg.py / ELECTRON_MC2_EV,
+            pg.z,
+            pg.pz / ELECTRON_MC2_EV,
+        ],
+        axis=-1,
     )
 
 
@@ -342,7 +380,7 @@ def test_a_synthetic_bunch_is_in_the_bunch_frame_with_equal_charges():
     assert numpy.allclose(weight, weight[0])
     assert weight.sum() == pytest.approx(descriptor["total_beam_charge_pc"] * 1e-12)
     assert (
-        numpy.asarray(synthetic.pz).min() / _MC2_EV >= 1.0
+        numpy.asarray(synthetic.pz).min() / ELECTRON_MC2_EV >= 1.0
     )  # no non-physical negative energies
 
 
@@ -372,7 +410,7 @@ def test_energy_rises_along_z_when_the_descriptors_bins_do():
     synthetic = particles_from_descriptor(descriptor, n_particles=40_000, seed=0)
 
     z = numpy.asarray(synthetic.z)
-    uz = numpy.asarray(synthetic.pz) / _MC2_EV
+    uz = numpy.asarray(synthetic.pz) / ELECTRON_MC2_EV
     assert (
         numpy.corrcoef(z, uz)[0, 1] > 0.6
     )  # the head (larger z) carries the high energies

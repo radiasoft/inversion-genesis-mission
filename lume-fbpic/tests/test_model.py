@@ -6,7 +6,7 @@ import pytest
 
 from lume.exceptions import ReadOnlyError
 
-from tests.downramp_actions import make_actions
+from downramp_actions import make_actions
 from lume_fbpic.model import LUMEFBPICModel
 
 
@@ -21,7 +21,7 @@ def test_dummy_run_set_updates_parameter_without_running(model, simulator, mocke
     run_mock = mocker.patch.object(simulator, "run")
     model.set({"laser_energy": 6.0})
 
-    assert model.get("laser_energy") == 6.0
+    assert model.get(["laser_energy"])["laser_energy"] == 6.0
     run_mock.assert_not_called()
 
 
@@ -34,6 +34,18 @@ def test_set_runs_simulator_after_updating_parameter(simulator, mocker):
     model.set({"laser_energy": 6.0})
 
     assert seen == [6.0]  # run() saw the already-updated laser
+
+
+def test_set_configures_an_unconfigured_simulator_and_runs_it(simulator, mocker):
+    model = LUMEFBPICModel(simulator, make_actions(simulator))
+    run_simulation = mocker.patch.object(simulator, "run_simulation")
+    mocker.patch.object(simulator, "load_results")
+    assert simulator.configured is False
+
+    model.set({"laser_energy": 6.0})
+
+    assert simulator.configured is True
+    run_simulation.assert_called_once()
 
 
 def test_read_only_variable_cannot_be_set(model):
