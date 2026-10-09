@@ -5,8 +5,6 @@ at the start of the line and the twin tracks it through the magnets and screens.
 LPA archives can be served as EPICS PVs and watched in Phoebus; choosing another archive changes
 the twin's source.
 
-Serving needs `lume-pva`.
-
 ## How the pieces fit
 
 An LPA run is an archive (`LUMEFBPICModel.archive()`): the config, the action values and, if saved,
@@ -47,16 +45,41 @@ displays in `phoebus/` are laid out for those PVs.
   and run selector, and `lpa_bunch.bob` showing the bunch, the 33 descriptor values and the run
   statistics. Two scripts generate them, so do not edit the `.bob` files; see its README.
 
-## Run the twin
+## Install
 
-All commands are run from the `lume-fbpic` directory.
+You need Python 3.11 to 3.13, git, an MPI library (`fbpic` needs `mpi4py`) and a Phoebus 5.x build.
+Run these from the repository root:
 
 ```bash
-python docs/htu-twin/twin/initial_sample_archives.py      # writes ./initial_sample_archives
-python docs/htu-twin/serving/serve.py initial_sample_archives --twin --synthesize-bunch
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -e lpa/Simulation_FBPIC      # inversion_fbpic, with fbpic
+pip install -e lume-fbpic                # lume_fbpic
+pip install -e geecs-lume-twin           # the twin (htu), with Cheetah, lume-pva and p4p
 ```
 
-Then open the displays in Phoebus (see `phoebus/README.md`).
+The twin installs the `lume-pva` commit it pins (from GitHub), replacing any other `lume-pva` in the
+environment. That version needs `serve.py --include-inputs` (below).
+
+## Run the twin
+
+From the repository root, with the environment active:
+
+```bash
+cd lume-fbpic
+python docs/htu-twin/twin/initial_sample_archives.py      # writes ./initial_sample_archives
+python docs/htu-twin/serving/serve.py initial_sample_archives --twin --synthesize-bunch --include-inputs
+```
+
+Wait for `serving 131 variables` (a few seconds) and leave the terminal open. Then open the displays
+in Phoebus (see `phoebus/README.md`).
+
+`--include-inputs` also serves the writable LPA inputs (`laser_energy`, the Zernike coefficients,
+...), 17 more variables than without it. The `lume-pva` the twin pins fails with
+`KeyError: 'laser_energy'` when they are left out: it looks up every variable of the model in the
+served config. The server runs with `dummy_run=True`, so a put to one of these inputs changes the
+config only, and the recorded outputs read NaN until the `RESET` PV is used. A newer `lume-pva`
+(`0.5.1.dev4` was tested) does not need `--include-inputs`, and the server then serves 114 variables.
 
 - Archives are files or directories of `.h5` files; their file names (without `.h5`) are the options
   of the `HTU:SIM:LPA_Archive` selector PV. The first one is active at start.

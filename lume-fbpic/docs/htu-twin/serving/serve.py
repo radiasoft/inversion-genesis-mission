@@ -21,8 +21,9 @@ With `--twin` the archive's final particles are the source of the HTU transport 
 (`build_chain` in `docs/htu-twin/twin/twin.py`): the twin's own variables (magnets, steering, chicane, slit,
 magspec, ...) are served read-write and re-track on every put, its `Source_*` variables read the
 LPA bunch read-only, and the archive's outputs are served read-only next to them. The archive must
-hold the final particles (`save_final_particles=True`). `htu` (geecs-lume-twin) must be importable,
-and the default prefix becomes `HTU:SIM:`, the one the twin's Phoebus displays use.
+hold the final particles (`save_final_particles=True`) unless `--synthesize-bunch` is given (below).
+`htu` (geecs-lume-twin) must be importable, and the default prefix becomes `HTU:SIM:`, the one the
+twin's Phoebus displays use.
 
 A put is acknowledged at once and the served values update when the twin has re-tracked (about
 3 s), because Phoebus waits one second for a put reply on its UI thread and would otherwise report
@@ -114,7 +115,9 @@ def main(argv: list[str] | None = None) -> None:
         help="archives written by LUMEFBPICModel.archive(), or directories of them",
     )
     parser.add_argument(
-        "--selector-name", default=DEFAULT_SELECTOR_NAME, help="name of the archive-selector PV"
+        "--selector-name",
+        default=DEFAULT_SELECTOR_NAME,
+        help="name of the archive-selector PV",
     )
     parser.add_argument(
         "--prefix",
@@ -127,7 +130,10 @@ def main(argv: list[str] | None = None) -> None:
         help="also serve the writable actions (puts change the config but never run it)",
     )
     parser.add_argument(
-        "--protocol", nargs="+", choices=["ca", "pva"], help="protocols to serve (default both)"
+        "--protocol",
+        nargs="+",
+        choices=["ca", "pva"],
+        help="protocols to serve (default both)",
     )
     parser.add_argument(
         "--twin",
@@ -141,7 +147,10 @@ def main(argv: list[str] | None = None) -> None:
         "the recorded moment descriptor",
     )
     parser.add_argument(
-        "--bunch-particles", type=int, default=20_000, help="macroparticles of the synthetic bunch"
+        "--bunch-particles",
+        type=int,
+        default=20_000,
+        help="macroparticles of the synthetic bunch",
     )
     parser.add_argument(
         "--wait-for-puts",
@@ -171,12 +180,16 @@ def main(argv: list[str] | None = None) -> None:
         parser.error(str(error))
     stems = [path.stem for path in paths]
     if len(set(stems)) != len(stems):
-        parser.error(f"archive file names must be unique to name the runs: {sorted(stems)}")
+        parser.error(
+            f"archive file names must be unique to name the runs: {sorted(stems)}"
+        )
     models = {
         path.stem: LUMEFBPICModel.from_archive(path, dummy_run=True) for path in paths
     }
     if args.twin:
-        without = [name for name, m in models.items() if m.simulator.final_particles is None]
+        without = [
+            name for name, m in models.items() if m.simulator.final_particles is None
+        ]
         if without and not args.synthesize_bunch:
             parser.error(
                 f"--twin needs the final particles in every archive; without them: {without}. "
@@ -194,7 +207,9 @@ def main(argv: list[str] | None = None) -> None:
         selector = ArchiveSelector(
             models,
             selector_name=args.selector_name,
-            synthetic_bunch_particles=args.bunch_particles if args.synthesize_bunch else None,
+            synthetic_bunch_particles=(
+                args.bunch_particles if args.synthesize_bunch else None
+            ),
         )
     except ValueError as error:
         parser.error(str(error))

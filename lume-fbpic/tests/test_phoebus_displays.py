@@ -98,7 +98,27 @@ def twin_dir(tmp_path):
 
 
 def _files(root):
-    return [a.findtext("file") for a in root.iter("action") if a.get("type") == "open_display"]
+    return [
+        a.findtext("file")
+        for a in root.iter("action")
+        if a.get("type") == "open_display"
+    ]
+
+
+def _repository_with_twin(tmp_path, twin_dir):
+    """A repository (a directory with a `.git`) holding a copy of the stand-in twin synoptic in
+    `twin/display`; returns that directory and an output directory `docs/phoebus` beside it.
+    """
+    repository = tmp_path / "repository"
+    (repository / ".git").mkdir(parents=True)
+    twin = repository / "twin" / "display"
+    twin.mkdir(parents=True)
+    (twin / "htu_synoptic.bob").write_text(
+        (twin_dir / "htu_synoptic.bob").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    output = repository / "docs" / "phoebus"
+    output.mkdir(parents=True)
+    return twin, output
 
 
 # --- the LPA bunch display
@@ -114,20 +134,25 @@ def test_the_lpa_display_is_valid_xml_with_unique_widget_names(lpa_display):
 
 def test_the_lpa_display_shows_every_descriptor_feature_once(lpa_display):
     root = ET.fromstring(lpa_display.build())
-    pvs = [w.findtext("pv_name") for w in root.findall("widget") if w.findtext("pv_name")]
+    pvs = [
+        w.findtext("pv_name") for w in root.findall("widget") if w.findtext("pv_name")
+    ]
 
     for action in make_descriptor_actions():
-        assert pvs.count(f"pva://$(P){action.name}") == 1, action.name
-    assert pvs.count("pva://$(P)LPA_Archive") == 1  # the run selector
-    assert len(pvs) == 33 + 14 + 3 + 1  # descriptor, twin source readbacks, statistics, selector
+        assert pvs.count(f"pva://$(P=HTU:SIM:){action.name}") == 1, action.name
+    assert pvs.count("pva://$(P=HTU:SIM:)LPA_Archive") == 1  # the run selector
+    assert (
+        len(pvs) == 33 + 14 + 3 + 1
+    )  # descriptor, twin source readbacks, statistics, selector
 
 
 def test_the_lpa_display_prefix_is_a_macro_defaulting_to_the_twins(lpa_display):
     root = ET.fromstring(lpa_display.build())
 
-    assert root.find("macros").findtext("P") == "HTU:SIM:"
+    # The default is in each PV name and the file defines no `P`, so setting `P` overrides it.
+    assert root.findtext("macros/P") is None
     assert all(
-        w.findtext("pv_name").startswith("pva://$(P)")
+        w.findtext("pv_name").startswith("pva://$(P=HTU:SIM:)")
         for w in root.findall("widget")
         if w.findtext("pv_name")
     )
@@ -148,31 +173,78 @@ def test_the_committed_lpa_display_is_up_to_date(lpa_display):
 # --- the linked synoptic
 
 
-def test_other_buttons_are_pointed_at_the_twins_display_directory(linked_synoptic, twin_dir):
+def test_other_buttons_are_pointed_at_the_twins_display_directory(
+    linked_synoptic, twin_dir
+):
     root = ET.fromstring(linked_synoptic.build(twin_dir))
 
-    assert "$(TWIN_DISPLAYS)/quad_controls.bob" in _files(root)
-    assert root.find("macros").findtext("TWIN_DISPLAYS") == str(twin_dir.resolve())
-    quad = [a for a in root.iter("action") if a.findtext("file", "").endswith("quad_controls.bob")][0]
-    assert quad.find("macros").findtext("NAME") == "EMQ1H"  # the button's own macros are kept
+    assert f"$(TWIN_DISPLAYS={twin_dir.resolve()})/quad_controls.bob" in _files(root)
+    # The macro has a default in each reference and is not defined by the file, so that opening
+    # the display with TWIN_DISPLAYS set overrides it.
+    assert root.findtext("macros/TWIN_DISPLAYS") is None
+    quad = [
+        a
+        for a in root.iter("action")
+        if a.findtext("file", "").endswith("quad_controls.bob")
+    ][0]
+    assert (
+        quad.find("macros").findtext("NAME") == "EMQ1H"
+    )  # the button's own macros are kept
 
 
-def test_the_src_button_opens_the_lpa_display_as_its_only_action(linked_synoptic, twin_dir):
+def test_the_src_button_opens_the_lpa_display_as_its_only_action(
+    linked_synoptic, twin_dir
+):
     root = ET.fromstring(linked_synoptic.build(twin_dir))
 
-    src = [w for w in root.findall("widget") if w.findtext("name").startswith("btn_SRC")][0]
+    src = [
+        w for w in root.findall("widget") if w.findtext("name").startswith("btn_SRC")
+    ][0]
 
     # One action: Phoebus draws several as a drop-down menu, which a click would only open.
     assert [a.findtext("file") for a in src.find("actions")] == ["lpa_bunch.bob"]
     assert "LPA bunch" in src.findtext("tooltip")
 
 
+def test_a_status_indicator_shows_whether_the_twin_is_simulating(
+    linked_synoptic, twin_dir
+):
+    root = ET.fromstring(linked_synoptic.build(twin_dir))
+
+    widgets = {
+        w.findtext("name"): w
+        for w in root.findall("widget")
+        if w.findtext("name", "").startswith("lpa_strip_status")
+    }
+
+    assert {w.get("type") for w in widgets.values()} == {"label", "led", "textupdate"}
+    for name in ("lpa_strip_status_led", "lpa_strip_status_text"):
+        assert widgets[name].findtext("pv_name") == "pva://HTU:SIM:STATUS"
+    led = widgets["lpa_strip_status_led"]
+    assert led.find("off_color/color").get("green") == "170"  # idle: green
+    assert led.find("on_color/color").get("red") == "255"  # simulating: amber
+
+
+def test_the_status_indicator_is_on_the_synoptic_only(lpa_display):
+    root = ET.fromstring(lpa_display.build())
+
+    assert not [
+        w for w in root.iter("widget") if "STATUS" in (w.findtext("pv_name") or "")
+    ]
+
+
 def test_a_strip_below_the_synoptic_shows_the_source_pvs(linked_synoptic, twin_dir):
     root = ET.fromstring(linked_synoptic.build(twin_dir))
 
     assert int(root.findtext("height")) == 960 + linked_synoptic.STRIP_HEIGHT
-    strip = [w for w in root.findall("widget") if w.findtext("name", "").startswith("lpa_strip")]
-    assert min(int(w.findtext("y")) for w in strip) >= 960  # nothing overlaps the original
+    strip = [
+        w
+        for w in root.findall("widget")
+        if w.findtext("name", "").startswith("lpa_strip")
+    ]
+    assert (
+        min(int(w.findtext("y")) for w in strip) >= 960
+    )  # nothing overlaps the original
     pvs = {w.findtext("pv_name") for w in strip if w.findtext("pv_name")}
     assert pvs == {
         "pva://HTU:SIM:LPA_Archive",
@@ -180,6 +252,7 @@ def test_a_strip_below_the_synoptic_shows_the_source_pvs(linked_synoptic, twin_d
         "pva://HTU:SIM:Source_EnergySpread_pct",
         "pva://HTU:SIM:Source_Charge_pC",
         "pva://HTU:SIM:Source_NumParticles",
+        "pva://HTU:SIM:STATUS",
     }
     assert "lpa_bunch.bob" in _files(root)  # the strip button opens the LPA display
 
@@ -193,7 +266,11 @@ def test_the_twins_own_synoptic_is_not_modified(linked_synoptic, twin_dir):
 
 
 def test_a_synoptic_without_one_src_button_is_refused(linked_synoptic, twin_dir):
-    text = (twin_dir / "htu_synoptic.bob").read_text(encoding="utf-8").replace("btn_SRC_2", "btn_X")
+    text = (
+        (twin_dir / "htu_synoptic.bob")
+        .read_text(encoding="utf-8")
+        .replace("btn_SRC_2", "btn_X")
+    )
     (twin_dir / "htu_synoptic.bob").write_text(text, encoding="utf-8")
 
     with pytest.raises(ValueError, match="SRC button"):
@@ -204,25 +281,53 @@ def test_non_ascii_text_in_the_twins_synoptic_survives(linked_synoptic, twin_dir
     assert "—" in linked_synoptic.build(twin_dir)
 
 
-def test_embedded_camera_tabs_are_pointed_at_the_twins_directory_too(linked_synoptic, twin_dir):
+def test_every_display_file_but_the_lpa_display_is_pointed_at_the_twins_directory(
+    linked_synoptic, twin_dir
+):
     root = ET.fromstring(linked_synoptic.build(twin_dir))
 
     tab_files = [t.findtext("file") for t in root.iter("tab")]
+    relative = {
+        f.text for f in root.iter("file") if not f.text.startswith("$(TWIN_DISPLAYS=")
+    }
 
-    assert tab_files == ["$(TWIN_DISPLAYS)/camera_view.bob"]
-    assert root.find(".//tab/macros").findtext("CAM") == "Phosphor1"  # the tab's macros are kept
-
-
-def test_no_display_file_is_left_relative_except_the_lpa_display(linked_synoptic, twin_dir):
-    root = ET.fromstring(linked_synoptic.build(twin_dir))
-
-    relative = {f.text for f in root.iter("file") if not f.text.startswith("$(TWIN_DISPLAYS)/")}
-
+    assert tab_files == [f"$(TWIN_DISPLAYS={twin_dir.resolve()})/camera_view.bob"]
+    assert (
+        root.find(".//tab/macros").findtext("CAM") == "Phosphor1"
+    )  # the tab's macros are kept
     assert relative == {"lpa_bunch.bob"}
-    assert "source_controls.bob" not in " ".join(f.text for f in root.iter("file"))  # replaced
+    assert "source_controls.bob" not in " ".join(
+        f.text for f in root.iter("file")
+    )  # replaced
 
 
-def test_the_run_selector_is_a_combo_box_that_takes_its_items_from_the_pv(lpa_display, linked_synoptic, twin_dir):
+def test_the_twin_displays_default_is_relative_inside_the_same_repository(
+    linked_synoptic, twin_dir, tmp_path
+):
+    twin, output = _repository_with_twin(tmp_path, twin_dir)
+
+    root = ET.fromstring(linked_synoptic.build(twin, output))
+    assert "$(TWIN_DISPLAYS=../../twin/display)/quad_controls.bob" in _files(root)
+
+    written = output / "htu_synoptic_lpa.bob"
+    linked_synoptic.main([str(twin), str(written)])
+    assert str(tmp_path / "repository") not in written.read_text(encoding="utf-8")
+
+
+def test_the_twin_displays_default_is_absolute_outside_the_repository(
+    linked_synoptic, twin_dir, tmp_path
+):
+    output = tmp_path / "elsewhere"
+    output.mkdir()
+
+    root = ET.fromstring(linked_synoptic.build(twin_dir, output))
+
+    assert f"$(TWIN_DISPLAYS={twin_dir.resolve()})/quad_controls.bob" in _files(root)
+
+
+def test_the_run_selector_is_a_combo_box_that_takes_its_items_from_the_pv(
+    lpa_display, linked_synoptic, twin_dir
+):
     for xml in (lpa_display.build(), linked_synoptic.build(twin_dir)):
         root = ET.fromstring(xml)
 
@@ -233,7 +338,9 @@ def test_the_run_selector_is_a_combo_box_that_takes_its_items_from_the_pv(lpa_di
         assert combos[0].findtext("items_from_pv") == "true"
 
 
-def test_rotation_steps_are_converted_from_degrees_to_phoebus_ordinals(linked_synoptic, twin_dir):
+def test_rotation_steps_are_converted_from_degrees_to_phoebus_ordinals(
+    linked_synoptic, twin_dir
+):
     root = ET.fromstring(linked_synoptic.build(twin_dir))
 
     steps = [s.text for s in root.iter("rotation_step")]
@@ -241,8 +348,14 @@ def test_rotation_steps_are_converted_from_degrees_to_phoebus_ordinals(linked_sy
     assert steps == ["1"]  # 90.0 degrees -> ordinal 1 (NINETY)
 
 
-def test_a_rotation_that_is_not_a_multiple_of_90_degrees_is_refused(linked_synoptic, twin_dir):
-    text = (twin_dir / "htu_synoptic.bob").read_text(encoding="utf-8").replace("90.0", "45.0")
+def test_a_rotation_that_is_not_a_multiple_of_90_degrees_is_refused(
+    linked_synoptic, twin_dir
+):
+    text = (
+        (twin_dir / "htu_synoptic.bob")
+        .read_text(encoding="utf-8")
+        .replace("90.0", "45.0")
+    )
     (twin_dir / "htu_synoptic.bob").write_text(text, encoding="utf-8")
 
     with pytest.raises(ValueError, match="multiple of 90"):

@@ -38,6 +38,7 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
     `reset()` restores the simulator's starting state (for a model loaded from an archive, the
     archived config and results); it never runs the simulation.
 
+    An action made without a `unit` gets its default one: see `lume_fbpic.actions`.
     """
 
     def __init__(
@@ -46,6 +47,7 @@ class LUMEFBPICModel(FinalParticlesMixIn, ActionModel[BaseSimulator]):
         actions: list[Action],
         dummy_run: bool = False,
     ) -> None:
+        _set_default_units(simulator, actions)
         super().__init__(simulator=simulator, action_variables=actions)
         self.dummy_run = dummy_run
 
@@ -244,3 +246,16 @@ def _read_output_values(h5) -> dict[str, float]:
         for key in sorted(group)
         if "value" in group[key].attrs
     }
+
+
+def _set_default_units(simulator: BaseSimulator, actions: list[Action]) -> None:
+    """Give each action that was made without a `unit` the one its `default_unit()` finds.
+
+    An action with a `unit` passed to it, `None` included, keeps it.
+    """
+    for action in actions:
+        default_unit = getattr(action, "default_unit", None)
+        if default_unit is not None and "unit" not in action.model_fields_set:
+            unit = default_unit(simulator)
+            if unit is not None:
+                action.unit = unit

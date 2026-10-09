@@ -5,12 +5,13 @@ script reads it and writes a copy, next to `lpa_bunch.bob`, with three changes:
 
 - a new bottom row shows the LPA bunch the twin is tracking (energy, energy spread, charge,
   macroparticles, read from the `Source_*` PVs), a combo box that selects the LPA run (the
-  `LPA_Archive` PV, one option per archive `serve.py` was given) and a button that opens
-  `lpa_bunch.bob`;
+  `LPA_Archive` PV, one option per archive `serve.py` was given), a button that opens
+  `lpa_bunch.bob`, and whether the twin is simulating (a LED, green when idle and amber when
+  simulating, and the state's name, from the `STATUS` PV that lume-pva serves);
 - the `SRC` element's button opens `lpa_bunch.bob` instead of the twin's source display. It is a
   single action on purpose: Phoebus draws a button with several actions as a drop-down menu, and a
   click on the small `SRC` element would then only open the menu. The LPA display shows every
-  `Source_*` value the twin's source display does, and the `Source_*` PVs are read-only now;
+  `Source_*` value the twin's source display does, and the `Source_*` PVs are read-only;
 - every `rotation_step` is converted from degrees to the ordinal Phoebus expects. The twin's
   generator writes `90.0` (an angle) for its vertical labels, but the property is an enum
   (0 = none, 1 = 90 degrees, 2 = 180, 3 = 270) and Phoebus logs a warning for each label and does not
@@ -19,9 +20,12 @@ script reads it and writes a copy, next to `lpa_bunch.bob`, with three changes:
   ...) and the camera tabs embedded in it (`camera_view.bob`) -- is pointed at the twin's display
   directory through a `TWIN_DISPLAYS` macro, so they keep working from here.
 
-`TWIN_DISPLAYS` defaults to the directory the copy was built from; set it when opening the display
-(`phoebus -resource htu_synoptic_lpa.bob?TWIN_DISPLAYS=<twin display directory>`) if the
-twin lives elsewhere. The PVs are the synoptic's own, `pva://HTU:SIM:...`.
+`TWIN_DISPLAYS` is the twin's display directory. It has a default in each file reference: a path
+relative to the copy when both are in the same repository, so the file is the same on every clone,
+and an absolute path otherwise. Set the macro when opening the display to use another directory
+(`phoebus -resource "file:<absolute path>/htu_synoptic_lpa.bob?TWIN_DISPLAYS=<twin display
+directory>"`; the `file:` URL is needed, since a plain path takes the `?` as part of the file name).
+The PVs are the synoptic's own, `pva://HTU:SIM:...`.
 
 Run `python generate_linked_synoptic.py <twin display dir> [output.bob]` again whenever the twin's
 synoptic changes; do not edit the copy by hand. The twin's `display` directory is the one that
@@ -30,6 +34,7 @@ holds `htu_synoptic.bob`.
 
 from __future__ import annotations
 
+import os
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -40,6 +45,7 @@ ROTATION_ORDINAL = {0.0: 0, 90.0: 1, 180.0: 2, 270.0: 3, -90.0: 3}
 STRIP_HEIGHT = 44
 LPA_DISPLAY = "lpa_bunch.bob"
 SELECTOR = "LPA_Archive"  # the enum PV `serve.py` serves, one option per archive
+STATUS = "STATUS"  # lume-pva's read-only enum PV: 0 Idle, 1 Simulating
 PREFIX = "pva://HTU:SIM:"
 
 # (label, PV name, label width, value width, decimals)
@@ -51,89 +57,51 @@ STRIP = (
 )
 
 
-def _text(parent: ET.Element, tag: str, text: str) -> ET.Element:
-    child = ET.SubElement(parent, tag)
-    child.text = text
-    return child
+def build(twin_display_dir: Path, output_dir: Path | None = None) -> str:
+    """The linked synoptic's XML, built from `<twin_display_dir>/htu_synoptic.bob`.
 
-
-def _geometry(widget: ET.Element, x: int, y: int, w: int, h: int) -> None:
-    for tag, value in (("x", x), ("y", y), ("width", w), ("height", h)):
-        _text(widget, tag, str(value))
-
-
-def _label(root, name, text, x, y, w, h=24, bold=False):
-    widget = ET.SubElement(root, "widget", type="label", version="2.0.0")
-    _text(widget, "name", name)
-    _text(widget, "text", text)
-    _geometry(widget, x, y, w, h)
-    if bold:
-        font = ET.SubElement(ET.SubElement(widget, "font"), "font")
-        font.set("family", "Liberation Sans")
-        font.set("style", "BOLD")
-        font.set("size", "12.0")
-
-
-def _value(root, name, pv, x, y, w, h, decimals):
-    widget = ET.SubElement(root, "widget", type="textupdate", version="2.0.0")
-    _text(widget, "name", name)
-    _text(widget, "pv_name", PREFIX + pv)
-    _geometry(widget, x, y, w, h)
-    _text(widget, "precision", str(decimals))
-    _text(widget, "precision_from_pv", "false")
-    _text(widget, "show_units", "false")
-
-
-def _combo(root, name, pv, x, y, w, h):
-    widget = ET.SubElement(root, "widget", type="combo", version="2.0.0")
-    _text(widget, "name", name)
-    _text(widget, "pv_name", PREFIX + pv)
-    _geometry(widget, x, y, w, h)
-    _text(widget, "items_from_pv", "true")
-
-
-def _lpa_action(parent: ET.Element) -> None:
-    action = ET.SubElement(parent, "action", type="open_display")
-    _text(action, "file", LPA_DISPLAY)
-    ET.SubElement(action, "macros")
-    _text(action, "target", "window")
-    _text(action, "description", "LPA bunch: the twin's source readbacks and the moment descriptor")
-
-
-def build(twin_display_dir: Path) -> str:
-    """The linked synoptic's XML, built from `<twin_display_dir>/htu_synoptic.bob`."""
+    Every file the synoptic refers to is `$(TWIN_DISPLAYS=<default>)/<file>`: the macro, if set
+    when the display is opened, otherwise the default. `output_dir` is the directory the synoptic
+    will be written to. When the twin's display directory is in the same git repository, the
+    default is a path relative to `output_dir`, so the file does not depend on where the
+    repository is; otherwise it is the absolute path."""
     source = twin_display_dir / "htu_synoptic.bob"
     root = ET.parse(source).getroot()
 
-    macros = ET.Element("macros")
-    _text(macros, "TWIN_DISPLAYS", str(twin_display_dir.resolve()))
-    root.insert(1, macros)
+    default = _macro_value(twin_display_dir, output_dir)
 
     for step in root.iter("rotation_step"):
         angle = float(step.text)
         if angle not in ROTATION_ORDINAL:
-            raise ValueError(f"rotation_step {step.text!r} is not a multiple of 90 degrees")
+            raise ValueError(
+                f"rotation_step {step.text!r} is not a multiple of 90 degrees"
+            )
         step.text = str(ROTATION_ORDINAL[angle])
 
     # Every <file>, whatever holds it: button actions, and the tabs that embed the camera views.
     for file in root.iter("file"):
         if file.text and not file.text.startswith("$("):
-            file.text = f"$(TWIN_DISPLAYS)/{file.text}"
+            file.text = f"$(TWIN_DISPLAYS={default})/{file.text}"
 
     src_buttons = [
         w
         for w in root.findall("widget")
-        if w.get("type") == "action_button" and (w.findtext("name") or "").startswith("btn_SRC")
+        if w.get("type") == "action_button"
+        and (w.findtext("name") or "").startswith("btn_SRC")
     ]
     if len(src_buttons) != 1:
-        raise ValueError(f"expected one SRC button in {source}, found {len(src_buttons)}")
+        raise ValueError(
+            f"expected one SRC button in {source}, found {len(src_buttons)}"
+        )
     actions = src_buttons[0].find("actions")
     for action in list(actions):
         actions.remove(action)
     _lpa_action(actions)
     tooltip = src_buttons[0].find("tooltip")
     if tooltip is not None:
-        tooltip.text = "LPA bunch: the twin's source readbacks and the moment descriptor"
+        tooltip.text = (
+            "LPA bunch: the twin's source readbacks and the moment descriptor"
+        )
 
     height = int(root.findtext("height"))
     root.find("height").text = str(height + STRIP_HEIGHT)
@@ -154,7 +122,9 @@ def build(twin_display_dir: Path) -> str:
     x += 42 + 170 + 16
     for index, (text, pv, label_w, value_w, decimals) in enumerate(STRIP):
         _label(root, f"lpa_strip_label{index}", text, x, y, label_w)
-        _value(root, f"lpa_strip_value{index}", pv, x + label_w, y, value_w, 24, decimals)
+        _value(
+            root, f"lpa_strip_value{index}", pv, x + label_w, y, value_w, 24, decimals
+        )
         x += label_w + value_w + 14
 
     button = ET.SubElement(root, "widget", type="action_button", version="3.0.0")
@@ -162,18 +132,118 @@ def build(twin_display_dir: Path) -> str:
     _lpa_action(ET.SubElement(button, "actions"))
     _text(button, "text", "LPA bunch...")
     _geometry(button, x, y - 1, 130, 26)
+    _status(root, x + 130 + 24, y)
 
     ET.indent(root, space="  ")
-    return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(root, encoding="unicode") + "\n"
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + ET.tostring(root, encoding="unicode")
+        + "\n"
+    )
 
 
 def main(argv: list[str] | None = None) -> None:
     argv = sys.argv[1:] if argv is None else argv
     if not argv:
         sys.exit(f"usage: python {Path(__file__).name} <twin display dir> [output.bob]")
-    output = Path(argv[1]) if len(argv) > 1 else Path(__file__).with_name("htu_synoptic_lpa.bob")
-    output.write_text(build(Path(argv[0])))
+    output = (
+        Path(argv[1])
+        if len(argv) > 1
+        else Path(__file__).with_name("htu_synoptic_lpa.bob")
+    )
+    output.write_text(build(Path(argv[0]), output.parent))
     print(f"wrote {output}")
+
+
+def _combo(root, name, pv, x, y, w, h):
+    widget = ET.SubElement(root, "widget", type="combo", version="2.0.0")
+    _text(widget, "name", name)
+    _text(widget, "pv_name", PREFIX + pv)
+    _geometry(widget, x, y, w, h)
+    _text(widget, "items_from_pv", "true")
+
+
+def _geometry(widget: ET.Element, x: int, y: int, w: int, h: int) -> None:
+    for tag, value in (("x", x), ("y", y), ("width", w), ("height", h)):
+        _text(widget, tag, str(value))
+
+
+def _label(root, name, text, x, y, w, h=24, bold=False):
+    widget = ET.SubElement(root, "widget", type="label", version="2.0.0")
+    _text(widget, "name", name)
+    _text(widget, "text", text)
+    _geometry(widget, x, y, w, h)
+    if bold:
+        font = ET.SubElement(ET.SubElement(widget, "font"), "font")
+        font.set("family", "Liberation Sans")
+        font.set("style", "BOLD")
+        font.set("size", "12.0")
+
+
+def _lpa_action(parent: ET.Element) -> None:
+    action = ET.SubElement(parent, "action", type="open_display")
+    _text(action, "file", LPA_DISPLAY)
+    ET.SubElement(action, "macros")
+    _text(action, "target", "window")
+    _text(
+        action,
+        "description",
+        "LPA bunch: the twin's source readbacks and the moment descriptor",
+    )
+
+
+def _macro_value(twin_display_dir: Path, output_dir: Path | None) -> str:
+    """The `TWIN_DISPLAYS` default: relative to `output_dir` if the twin's display directory is in
+    the same git repository, otherwise absolute."""
+    twin = twin_display_dir.resolve()
+    if output_dir is not None:
+        output = output_dir.resolve()
+        root = _repository_root(output)
+        if root is not None and twin.is_relative_to(root):
+            return Path(os.path.relpath(twin, output)).as_posix()
+    return str(twin)
+
+
+def _repository_root(path: Path) -> Path | None:
+    """The nearest directory at or above `path` that holds a `.git`, or None."""
+    for directory in (path, *path.parents):
+        if (directory / ".git").exists():
+            return directory
+    return None
+
+
+def _status(root, x, y):
+    """The twin's activity: a LED, green while it is idle and amber while it simulates, and the
+    state's name, from lume-pva's `STATUS` PV."""
+    _label(root, "lpa_strip_status_label", "Twin:", x, y, 45, bold=True)
+    led = ET.SubElement(root, "widget", type="led", version="2.0.0")
+    _text(led, "name", "lpa_strip_status_led")
+    _text(led, "pv_name", PREFIX + STATUS)
+    _geometry(led, x + 48, y + 2, 20, 20)
+    for tag, rgb in (("off_color", (0, 170, 0)), ("on_color", (255, 150, 0))):
+        color = ET.SubElement(ET.SubElement(led, tag), "color")
+        for channel, value in zip(("red", "green", "blue"), rgb):
+            color.set(channel, str(value))
+    text = ET.SubElement(root, "widget", type="textupdate", version="2.0.0")
+    _text(text, "name", "lpa_strip_status_text")
+    _text(text, "pv_name", PREFIX + STATUS)
+    _geometry(text, x + 74, y, 90, 24)
+
+
+def _text(parent: ET.Element, tag: str, text: str) -> ET.Element:
+    child = ET.SubElement(parent, tag)
+    child.text = text
+    return child
+
+
+def _value(root, name, pv, x, y, w, h, decimals):
+    widget = ET.SubElement(root, "widget", type="textupdate", version="2.0.0")
+    _text(widget, "name", name)
+    _text(widget, "pv_name", PREFIX + pv)
+    _geometry(widget, x, y, w, h)
+    _text(widget, "precision", str(decimals))
+    _text(widget, "precision_from_pv", "false")
+    _text(widget, "show_units", "false")
 
 
 if __name__ == "__main__":

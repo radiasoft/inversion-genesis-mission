@@ -174,8 +174,8 @@ def _check_fixed_inputs(model: LUMEFBPICModel, inputs: dict[str, float]) -> None
 def _descriptor_outputs(output: dict[str, float]) -> dict[str, float]:
     """The dataset's recorded descriptor values under the feature names `lume_fbpic` uses.
 
-    The dataset records the charge in coulombs as `total_beam_charge_c`; the descriptor now has
-    it in picocoulombs as `total_beam_charge_pc`.
+    The dataset records the charge in coulombs as `total_beam_charge_c`; the descriptor feature
+    is `total_beam_charge_pc`, in picocoulombs.
     """
     converted = dict(output)
     if "total_beam_charge_c" in converted:

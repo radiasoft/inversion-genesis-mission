@@ -6,7 +6,7 @@ config can hold two kinds of path, and neither goes into the archive as a path:
 - Output paths (`save_directory`, `lasy_file`): where a run writes, decided when it runs. Only
   the basename of the class default is stored (`diags`, `lasy_laser`), and a loaded config has
   the class default; the simulator's working directory decides the rest.
-- Input files (fields marked `input_path`, today the table of `InterpolateFromH5Profile`): the
+- Input files (fields marked `input_path`, such as the table of `InterpolateFromH5Profile`): the
   archive keeps only the file's basename and its md5. The file itself is looked for in the
   `input_dirs` given to `archive()` and `from_archive()`. When it is not in `input_dirs` at
   `archive()` it is embedded in the archive, and a loaded archive then uses the embedded copy.

@@ -19,8 +19,6 @@ Substitutions made in the conversion:
 
 from __future__ import annotations
 
-import attrs
-
 from lume_fbpic.actions import (
     DensityFieldAction,
     FinalParticlesAction,
@@ -94,7 +92,9 @@ def build_model(working_directory: str | None = None) -> LUMEFBPICModel:
         ramp_start=30.0e-6,
         ramp_length=40.0e-6,
         elec_name="electrons",
-        elec_select={"uz": [1.0, None]},  # matches the original's ParticleDiagnostic select
+        elec_select={
+            "uz": [1.0, None]
+        },  # matches the original's ParticleDiagnostic select
     )
 
     simulator = FBPICSimulator(
@@ -107,18 +107,15 @@ def build_model(working_directory: str | None = None) -> LUMEFBPICModel:
 
     # The model's inputs and outputs, for one laser and one density profile.
     actions = [
-        LaserFieldAction(name="laser_a0", field_name="a0", unit=None),
-        LaserFieldAction(name="laser_focal_position", field_name="focal_position", unit="m"),
+        LaserFieldAction(name="laser_a0", field_name="a0"),
+        LaserFieldAction(name="laser_focal_position", field_name="focal_position"),
         DensityFieldAction(
             name="plasma_density",
             density_index=0,
             field_name="nominal_density",
-            unit="m^-3",
         ),
-        StatAction(name="charge_pc", stat_name="charge_pc", unit="pC", read_only=True),
-        StatAction(
-            name="energy_mean_mev", stat_name="energy_mean_mev", unit="MeV", read_only=True
-        ),
+        StatAction(name="charge_pc", stat_name="charge_pc", read_only=True),
+        StatAction(name="energy_mean_mev", stat_name="energy_mean_mev", read_only=True),
         FinalParticlesAction(name="final_particles", read_only=True),
         # Moment descriptor of the bunch. This bunch is ~1 MeV (mean uz ~ 2), so the
         # build_dataset.py default of uz >= 30 would select nothing; use uz >= 1 here.

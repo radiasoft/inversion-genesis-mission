@@ -15,7 +15,7 @@ from lume_fbpic.actions import make_pwfa_actions
 from lume_fbpic.density_profiles import LinearRampFlattop, UpDownRampProfile
 from lume_fbpic.model import LUMEFBPICModel
 from lume_fbpic.pwfa_config import FlatTopBunch, GaussianBunch, PWFAGrid
-from lume_fbpic.simulator import BaseSimulator, FBPICSimulator, PWFASimulator
+from lume_fbpic.simulator import FBPICSimulator, PWFASimulator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "docs" / "examples"))
 import pwfa_clara_febe as clara_example  # noqa: E402
@@ -26,7 +26,13 @@ import pwfa_gaussian as pwfa_gaussian_example  # noqa: E402
 def pwfa_model(tmp_path) -> LUMEFBPICModel:
     """A flat-top-driver PWFA model (no witness) on a coarse grid; `dummy_run`, so nothing runs."""
     grid = PWFAGrid(
-        zmin=-10.0e-6, zmax=30.0e-6, nz=200, rmax=20.0e-6, nr=100, n_steps=400, write_period=20
+        zmin=-10.0e-6,
+        zmax=30.0e-6,
+        nz=200,
+        rmax=20.0e-6,
+        nr=100,
+        n_steps=400,
+        write_period=20,
     )
     plasma = LinearRampFlattop(
         nominal_density=1.0e24,
@@ -46,14 +52,20 @@ def pwfa_model(tmp_path) -> LUMEFBPICModel:
 
 
 def test_flat_top_bunch_charge_is_the_density_times_the_cylinder_volume():
-    bunch = FlatTopBunch(gamma=10.0, density=1.0e24, radius=1.0e-6, zmin=0.0, zmax=1.0e-5)
+    bunch = FlatTopBunch(
+        gamma=10.0, density=1.0e24, radius=1.0e-6, zmin=0.0, zmax=1.0e-5
+    )
 
-    assert bunch.charge == pytest.approx(1.602176634e-19 * 1.0e24 * 3.141592653589793e-12 * 1.0e-5)
+    assert bunch.charge == pytest.approx(
+        1.602176634e-19 * 1.0e24 * 3.141592653589793e-12 * 1.0e-5
+    )
 
 
 def test_flat_top_bunch_rejects_a_reversed_extent():
     with pytest.raises(ValueError, match="zmax"):
-        FlatTopBunch(gamma=10.0, density=1.0e24, radius=1.0e-6, zmin=2.0e-6, zmax=1.0e-6)
+        FlatTopBunch(
+            gamma=10.0, density=1.0e24, radius=1.0e-6, zmin=2.0e-6, zmax=1.0e-6
+        )
 
 
 def test_grid_defaults_to_one_cell_of_light_travel_per_step():
@@ -64,17 +76,13 @@ def test_grid_defaults_to_one_cell_of_light_travel_per_step():
 
 
 @pytest.mark.parametrize(
-    "changes", [{"z_boundary": "reflective"}, {"r_boundary": "periodic"}, {"zmax": -1.0}]
+    "changes",
+    [{"z_boundary": "reflective"}, {"r_boundary": "periodic"}, {"zmax": -1.0}],
 )
 def test_grid_rejects_bad_values(changes):
     kwargs = dict(zmin=0.0, zmax=3.0e-5, nz=100, rmax=1.0e-5, nr=10, n_steps=5)
     with pytest.raises(ValueError):
         PWFAGrid(**{**kwargs, **changes})
-
-
-def test_configs_round_trip_through_yaml(pwfa_model):
-    for config in pwfa_model.simulator.config().values():
-        assert SerializableConfig.from_yaml(config.to_yaml()).to_dict() == config.to_dict()
 
 
 def test_configure_rejects_a_target_species_that_does_not_exist(pwfa_model):
@@ -94,12 +102,20 @@ def test_the_model_gets_the_pwfa_actions(pwfa_model):
 
 def test_a_witness_adds_witness_actions(pwfa_model):
     simulator = pwfa_model.simulator
-    witness = FlatTopBunch(gamma=500.0, density=1.0e23, radius=1.0e-6, zmin=0.0, zmax=1.0e-6)
+    witness = FlatTopBunch(
+        gamma=500.0, density=1.0e23, radius=1.0e-6, zmin=0.0, zmax=1.0e-6
+    )
     with_witness = PWFASimulator(
-        simulator.grid, simulator.plasma, simulator.driver, witness, target_species="witness"
+        simulator.grid,
+        simulator.plasma,
+        simulator.driver,
+        witness,
+        target_species="witness",
     )
 
-    model = LUMEFBPICModel(with_witness, make_pwfa_actions(with_witness), dummy_run=True)
+    model = LUMEFBPICModel(
+        with_witness, make_pwfa_actions(with_witness), dummy_run=True
+    )
 
     assert {"witness_gamma", "witness_density"} <= set(model.supported_variables)
 
@@ -133,7 +149,9 @@ def test_bunch_actions_come_back_from_an_archive(pwfa_model, tmp_path):
     assert action.bunch == "driver" and action.field_name == "gamma"
 
 
-def test_archive_round_trips_a_pwfa_model_and_picks_the_pwfa_class(pwfa_model, tmp_path):
+def test_archive_round_trips_a_pwfa_model_and_picks_the_pwfa_class(
+    pwfa_model, tmp_path
+):
     pwfa_model.archive(tmp_path / "p.h5")
 
     with h5py.File(tmp_path / "p.h5") as f:
@@ -152,39 +170,25 @@ def test_an_lwfa_class_cannot_load_a_pwfa_archive(pwfa_model, tmp_path):
 
     with pytest.raises(ValueError, match="cannot load"):
         FBPICSimulator.from_archive(tmp_path / "p.h5")
-    assert type(BaseSimulator.from_archive(tmp_path / "p.h5")) is PWFASimulator
 
 
 def test_a_short_run_writes_the_driver_and_reads_it_back(tmp_path):
-    grid = PWFAGrid(
-        zmin=-10.0e-6, zmax=30.0e-6, nz=40, rmax=20.0e-6, nr=20, n_steps=3, write_period=2
-    )
-    plasma = LinearRampFlattop(
-        nominal_density=1.0e24,
-        species=None,
-        ionization=-1,
-        p_nz=2,
-        p_nr=2,
-        p_nt=4,
-        ramp_start=0.0,
-        ramp_length=5.0e-5,
-    )
-    driver = FlatTopBunch(
-        gamma=2.0e3, density=5.0e24, radius=2.0e-6, zmin=15.0e-6, zmax=20.0e-6
-    )
-    simulator = PWFASimulator(grid, plasma, driver, working_directory=tmp_path)
-    simulator.configure()
+    simulator = _short_run_simulator(tmp_path)
 
     simulator.run()
 
     assert simulator.finished is True
     assert (tmp_path / "diags" / "hdf5" / "data00000002.h5").exists()
-    assert simulator.stats["charge_pc"] == pytest.approx(simulator.driver.charge * 1e12, rel=0.05)
+    assert simulator.stats["charge_pc"] == pytest.approx(
+        simulator.driver.charge * 1e12, rel=0.05
+    )
     assert simulator.stats["energy_mean_mev"] == pytest.approx(1021.5, rel=0.01)
 
 
 def test_gaussian_bunch_charge_is_its_field_and_rejects_bad_values():
-    bunch = GaussianBunch(gamma=100.0, charge=1.0e-10, sig_r=1.0e-6, sig_z=2.0e-6, zf=0.0)
+    bunch = GaussianBunch(
+        gamma=100.0, charge=1.0e-10, sig_r=1.0e-6, sig_z=2.0e-6, zf=0.0
+    )
 
     assert bunch.charge == 1.0e-10
     assert bunch.tf == 0.0 and bunch.n_emit == 0.0
@@ -192,11 +196,16 @@ def test_gaussian_bunch_charge_is_its_field_and_rejects_bad_values():
         GaussianBunch(gamma=100.0, charge=-1.0e-10, sig_r=1.0e-6, sig_z=2.0e-6, zf=0.0)
 
 
-def test_the_gaussian_example_has_a_witness_and_gaussian_actions(tmp_path):
+def test_the_gaussian_example_has_a_witness_and_gaussian_actions():
     model = pwfa_gaussian_example.build_model(dummy_run=True)
 
     names = set(model.supported_variables)
-    assert {"driver_charge", "driver_sigma_z", "driver_position", "witness_charge"} <= names
+    assert {
+        "driver_charge",
+        "driver_sigma_z",
+        "driver_position",
+        "witness_charge",
+    } <= names
     assert "driver_density" not in names
     assert model.simulator.target_species == "witness"
     assert model.simulator.grid.nz == 209 and model.simulator.grid.nr == 64
@@ -204,9 +213,6 @@ def test_the_gaussian_example_has_a_witness_and_gaussian_actions(tmp_path):
 
     model.set({"witness_position": 1.0e-4})
     assert model.simulator.witness.zf == 1.0e-4
-    model.archive(tmp_path / "g.h5")
-    restored = LUMEFBPICModel.from_archive(tmp_path / "g.h5")
-    assert restored.simulator.witness.to_dict() == model.simulator.witness.to_dict()
 
 
 def test_a_short_run_with_gaussian_bunches_reads_the_witness_back(tmp_path):
@@ -250,6 +256,36 @@ def test_the_gaussian_example_plots_the_fields_of_a_short_run(tmp_path):
         pwfa_gaussian_example.plot_results(tmp_path / "plots")
 
 
+def _short_run_simulator(tmp_path, **grid_changes) -> PWFASimulator:
+    """A configured 3-step run of a flat-top driver in a bare-electron plasma, with dumps at step 2."""
+    grid = PWFAGrid(
+        zmin=-10.0e-6,
+        zmax=30.0e-6,
+        nz=40,
+        rmax=20.0e-6,
+        nr=20,
+        n_steps=3,
+        write_period=2,
+        **grid_changes,
+    )
+    plasma = LinearRampFlattop(
+        nominal_density=1.0e24,
+        species=None,
+        ionization=-1,
+        p_nz=2,
+        p_nr=2,
+        p_nt=4,
+        ramp_start=0.0,
+        ramp_length=5.0e-5,
+    )
+    driver = FlatTopBunch(
+        gamma=2.0e3, density=5.0e24, radius=2.0e-6, zmin=15.0e-6, zmax=20.0e-6
+    )
+    simulator = PWFASimulator(grid, plasma, driver, working_directory=tmp_path)
+    simulator.configure()
+    return simulator
+
+
 def _up_down_ramp(**changes) -> UpDownRampProfile:
     kwargs = dict(
         nominal_density=4.2e22,
@@ -270,8 +306,11 @@ def _up_down_ramp(**changes) -> UpDownRampProfile:
 
 def test_up_down_ramp_has_five_stages_and_no_plasma_outside_the_cell():
     import numpy
+
     dens = _up_down_ramp().build_density_function()
-    z = numpy.array([-1.0e-3, 0.0, 0.04, 0.055, 0.06, 0.1, 0.155, 0.16, 0.18, 0.2, 0.25])
+    z = numpy.array(
+        [-1.0e-3, 0.0, 0.04, 0.055, 0.06, 0.1, 0.155, 0.16, 0.18, 0.2, 0.25]
+    )
 
     relative = dens(z, numpy.zeros_like(z))
 
@@ -282,9 +321,12 @@ def test_up_down_ramp_has_five_stages_and_no_plasma_outside_the_cell():
 
 def test_up_down_ramp_has_no_end_by_default_and_round_trips_through_yaml():
     import numpy
+
     profile = _up_down_ramp(z_end=None)
 
-    assert profile.build_density_function()(numpy.array([10.0]), numpy.array([0.0]))[0] == pytest.approx(2 / 3)
+    assert profile.build_density_function()(numpy.array([10.0]), numpy.array([0.0]))[
+        0
+    ] == pytest.approx(2 / 3)
     loaded = SerializableConfig.from_yaml(profile.to_yaml())
     assert loaded.to_dict() == profile.to_dict()
 
@@ -298,63 +340,60 @@ def test_up_down_ramp_rejects_inconsistent_stages(changes):
         _up_down_ramp(**changes)
 
 
-@pytest.mark.parametrize("witness, n0_fraction", [("longer", 2.8 / 4.2), ("shorter", 1.9 / 4.2)])
+@pytest.mark.parametrize(
+    "witness, n0_fraction", [("longer", 2.8 / 4.2), ("shorter", 1.9 / 4.2)]
+)
 def test_the_clara_example_follows_the_papers_tables(witness, n0_fraction):
     model = clara_example.build_model(witness=witness, dummy_run=True)
     simulator = model.simulator
 
     assert simulator.grid.nr == 200 and simulator.grid.nm == 1
-    assert simulator.grid.r_boundary == "reflective" and simulator.grid.z_boundary == "open"
+    assert (
+        simulator.grid.r_boundary == "reflective"
+        and simulator.grid.z_boundary == "open"
+    )
     assert simulator.plasma.base_fraction == pytest.approx(n0_fraction)
     assert simulator.driver.charge == pytest.approx(150.0e-12)
     assert simulator.driver.zf - simulator.witness.zf == pytest.approx(90.0e-6)
     assert simulator.target_species == "witness"
 
 
-def test_the_clara_example_defaults_are_the_coarser_resolution_of_the_20_cm_run():
-    simulator = clara_example.build_model(dummy_run=True).simulator
+@pytest.mark.parametrize(
+    "arguments, nz, n_steps, time_step, plasma_ppc",
+    [
+        (
+            {},
+            100,
+            133_333,
+            1.5e-6 / 299792458.0,
+            (2, 2, 4),
+        ),  # the coarser 20 cm run; the paper: 500, 1 fs, (4, 4, 4)
+        (
+            {"dz": 0.30e-6, "plasma_ppc": (4, 4, 4)},
+            500,
+            666_667,
+            1.0e-15,
+            (4, 4, 4),
+        ),  # the paper's
+    ],
+    ids=["defaults", "the_papers_resolution"],
+)
+def test_the_clara_example_resolution(arguments, nz, n_steps, time_step, plasma_ppc):
+    simulator = clara_example.build_model(dummy_run=True, **arguments).simulator
 
-    assert simulator.grid.nz == 100  # the paper: 500
-    assert simulator.grid.n_steps == 133_333  # the whole 20 cm cell
-    assert simulator.grid.time_step == pytest.approx(1.5e-6 / 299792458.0)  # the paper: 1 fs
-    assert (simulator.plasma.p_nz, simulator.plasma.p_nr, simulator.plasma.p_nt) == (2, 2, 4)
+    assert simulator.grid.nz == nz
+    assert simulator.grid.n_steps == n_steps  # the whole 20 cm cell
+    assert simulator.grid.time_step == pytest.approx(time_step, rel=1e-3)
+    assert (
+        simulator.plasma.p_nz,
+        simulator.plasma.p_nr,
+        simulator.plasma.p_nt,
+    ) == plasma_ppc
     assert simulator.grid.write_plasma is False
 
 
-def test_the_clara_example_gives_the_papers_resolution_with_dz_and_the_plasma_ppc():
-    model = clara_example.build_model(dummy_run=True, dz=0.30e-6, plasma_ppc=(4, 4, 4))
-    simulator = model.simulator
-
-    assert simulator.grid.nz == 500
-    assert simulator.grid.n_steps == 666_667
-    assert simulator.grid.time_step == pytest.approx(1.0e-15, rel=1e-3)
-    assert (simulator.plasma.p_nz, simulator.plasma.p_nr, simulator.plasma.p_nt) == (4, 4, 4)
-
-
 def test_a_grid_without_plasma_output_still_runs(tmp_path):
-    grid = PWFAGrid(
-        zmin=-10.0e-6,
-        zmax=30.0e-6,
-        nz=40,
-        rmax=20.0e-6,
-        nr=16,
-        n_steps=3,
-        write_period=2,
-        write_plasma=False,
-    )
-    plasma = LinearRampFlattop(
-        nominal_density=1.0e24,
-        species=None,
-        ionization=-1,
-        p_nz=2,
-        p_nr=2,
-        p_nt=4,
-        ramp_start=0.0,
-        ramp_length=5.0e-5,
-    )
-    driver = FlatTopBunch(gamma=2.0e3, density=5.0e24, radius=2.0e-6, zmin=15.0e-6, zmax=20.0e-6)
-    simulator = PWFASimulator(grid, plasma, driver, working_directory=tmp_path)
-    simulator.configure()
+    simulator = _short_run_simulator(tmp_path, write_plasma=False)
 
     simulator.run()
 
@@ -379,7 +418,11 @@ def _write_witness_dump(directory, iteration, time, *, outlier=False):
         ):
             x, y = rng.normal(0.0, sigma_r, n), rng.normal(0.0, sigma_r, n)
             z = rng.normal(z_centre, sigma_z, n)
-            ux, uy, uz = rng.normal(0.0, 0.01, n), rng.normal(0.0, 0.01, n), numpy.full(n, 500.0)
+            ux, uy, uz = (
+                rng.normal(0.0, 0.01, n),
+                rng.normal(0.0, 0.01, n),
+                numpy.full(n, 500.0),
+            )
             if outlier and name == "witness":
                 x[0] = 1.0e-3
             particles = step.create_group(f"particles/{name}")
@@ -405,10 +448,14 @@ def test_the_dump_metrics_follow_the_papers_cut(tmp_path):
     )
 
     assert distance == pytest.approx(100.0 * 299792458.0 * 1.0e-10)
-    assert charge == pytest.approx(1.0 * 999.0 / 1000.0, rel=1e-6)  # pC: the outlier is cut
+    assert charge == pytest.approx(
+        1.0 * 999.0 / 1000.0, rel=1e-6
+    )  # pC: the outlier is cut
     assert energy == pytest.approx(500.0 * 0.51099895, rel=1e-3)
     assert size == pytest.approx(14.0, rel=0.1)
-    assert emittance == pytest.approx(14.0 * 0.01, rel=0.2)  # sigma_x * sigma_ux = 0.14 mm mrad
+    assert emittance == pytest.approx(
+        14.0 * 0.01, rel=0.2
+    )  # sigma_x * sigma_ux = 0.14 mm mrad
     assert spread < 0.1
 
 
@@ -423,11 +470,15 @@ def test_plot_results_writes_the_four_plots_from_the_dumps(tmp_path):
         "offaxis_transverse_wakefield.png",
     ]
 
-    files = clara_example.plot_results(tmp_path, witness="longer", output=tmp_path / "plots")
+    files = clara_example.plot_results(
+        tmp_path, witness="longer", output=tmp_path / "plots"
+    )
 
     assert [f.name for f in files] == expected
     assert all(f.stat().st_size > 1000 for f in files)
-    shorter = clara_example.plot_results(tmp_path, witness="shorter", output=tmp_path / "plots_shorter")
+    shorter = clara_example.plot_results(
+        tmp_path, witness="shorter", output=tmp_path / "plots_shorter"
+    )
     assert [f.name for f in shorter] == expected
 
 

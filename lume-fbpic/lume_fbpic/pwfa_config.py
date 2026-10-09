@@ -1,8 +1,8 @@
 """Config classes for beam-driven (PWFA) simulations: the grid and the particle bunches.
 
 They are frozen attrs classes on `inversion_fbpic`'s `SerializableConfig`, which only supplies
-the YAML round trip and the type registry; nothing here uses the LWFA `Simulation` or its laser
-classes. The plasma is an ordinary `_DensityProfile` (for example `LinearRampFlattop` with
+the serialization (YAML, JSON and HDF5) and the type registry; nothing here uses the LWFA
+`Simulation` or its laser classes. The plasma is an ordinary `_DensityProfile` (for example `LinearRampFlattop` with
 `species=None`, bare electrons).
 
 Two bunch shapes: `FlatTopBunch` (uniform density, `add_particle_bunch`) and `GaussianBunch`
@@ -63,12 +63,16 @@ class PWFAGrid(SerializableConfig):
         converter=attrs.converters.optional(float),
         validator=attrs.validators.optional(attrs.validators.gt(0.0)),
     )
-    write_period: int = attrs.field(default=20, converter=int, validator=attrs.validators.gt(0))
+    write_period: int = attrs.field(
+        default=20, converter=int, validator=attrs.validators.gt(0)
+    )
     save_directory: str = attrs.field(default="diags")
     z_boundary: str = attrs.field(default="open")
     r_boundary: str = attrs.field(default="open")
     use_cuda: bool = attrs.field(default=False)
-    smoother_passes: int = attrs.field(default=1, converter=int, validator=attrs.validators.ge(0))
+    smoother_passes: int = attrs.field(
+        default=1, converter=int, validator=attrs.validators.ge(0)
+    )
     smoother_compensator: bool = attrs.field(default=True)
     random_seed: int | None = attrs.field(
         default=None, converter=attrs.converters.optional(int)
@@ -77,10 +81,14 @@ class PWFAGrid(SerializableConfig):
 
     def __attrs_post_init__(self) -> None:
         if self.zmax <= self.zmin:
-            raise ValueError(f"zmax ({self.zmax}) must be greater than zmin ({self.zmin})")
+            raise ValueError(
+                f"zmax ({self.zmax}) must be greater than zmin ({self.zmin})"
+            )
         for axis, value in (("z", self.z_boundary), ("r", self.r_boundary)):
             if value not in _BOUNDARIES[axis]:
-                raise ValueError(f"{axis}_boundary must be one of {_BOUNDARIES[axis]}, got {value!r}")
+                raise ValueError(
+                    f"{axis}_boundary must be one of {_BOUNDARIES[axis]}, got {value!r}"
+                )
 
     @property
     def boundaries(self) -> dict[str, str]:
@@ -140,7 +148,9 @@ class FlatTopBunch(_ParticleBunch):
 
     def __attrs_post_init__(self) -> None:
         if self.zmax <= self.zmin:
-            raise ValueError(f"zmax ({self.zmax}) must be greater than zmin ({self.zmin})")
+            raise ValueError(
+                f"zmax ({self.zmax}) must be greater than zmin ({self.zmin})"
+            )
 
     @property
     def charge(self) -> float:
@@ -192,7 +202,9 @@ class GaussianBunch(_ParticleBunch):
     sig_r: float = attrs.field(converter=float, validator=attrs.validators.gt(0.0))
     sig_z: float = attrs.field(converter=float, validator=attrs.validators.gt(0.0))
     zf: float = attrs.field(converter=float)
-    n_emit: float = attrs.field(default=0.0, converter=float, validator=attrs.validators.ge(0.0))
+    n_emit: float = attrs.field(
+        default=0.0, converter=float, validator=attrs.validators.ge(0.0)
+    )
     n_macroparticles: int = attrs.field(
         default=1000, converter=int, validator=attrs.validators.gt(0)
     )

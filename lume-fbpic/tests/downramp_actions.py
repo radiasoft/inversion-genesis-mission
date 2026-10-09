@@ -31,44 +31,33 @@ def make_actions(simulator: FBPICSimulator) -> list[Action]:
     Outputs (read-only): charge, mean/std energy, and `final_particles`.
     """
     return [
-        LaserFieldAction(name="laser_energy", field_name="energy", unit="J"),
-        LaserFieldAction(
-            name="laser_focal_position", field_name="focal_position", unit="m"
-        ),
-        LaserFieldAction(
-            name="laser_temporal_width", field_name="tau_fwhm", unit="s"
-        ),
+        LaserFieldAction(name="laser_energy", field_name="energy"),
+        LaserFieldAction(name="laser_focal_position", field_name="focal_position"),
+        LaserFieldAction(name="laser_temporal_width", field_name="tau_fwhm"),
         DensityFieldAction(
             name="flattop_density",
             density_index=0,
             field_name="nominal_density",
-            unit="m^-3",
         ),
         DensityFieldAction(
             name="downramp_density",
             density_index=1,
             field_name="nominal_density",
-            unit="m^-3",
         ),
         DensityFieldAction(
             name="downramp_length",
             density_index=1,
             field_name="downramp_length",
-            unit="m",
         ),
-        StatAction(
-            name="charge_pc", stat_name="charge_pc", unit="pC", read_only=True
-        ),
+        StatAction(name="charge_pc", stat_name="charge_pc", read_only=True),
         StatAction(
             name="energy_mean_mev",
             stat_name="energy_mean_mev",
-            unit="MeV",
             read_only=True,
         ),
         StatAction(
             name="energy_std_mev",
             stat_name="energy_std_mev",
-            unit="MeV",
             read_only=True,
         ),
         FinalParticlesAction(name="final_particles", read_only=True),

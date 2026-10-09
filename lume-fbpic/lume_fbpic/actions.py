@@ -4,14 +4,21 @@
 `_DensityProfile` subclasses) are frozen `attrs` classes, so writable actions here replace
 the whole held object via `attrs.evolve()` rather than mutating a field in place -- unlike
 `lume-cheetah`'s actions, which `setattr()` directly on Cheetah's plain mutable elements.
+
+The `unit` of an action can be left out. `LUMEFBPICModel` then fills it in with
+`default_unit()`: for an action on a config field, the unit tagged in brackets in that field's
+documentation (`[m]`, `[J]`, `[m^-3]`, ...), and for a statistic its entry in `STAT_UNITS`. A
+unit given explicitly, `None` included, is kept.
 """
 
 from __future__ import annotations
 
+import re
 import typing
 
 import attrs
 import numpy
+from beamphysics.units import pmd_unit
 from scipy.constants import c, e, m_e
 
 from lume.actions import Action, ReadOnlyActionMixin, WritableActionMixin
@@ -33,12 +40,21 @@ from inversion_fbpic.utils.distributions import (
 # Electron rest energy [eV]: converts a ParticleGroup's px/py/pz [eV/c] to normalized u = p/(m c).
 _MC2_EV = m_e * c**2 / e
 
+# Units of the statistics a simulator keeps in `stats`, by name.
+STAT_UNITS = {"charge_pc": "pC", "energy_mean_mev": "MeV", "energy_std_mev": "MeV"}
+
+# Units that are not `pmd_unit` symbols but are tagged in a config field's documentation.
+_EXTRA_UNITS = {"wavelengths"}
+
 
 class BunchFieldAction(WritableActionMixin[PWFASimulator], ScalarVariable):
     """Writable scalar mapped onto one field of a PWFA simulator's `driver` or `witness` bunch."""
 
     bunch: str
     field_name: str
+
+    def default_unit(self, simulator: PWFASimulator) -> str | None:
+        return _config_unit(self._bunch(simulator), self.field_name)
 
     def _bunch(self, simulator: PWFASimulator) -> typing.Any:
         if self.bunch not in ("driver", "witness"):
@@ -65,6 +81,9 @@ class DensityFieldAction(WritableActionMixin[FBPICSimulator], ScalarVariable):
 
     density_index: int
     field_name: str
+
+    def default_unit(self, simulator: FBPICSimulator) -> str | None:
+        return _config_unit(simulator.densities[self.density_index], self.field_name)
 
     def _get(self, simulator: FBPICSimulator) -> typing.Any:
         return getattr(simulator.densities[self.density_index], self.field_name)
@@ -93,6 +112,9 @@ class DopantFractionAction(WritableActionMixin[FBPICSimulator], ScalarVariable):
 
     dopant_index: int
     host_index: int
+
+    def default_unit(self, simulator: FBPICSimulator) -> str | None:
+        return "1"  # a fraction
 
     def _atom_densities(self, simulator: FBPICSimulator) -> tuple[float, float]:
         """Return `(host, dopant)` neutral-atom densities in m^-3."""
@@ -159,6 +181,9 @@ class HyperparameterFieldAction(WritableActionMixin[FBPICSimulator], ScalarVaria
 
     field_name: str
 
+    def default_unit(self, simulator: FBPICSimulator) -> str | None:
+        return _config_unit(simulator.hyparams, self.field_name)
+
     def _get(self, simulator: FBPICSimulator) -> typing.Any:
         return getattr(simulator.hyparams, self.field_name)
 
@@ -181,6 +206,9 @@ class LaserFieldAction(WritableActionMixin[FBPICSimulator], ScalarVariable):
     """
 
     field_name: str
+
+    def default_unit(self, simulator: FBPICSimulator) -> str | None:
+        return _config_unit(simulator.laser, self.field_name)
 
     def _get(self, simulator: FBPICSimulator) -> typing.Any:
         return getattr(simulator.laser, self.field_name)
@@ -233,6 +261,9 @@ class PlasmaFieldAction(WritableActionMixin[PWFASimulator], ScalarVariable):
 
     field_name: str
 
+    def default_unit(self, simulator: PWFASimulator) -> str | None:
+        return _config_unit(simulator.plasma, self.field_name)
+
     def _get(self, simulator: PWFASimulator) -> typing.Any:
         return getattr(simulator.plasma, self.field_name)
 
@@ -249,6 +280,9 @@ class StatAction(ReadOnlyActionMixin[BaseSimulator], ScalarVariable):
     """
 
     stat_name: str
+
+    def default_unit(self, simulator: BaseSimulator) -> str | None:
+        return STAT_UNITS.get(self.stat_name)
 
     def _get(self, simulator: BaseSimulator) -> typing.Any:
         if self.stat_name in simulator.stats:
@@ -289,6 +323,10 @@ def make_descriptor_actions(
     `central_fraction=0.95`) is the `build_dataset.py` default, tuned to the
     ionization-injection beams; a lower-energy bunch (the LWFA example's, for instance, has a
     mean `uz` near 2) needs a lower `uz_min`.
+
+    Each action has the unit of its feature (see `_descriptor_unit()`): the momenta `ux`, `uy`,
+    `uz` are normalized and so dimensionless, `"1"`, the positions are in metres, and the charge
+    is in pC.
     """
     return [
         MomentDescriptorAction(
@@ -298,7 +336,7 @@ def make_descriptor_actions(
             longitudinal_bins=longitudinal_bins,
             read_only=True,
             uz_min=uz_min,
-            unit="pC" if feature == "total_beam_charge_pc" else None,
+            unit=_descriptor_unit(feature),
         )
         for feature in _descriptor_features(longitudinal_bins)
     ]
@@ -315,49 +353,53 @@ def make_pwfa_actions(simulator: PWFASimulator) -> list[Action]:
     `final_particles`.
     """
     actions: list[Action] = [
-        PlasmaFieldAction(
-            name="plasma_density", field_name="nominal_density", unit="m^-3"
-        )
+        PlasmaFieldAction(name="plasma_density", field_name="nominal_density")
     ]
     actions += _bunch_actions("driver", simulator.driver)
     if simulator.witness is not None:
         actions += _bunch_actions("witness", simulator.witness)
     return actions + [
-        StatAction(name="charge_pc", stat_name="charge_pc", unit="pC", read_only=True),
-        StatAction(
-            name="energy_mean_mev",
-            stat_name="energy_mean_mev",
-            unit="MeV",
-            read_only=True,
-        ),
-        StatAction(
-            name="energy_std_mev",
-            stat_name="energy_std_mev",
-            unit="MeV",
-            read_only=True,
-        ),
+        StatAction(name="charge_pc", stat_name="charge_pc", read_only=True),
+        StatAction(name="energy_mean_mev", stat_name="energy_mean_mev", read_only=True),
+        StatAction(name="energy_std_mev", stat_name="energy_std_mev", read_only=True),
         FinalParticlesAction(name="final_particles", read_only=True),
     ]
 
 
 def _bunch_actions(bunch: str, config: typing.Any) -> list[Action]:
     """The writable actions of one PWFA bunch (`driver` or `witness`), by the kind of bunch."""
-    fields = [("gamma", "gamma", None)]
+    fields = [("gamma", "gamma")]
     if isinstance(config, FlatTopBunch):
-        fields += [("density", "density", "m^-3"), ("radius", "radius", "m")]
+        fields += [("density", "density"), ("radius", "radius")]
     elif isinstance(config, GaussianBunch):
         fields += [
-            ("charge", "charge", "C"),
-            ("sigma_r", "sig_r", "m"),
-            ("sigma_z", "sig_z", "m"),
-            ("position", "zf", "m"),
+            ("charge", "charge"),
+            ("sigma_r", "sig_r"),
+            ("sigma_z", "sig_z"),
+            ("position", "zf"),
         ]
     return [
-        BunchFieldAction(
-            name=f"{bunch}_{name}", bunch=bunch, field_name=field, unit=unit
-        )
-        for name, field, unit in fields
+        BunchFieldAction(name=f"{bunch}_{name}", bunch=bunch, field_name=field)
+        for name, field in fields
     ]
+
+
+def _config_unit(config: typing.Any, field_name: str) -> str | None:
+    """The unit tagged in brackets in the documentation of field `field_name` of `config`.
+
+    The documentation of a config class lists each field as `name: (type) [unit] description`;
+    the tags that are not units (`[str]`, `[int]`) are skipped. The text is that of
+    `SerializableConfig._parameter_descriptions()`, which also holds the fields a class
+    inherits. None if the field has no unit tag, or the class has no such documentation.
+    """
+    descriptions = getattr(type(config), "_parameter_descriptions", None)
+    if descriptions is None:
+        return None
+    text = " ".join(descriptions().get(field_name, []))
+    for tag in re.findall(r"\[([^\]]+)\]", text):
+        if tag in _EXTRA_UNITS or _is_unit(tag):
+            return tag
+    return None
 
 
 def _descriptor(
@@ -423,3 +465,35 @@ def _descriptor_features(longitudinal_bins: int) -> list[str]:
         features.append(f"longitudinal_rms_uz_{index:02d}")
     features.append("total_beam_charge_pc")
     return features
+
+
+def _descriptor_unit(feature: str) -> str:
+    """The unit of a moment-descriptor feature, from its name.
+
+    The phase space is `x`, `ux`, `y`, `uy`, `z`, `uz`: positions in metres and momenta
+    normalized to `m c`. A momentum centroid or a longitudinal `uz` feature is dimensionless
+    (`"1"`), a covariance is `m` to the power of the number of positions in the pair
+    (`cov_x_x` in m^2, `cov_x_ux` in m, `cov_ux_ux` dimensionless), and the charge is in pC.
+
+    Raises:
+        ValueError: For a name that is not a feature of the spline-mode descriptor.
+    """
+    if feature == "total_beam_charge_pc":
+        return "pC"
+    if feature.startswith(("mean_u", "longitudinal_mean_uz_", "longitudinal_rms_uz_")):
+        return "1"
+    if feature.startswith("cov_"):
+        names = feature[len("cov_") :].split("_")
+        if len(names) == 2 and all(name in COORD_NAMES for name in names):
+            positions = sum(name in ("x", "y", "z") for name in names)
+            return ("1", "m", "m^2")[positions]
+    raise ValueError(f"no unit for the descriptor feature {feature!r}")
+
+
+def _is_unit(text: str) -> bool:
+    """Whether `text` is a unit symbol `beamphysics` knows."""
+    try:
+        pmd_unit(text)
+    except ValueError:
+        return False
+    return True

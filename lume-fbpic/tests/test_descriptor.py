@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import collections
 import math
 
 import numpy
@@ -99,6 +100,25 @@ def test_charge_is_the_selected_weights_in_picocoulombs(descriptor_model, simula
     assert (
         0 < charge <= selected * _ELECTRONS_PER_MACROPARTICLE * e * 1e12
     )  # the crop only removes
+
+
+def test_each_descriptor_action_has_the_unit_of_its_feature():
+    units = {action.feature: action.unit for action in make_descriptor_actions()}
+
+    assert units["mean_ux"] == units["mean_uz"] == "1"  # normalized momentum
+    assert units["cov_x_x"] == units["cov_z_z"] == "m^2"
+    assert units["cov_x_ux"] == units["cov_y_uz"] == units["cov_z_uz"] == "m"
+    assert units["cov_ux_ux"] == units["cov_uy_uz"] == "1"
+    assert units["longitudinal_mean_uz_00"] == units["longitudinal_rms_uz_03"] == "1"
+    assert units["total_beam_charge_pc"] == "pC"
+    assert collections.Counter(units.values()) == {"1": 17, "m": 9, "m^2": 6, "pC": 1}
+
+
+def test_every_descriptor_unit_is_a_beamphysics_unit():
+    from beamphysics.units import pmd_unit
+
+    for action in make_descriptor_actions():
+        pmd_unit(action.unit)  # raises for an unknown unit
 
 
 def test_selection_parameters_change_the_result(simulator):

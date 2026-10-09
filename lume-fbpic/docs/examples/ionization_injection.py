@@ -1,7 +1,7 @@
 """lume_fbpic approximation of `runs/initial_sample/ionization_injection_runscript_00.py`
 (`sim_0000` of `runs/initial_sample/sample_dataset/sample_dataset.json`): a boosted-frame
 helium/nitrogen ionization-injection LPA driven by an unaberrated (all Zernike coefficients 0)
-super-Gaussian LASY laser pulse. Needs the real `LasyLaserPulse`, which is not on `main` yet.
+super-Gaussian LASY laser pulse (`LasyLaserPulse`).
 
 Substitutions, none of which makes it a bit-exact reproduction:
 
@@ -64,9 +64,9 @@ LASER_SPOT_SIZE_M = 24e-6
 LASER_SUPER_GAUSSIAN_ORDER = 3.0
 LASER_FOCAL_POSITION_M = 3.5e-3
 
-# --- hyperparameters: the coarsened 1-node CPU configuration (see module docstring,
-# "Reproducing the nz=1000 CPU run"). sim_0000's own values were NZ, NR, N_AZIMUTHAL_MODES =
-# 1500, 300, 5, NUMBER_DUMPS = WRITE_PERIOD = 50, P_NT = 15.
+# --- hyperparameters: the coarsened CPU configuration of the module docstring. sim_0000's own
+# values were NZ, NR, N_AZIMUTHAL_MODES = 1500, 300, 5, NUMBER_DUMPS = WRITE_PERIOD = 50,
+# P_NT = 15.
 NZ, NR, N_AZIMUTHAL_MODES = 1000, 100, 2
 ZMIN, ZMAX, RMAX = -70.0e-6, 0.0, 200.0e-6
 GAMMA_BOOST = 1.5
@@ -169,39 +169,30 @@ def build_model(working_directory: str | None = None) -> LUMEFBPICModel:
     )
 
     actions = [
-        LaserFieldAction(name="laser_energy", field_name="energy", unit="J"),
-        LaserFieldAction(
-            name="laser_focal_position", field_name="focal_position", unit="m"
-        ),
-        LaserFieldAction(
-            name="laser_temporal_width", field_name="tau_fwhm", unit="s"
-        ),
+        LaserFieldAction(name="laser_energy", field_name="energy"),
+        LaserFieldAction(name="laser_focal_position", field_name="focal_position"),
+        LaserFieldAction(name="laser_temporal_width", field_name="tau_fwhm"),
         DensityFieldAction(
             name="nitrogen_dopant_density",
             density_index=1,
             field_name="nominal_density",
-            unit="m^-3",
         ),
         # Scan variable `nitrogen_dopant_fraction` of sample_dataset.json: rewrites BOTH gas
         # densities at constant total atom density (profile 0 = He, profile 1 = N).
         DopantFractionAction(
-            name="nitrogen_dopant_fraction", host_index=0, dopant_index=1, unit=None
+            name="nitrogen_dopant_fraction", host_index=0, dopant_index=1
         ),
         # One action per Zernike coefficient, named like the dataset's `zernike_<name>` inputs
-        # (for example `zernike_astigmatism_4`, `zernike_coma_x`); phase amplitudes in radians.
+        # (for example `zernike_astigmatism_4`, `zernike_coma_x`); phase amplitudes in wavelengths.
         *[
             ZernikeCoefficientAction(
-                name=f"zernike_{coefficient}", coefficient=coefficient, unit="rad"
+                name=f"zernike_{coefficient}", coefficient=coefficient
             )
             for coefficient in laser.zernike_coefficients
         ],
-        StatAction(name="charge_pc", stat_name="charge_pc", unit="pC", read_only=True),
-        StatAction(
-            name="energy_mean_mev", stat_name="energy_mean_mev", unit="MeV", read_only=True
-        ),
-        StatAction(
-            name="energy_std_mev", stat_name="energy_std_mev", unit="MeV", read_only=True
-        ),
+        StatAction(name="charge_pc", stat_name="charge_pc", read_only=True),
+        StatAction(name="energy_mean_mev", stat_name="energy_mean_mev", read_only=True),
+        StatAction(name="energy_std_mev", stat_name="energy_std_mev", read_only=True),
         FinalParticlesAction(name="final_particles", read_only=True),
         # The 33 moment-descriptor scalars build_dataset.py writes (uz >= 30, central 95%).
         *make_descriptor_actions(),

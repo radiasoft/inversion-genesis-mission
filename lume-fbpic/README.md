@@ -1,8 +1,9 @@
 # lume-fbpic
 
-A [LUME](https://github.com/lume-science) model for laser-plasma accelerator (LPA) simulations,
-wrapping [`inversion_fbpic`](../lpa/Simulation_FBPIC) the way
-[`lume-cheetah`](https://github.com/lume-science/lume-cheetah) wraps Cheetah. With it you can:
+A [LUME](https://github.com/lume-science) model for fbpic plasma-accelerator simulations: laser-driven
+(LWFA, wrapping [`inversion_fbpic`](../lpa/Simulation_FBPIC)) and beam-driven (PWFA, built directly
+on fbpic), in the way [`lume-cheetah`](https://github.com/lume-science/lume-cheetah) wraps
+Cheetah. With it you can:
 
 - **run** an fbpic simulation through `get()` / `set()`;
 - **archive** it, **load** it back, and **serve** its outputs as EPICS PVs (via `lume-pva`);
@@ -15,10 +16,12 @@ wrapping [`inversion_fbpic`](../lpa/Simulation_FBPIC) the way
 ```bash
 pip install -e ../lpa/Simulation_FBPIC      # inversion_fbpic, which this package wraps
 pip install -e .                            # lume_fbpic
-pip install -e .[dev]                       # also pytest
+pip install -e .[dev]                       # also pytest and pytest-mock
+pip install -e .[serve]                     # also lume-pva, for docs/htu-twin/serving/serve.py
 ```
 
-`lume-pva` (for `docs/htu-twin/serving/serve.py`) is not a dependency; it is imported only when used.
+`lume-pva` is not a dependency of the package: only `docs/htu-twin/serving/serve.py` imports it, when
+it runs. The `serve` extra installs the commit that `geecs-lume-twin` pins, so the two installs agree.
 
 ## Quick start
 
@@ -30,12 +33,12 @@ from lume_fbpic.actions import FinalParticlesAction, LaserFieldAction, StatActio
 from lume_fbpic.model import LUMEFBPICModel
 
 actions = [   # the model's inputs and outputs; docs/examples build the lists for each case
-    LaserFieldAction(name="laser_energy", field_name="energy", unit="J"),
-    StatAction(name="charge_pc", stat_name="charge_pc", unit="pC", read_only=True),
-    StatAction(name="energy_mean_mev", stat_name="energy_mean_mev", unit="MeV", read_only=True),
+    LaserFieldAction(name="laser_energy", field_name="energy"),
+    StatAction(name="charge_pc", stat_name="charge_pc", read_only=True),
+    StatAction(name="energy_mean_mev", stat_name="energy_mean_mev", read_only=True),
     FinalParticlesAction(name="final_particles", read_only=True),
 ]
-model = LUMEFBPICModel(simulator, actions)
+model = LUMEFBPICModel(simulator, actions)      # fills in the units (J, pC, MeV) of the actions
 model.set({"laser_energy": 2.5})          # applies the value, then runs fbpic
 model.get(["charge_pc", "energy_mean_mev"])
 
@@ -48,6 +51,11 @@ model = LUMEFBPICModel.from_archive("run.h5")      # actions come back with it
 - The **actions** are the model's inputs and outputs: laser and density fields, Zernike
   coefficients, the dopant fraction, run statistics, the 33-scalar moment descriptor and the final
   particles.
+- An action's `unit` is left out and the model fills it in: for an action on a config field, from
+  the unit tagged in brackets in that field's documentation (`[J]`, `[m]`, `[m^-3]`, ...); for a
+  statistic, from `lume_fbpic.actions.STAT_UNITS`; for a moment-descriptor feature, from its
+  name. A `unit` given to the action, `None` included, is kept. The units are served as the PVs'
+  display units.
 - An archive holds the config (as native HDF5 groups, written by `SerializableConfig.to_hdf5()`),
   the actions, the output values and optionally the final particles (as a `ParticleGroup`). It
   holds no paths. Output directories are decided when a run starts, and an input data file a

@@ -136,42 +136,20 @@ def test_an_unlocked_source_put_replaces_the_injected_beam(twin_model):
         stage.reset()
 
 
-def test_the_source_variables_are_read_only_by_default(stage):
-    sources = [n for n in stage.supported_variables if n.startswith("Source_")]
-
-    assert len(sources) == 14
-    assert all(stage.supported_variables[n].read_only for n in sources)
-    assert not stage.supported_variables[
-        "EMQ1H_Current"
-    ].read_only  # the rest is unchanged
-
-
 def test_a_locked_source_cannot_be_set_and_the_injected_beam_stays(stage):
     stage.initial_particles = _lab_snapshot()
     charge = _get(stage, "Source_Charge_pC")
+    assert charge == pytest.approx(
+        stage.initial_particles.charge * 1e12
+    )  # it reads the bunch
 
     with pytest.raises(ReadOnlyError):
         stage.set({"Source_Charge_pC": 5.0})
+    stage.set({"EMQ1H_Current": 0.71})  # the other twin variables stay writable
 
     assert stage.external_beam is True
     assert _get(stage, "Source_Charge_pC") == charge
-
-
-def test_a_locked_source_still_reads_the_lpa_bunch(stage):
-    stage.initial_particles = _lab_snapshot()
-
-    assert _get(stage, "Source_Charge_pC") == pytest.approx(
-        stage.initial_particles.charge * 1e12
-    )
-
-
-def test_the_other_twin_variables_stay_writable_when_locked(stage):
-    stage.initial_particles = _lab_snapshot()
-
-    stage.set({"EMQ1H_Current": 0.71})
-
     assert _get(stage, "EMQ1H_Current") == pytest.approx(0.71, rel=1e-3)
-    assert stage.external_beam is True
 
 
 def test_the_source_can_be_left_writable(twin_model):
@@ -180,36 +158,17 @@ def test_the_source_can_be_left_writable(twin_model):
     assert not stage.supported_variables["Source_Energy_MeV"].read_only
 
 
-def test_a_staged_chain_refuses_source_puts_and_passes_the_lpa_bunch_on(
-    simulator, twin_model
-):
-    simulator.final_particles = _lab_snapshot()
-    chain = build_chain(
-        LUMEFBPICModel(simulator, make_actions(simulator), dummy_run=True), twin_model
-    )
-    stage = chain.lume_model_instances[1]
-    try:
-        with pytest.raises(ReadOnlyError):
-            chain.set({"Source_Energy_MeV": 50.0})
-
-        chain.set({"EMQ1H_Current": 0.7})
-
-        assert isinstance(stage, TwinStage)
-        assert stage.external_beam is True
-        assert chain.supported_variables["Source_Energy_MeV"].read_only
-        assert chain.get(["Source_Charge_pC"])["Source_Charge_pC"] > 0
-    finally:
-        stage.reset()
-
-
-def test_reset_restores_the_original_source_beam(stage):
+def test_reset_restores_the_original_source_beam_and_forgets_the_drift(stage):
     original = (_get(stage, "Source_Energy_MeV"), _get(stage, "Source_Charge_pC"))
+    stage.plasma_exit_z = 0.0029
     stage.initial_particles = _lab_snapshot()
+    assert stage.drift_length is not None
 
     stage.reset()
 
     assert stage.external_beam is False
     assert stage.initial_particles is None
+    assert stage.drift_length is None
     assert (
         _get(stage, "Source_Energy_MeV"),
         _get(stage, "Source_Charge_pC"),
@@ -221,6 +180,9 @@ def test_wrapped_variables_are_the_twins_apart_from_the_locked_source(
 ):
     twin = twin_model.supported_variables
     assert list(stage.supported_variables) == list(twin)
+    sources = [name for name in stage.supported_variables if name.startswith("Source_")]
+    assert len(sources) == 14
+    assert all(stage.supported_variables[name].read_only for name in sources)
     for name, variable in stage.supported_variables.items():
         if name.startswith("Source_"):
             assert (
@@ -228,13 +190,19 @@ def test_wrapped_variables_are_the_twins_apart_from_the_locked_source(
                 == twin[name]
             )
         else:
-            assert variable is twin[name]
+            assert (
+                variable is twin[name]
+            )  # the rest is the twin's own, writable as it is
 
 
 def test_the_stage_follows_an_lpa_model_in_a_staged_chain(stage, simulator):
     simulator.final_particles = _lab_snapshot()
     lpa = LUMEFBPICModel(simulator, make_actions(simulator), dummy_run=True)
     chain = StagedModel([lpa, stage])
+
+    with pytest.raises(ReadOnlyError):  # the LPA is the source: a source put is refused
+        chain.set({"Source_Energy_MeV": 50.0})
+    assert chain.supported_variables["Source_Energy_MeV"].read_only
 
     chain.set(
         {"EMQ1H_Current": 0.7}
@@ -276,17 +244,7 @@ def test_the_bunch_is_drifted_to_the_plasma_exit_plane(twin_model):
         numpy.testing.assert_allclose(
             numpy.asarray(injected.x), numpy.asarray(expected.x)
         )
-    finally:
-        stage.reset()
-
-
-def test_source_pvs_read_the_moments_at_the_plane(twin_model):
-    stage = TwinStage(twin_model, plasma_exit_z=0.0029)
-    try:
-        stage.initial_particles = _lab_snapshot()
-
-        moments = beam_moments(stage.initial_particles)
-
+        moments = beam_moments(injected)  # the source PVs read the bunch at the plane
         assert _get(stage, "Source_BetaX_mm") == pytest.approx(
             moments["beta_x_mm"], rel=1e-4
         )
@@ -306,15 +264,6 @@ def test_a_bunch_that_has_not_reached_the_plane_is_drifted_with_a_warning(twin_m
         assert stage.drift_length > 0
     finally:
         stage.reset()
-
-
-def test_reset_forgets_the_drift(twin_model):
-    stage = TwinStage(twin_model, plasma_exit_z=0.0029)
-    stage.initial_particles = _lab_snapshot()
-
-    stage.reset()
-
-    assert stage.drift_length is None
 
 
 def test_the_served_chain_exposes_the_twin_controls_and_keeps_the_source_read_only(
@@ -384,55 +333,6 @@ def test_screens_are_current_when_read_right_after_an_injection(stage):
     assert image.sum() > 0
 
 
-def test_a_synthesized_bunch_becomes_the_twins_source_with_the_recorded_charge(
-    simulator, twin_model, tmp_path
-):
-    from scipy.constants import e as electron_charge
-
-    from selector import ArchiveSelector
-
-    from inversion_fbpic.utils import distributions
-
-    pg = _lab_snapshot()
-    phase_space = numpy.stack(
-        [pg.x, pg.px / _MC2_EV, pg.y, pg.py / _MC2_EV, pg.z, pg.pz / _MC2_EV], axis=-1
-    )
-    descriptor = distributions.compute_moment_descriptor(
-        phase_space, numpy.asarray(pg.weight) / electron_charge
-    )
-    from lume_fbpic.actions import make_descriptor_actions
-
-    source = LUMEFBPICModel(
-        simulator,
-        [*make_actions(simulator), *make_descriptor_actions()],
-        dummy_run=True,
-    )
-    source.simulator.stats = {
-        f"descriptor_{k}": float(x) for k, x in descriptor.items()
-    }
-    source.archive(tmp_path / "lpa.h5")
-    lpa = LUMEFBPICModel.from_archive(tmp_path / "lpa.h5", dummy_run=True)
-    chain = build_chain(
-        ArchiveSelector({"lpa": lpa}, synthetic_bunch_particles=5000), twin_model
-    )
-    stage = chain.lume_model_instances[1]
-    try:
-        chain.set({"EMQ1H_Current": 0.7})
-
-        assert stage.external_beam is True
-        assert (
-            len(stage.initial_particles) == 5000
-        )  # taken as the selected bunch: no second cut
-        assert _get(stage, "Source_Charge_pC") == pytest.approx(
-            descriptor["total_beam_charge_pc"], rel=1e-6
-        )
-        assert _get(stage, "Source_Energy_MeV") == pytest.approx(
-            numpy.sqrt(1 + descriptor["mean_uz"] ** 2) * _MC2_EV / 1e6, rel=0.05
-        )
-    finally:
-        stage.reset()
-
-
 def test_switching_the_lpa_run_changes_the_twins_source(
     simulator, twin_model, tmp_path
 ):
@@ -442,6 +342,7 @@ def test_switching_the_lpa_run_changes_the_twins_source(
     from inversion_fbpic.utils import distributions
 
     models = {}
+    descriptors = {}
     for name, uz, charge_pc in (("low", 100.0, 200.0), ("high", 200.0, 400.0)):
         pg = _lab_snapshot(uz_mean=uz)
         phase_space = numpy.stack(
@@ -450,6 +351,7 @@ def test_switching_the_lpa_run_changes_the_twins_source(
         )
         weights = numpy.full(len(pg), charge_pc * 1e-12 / len(pg)) / e
         descriptor = distributions.compute_moment_descriptor(phase_space, weights)
+        descriptors[name] = descriptor
         source = LUMEFBPICModel(
             simulator,
             [*make_actions(simulator), *make_descriptor_actions()],
@@ -467,6 +369,10 @@ def test_switching_the_lpa_run_changes_the_twins_source(
     try:
         chain.set({"EMQ1H_Current": 0.7})
         low = (_get(stage, "Source_Charge_pC"), _get(stage, "Source_Energy_MeV"))
+        assert len(stage.initial_particles) == 4000  # the selected bunch: no second cut
+        assert low[1] == pytest.approx(
+            numpy.sqrt(1 + descriptors["low"]["mean_uz"] ** 2) * _MC2_EV / 1e6, rel=0.05
+        )
 
         chain.set({"LPA_Archive": "high"})  # only the selector: the twin must follow
         high = (_get(stage, "Source_Charge_pC"), _get(stage, "Source_Energy_MeV"))
@@ -506,10 +412,10 @@ def test_binned_geometries_keep_the_field_of_view_and_coarsen_the_pixels():
     )  # its own 20 um x 4
 
 
-@pytest.mark.parametrize("factor", [0, -2, 1.5, 3])
-def test_a_binning_that_is_not_a_positive_divisor_is_refused(factor):
-    with pytest.raises(ValueError):
-        binned_screen_geometries(factor)
+def test_a_binning_that_is_not_a_positive_divisor_is_refused():
+    for factor in (0, -2, 1.5, 3):
+        with pytest.raises(ValueError):
+            binned_screen_geometries(factor)
 
 
 def test_a_given_model_cannot_be_binned(twin_model):

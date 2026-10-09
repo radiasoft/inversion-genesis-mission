@@ -77,14 +77,13 @@ def _charge(selector) -> float:
     ]
 
 
-def test_the_first_run_is_active_at_the_start(selector):
-    assert selector.active == "run_a"
-    assert selector.get(["LPA_Archive"])["LPA_Archive"] == "run_a"
-
-
-def test_the_enum_lists_the_runs_in_order(selector):
+def test_the_first_run_is_active_at_the_start_and_the_enum_lists_the_runs_in_order(
+    selector,
+):
     variable = selector.supported_variables["LPA_Archive"]
 
+    assert selector.active == "run_a"
+    assert selector.get(["LPA_Archive"])["LPA_Archive"] == "run_a"
     assert list(variable.options) == ["run_a", "run_b"]
     assert variable.read_only is False
 
@@ -153,13 +152,18 @@ def test_reset_makes_the_first_run_active_and_resets_every_run(selector):
     assert _charge(selector) == pytest.approx(200.0)
 
 
-def test_a_single_run_is_a_selector_with_one_option(simulator, tmp_path):
+def test_a_single_run_is_a_selector_with_one_option_and_the_selector_name_can_be_chosen(
+    simulator, tmp_path
+):
     model = _reconstructed_model(simulator, tmp_path, "only", 150.0, 100.0)
 
     selector = ArchiveSelector({"only": model})
+    named = ArchiveSelector({"only": model}, selector_name="Run")
 
     assert list(selector.supported_variables["LPA_Archive"].options) == ["only"]
     assert selector.get(["LPA_Archive"])["LPA_Archive"] == "only"
+    assert named.get(["Run"])["Run"] == "only"
+    assert "LPA_Archive" not in named.supported_variables
 
 
 def test_runs_with_different_variables_are_refused(simulator, tmp_path):
@@ -182,15 +186,6 @@ def test_the_selector_name_must_not_clash_with_a_variable(simulator, tmp_path):
 
     with pytest.raises(ValueError, match="already"):
         ArchiveSelector({"a": a}, selector_name="charge_pc")
-
-
-def test_a_custom_selector_name_is_used(simulator, tmp_path):
-    a = _reconstructed_model(simulator, tmp_path, "a", 100.0, 100.0)
-
-    selector = ArchiveSelector({"a": a}, selector_name="Run")
-
-    assert selector.get(["Run"])["Run"] == "a"
-    assert "LPA_Archive" not in selector.supported_variables
 
 
 def test_nan_outputs_stay_nan_for_runs_without_stats(selector):

@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <display version="2.0.0">
   <name>HTU Twin Synoptic</name>
-  <macros>
-    <TWIN_DISPLAYS>/home/vagrant/src/Inversion-Semiconductor/inversion-genesis-mission/geecs-lume-twin/display</TWIN_DISPLAYS>
-  </macros>
   <width>1500</width>
   <height>1004</height>
   <widget type="label" version="2.0.0">
@@ -78,7 +75,7 @@
     <name>btn__37</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/pmq_hexapod_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/pmq_hexapod_controls.bob</file>
         <macros />
         <target>window</target>
         <description>PMQ1V: PMQ triplet hexapod (rigid-unit X/Y/Z)</description>
@@ -113,7 +110,7 @@
     <name>btn__46</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/pmq_hexapod_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/pmq_hexapod_controls.bob</file>
         <macros />
         <target>window</target>
         <description>PMQ2H: PMQ triplet hexapod (rigid-unit X/Y/Z)</description>
@@ -148,7 +145,7 @@
     <name>btn__57</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/pmq_hexapod_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/pmq_hexapod_controls.bob</file>
         <macros />
         <target>window</target>
         <description>PMQ3V: PMQ triplet hexapod (rigid-unit X/Y/Z)</description>
@@ -206,7 +203,7 @@
     <name>btn__154</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/chicane_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/chicane_controls.bob</file>
         <macros />
         <target>window</target>
         <description>BEND1: chicane R56 control</description>
@@ -241,7 +238,7 @@
     <name>btn__199</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/chicane_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/chicane_controls.bob</file>
         <macros />
         <target>window</target>
         <description>BEND2: chicane R56 control</description>
@@ -299,7 +296,7 @@
     <name>btn__269</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/chicane_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/chicane_controls.bob</file>
         <macros />
         <target>window</target>
         <description>BEND3: chicane R56 control</description>
@@ -334,7 +331,7 @@
     <name>btn__314</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/chicane_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/chicane_controls.bob</file>
         <macros />
         <target>window</target>
         <description>BEND4: chicane R56 control</description>
@@ -392,7 +389,7 @@
     <name>btn__440</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/quad_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/quad_controls.bob</file>
         <macros>
           <NAME>EMQ1H</NAME>
         </macros>
@@ -429,7 +426,7 @@
     <name>btn__477</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/quad_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/quad_controls.bob</file>
         <macros>
           <NAME>EMQ2V</NAME>
         </macros>
@@ -466,7 +463,7 @@
     <name>btn__536</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/quad_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/quad_controls.bob</file>
         <macros>
           <NAME>EMQ3H</NAME>
         </macros>
@@ -526,7 +523,7 @@
     <name>btn__611</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/magspec_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/magspec_controls.bob</file>
         <macros />
         <target>window</target>
         <description>Dutch MagSpec: on/off + field</description>
@@ -2286,7 +2283,7 @@
     <name>btn__154</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>S1</S>
         </macros>
@@ -2323,7 +2320,7 @@
     <name>btn__340</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>S2</S>
         </macros>
@@ -2360,7 +2357,7 @@
     <name>btn__557</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>S3</S>
         </macros>
@@ -2397,7 +2394,7 @@
     <name>btn__683</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>S4</S>
         </macros>
@@ -2434,7 +2431,7 @@
     <name>btn_BMP_874</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/visa_bump_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/visa_bump_controls.bob</file>
         <macros />
         <target>window</target>
         <description>VISA entrance bumps: position/angle via S3+S4</description>
@@ -2457,7 +2454,7 @@
     <name>btn__940</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>VS1</S>
         </macros>
@@ -2494,7 +2491,7 @@
     <name>btn__1011</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>VS2</S>
         </macros>
@@ -2531,7 +2528,7 @@
     <name>btn__1081</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>VS3</S>
         </macros>
@@ -2568,7 +2565,7 @@
     <name>btn__1152</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>VS4</S>
         </macros>
@@ -2605,7 +2602,7 @@
     <name>btn__1223</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>VS5</S>
         </macros>
@@ -2642,7 +2639,7 @@
     <name>btn__1293</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>VS6</S>
         </macros>
@@ -2679,7 +2676,7 @@
     <name>btn__1364</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>VS7</S>
         </macros>
@@ -2716,7 +2713,7 @@
     <name>btn__1434</name>
     <actions>
       <action type="open_display">
-        <file>$(TWIN_DISPLAYS)/steering_controls.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/steering_controls.bob</file>
         <macros>
           <S>VS8</S>
         </macros>
@@ -2864,7 +2861,7 @@
     <tabs>
       <tab>
         <name>TCPhosphor</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>TCPhosphor</CAM>
           <XMIN>-3.58</XMIN>
@@ -2876,7 +2873,7 @@
       </tab>
       <tab>
         <name>ChicaneSlit</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>ChicaneSlit</CAM>
           <XMIN>-10.24</XMIN>
@@ -2888,7 +2885,7 @@
       </tab>
       <tab>
         <name>DCPhosphor</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>DCPhosphor</CAM>
           <XMIN>-3.58</XMIN>
@@ -2900,7 +2897,7 @@
       </tab>
       <tab>
         <name>Phosphor1</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>Phosphor1</CAM>
           <XMIN>-3.58</XMIN>
@@ -2912,7 +2909,7 @@
       </tab>
       <tab>
         <name>UC_ALineEbeam1</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_ALineEbeam1</CAM>
           <XMIN>-3.58</XMIN>
@@ -2924,7 +2921,7 @@
       </tab>
       <tab>
         <name>UC_ALineEBeam2</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_ALineEBeam2</CAM>
           <XMIN>-3.58</XMIN>
@@ -2936,7 +2933,7 @@
       </tab>
       <tab>
         <name>UC_ALineEBeam3</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_ALineEBeam3</CAM>
           <XMIN>-3.58</XMIN>
@@ -2948,7 +2945,7 @@
       </tab>
       <tab>
         <name>MagSpec_FrontScreen</name>
-        <file>$(TWIN_DISPLAYS)/magspec_front_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/magspec_front_view.bob</file>
         <macros>
           <CAM>MagSpec_FrontScreen</CAM>
           <XMIN>-3.58</XMIN>
@@ -2960,7 +2957,7 @@
       </tab>
       <tab>
         <name>MagSpec_SideScreen</name>
-        <file>$(TWIN_DISPLAYS)/magspec_side_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/magspec_side_view.bob</file>
         <macros>
           <CAM>MagSpec_SideScreen</CAM>
           <XMIN>-3.58</XMIN>
@@ -2972,7 +2969,7 @@
       </tab>
       <tab>
         <name>UC_VisaEBeam1</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_VisaEBeam1</CAM>
           <XMIN>-3.58</XMIN>
@@ -2984,7 +2981,7 @@
       </tab>
       <tab>
         <name>UC_VisaEBeam2</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_VisaEBeam2</CAM>
           <XMIN>-3.58</XMIN>
@@ -2996,7 +2993,7 @@
       </tab>
       <tab>
         <name>UC_VisaEBeam3</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_VisaEBeam3</CAM>
           <XMIN>-3.58</XMIN>
@@ -3008,7 +3005,7 @@
       </tab>
       <tab>
         <name>UC_VisaEBeam4</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_VisaEBeam4</CAM>
           <XMIN>-3.58</XMIN>
@@ -3020,7 +3017,7 @@
       </tab>
       <tab>
         <name>UC_VisaEBeam5</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_VisaEBeam5</CAM>
           <XMIN>-3.58</XMIN>
@@ -3032,7 +3029,7 @@
       </tab>
       <tab>
         <name>UC_VisaEBeam6</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_VisaEBeam6</CAM>
           <XMIN>-3.58</XMIN>
@@ -3044,7 +3041,7 @@
       </tab>
       <tab>
         <name>UC_VisaEBeam7</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_VisaEBeam7</CAM>
           <XMIN>-3.58</XMIN>
@@ -3056,7 +3053,7 @@
       </tab>
       <tab>
         <name>UC_VisaEBeam8</name>
-        <file>$(TWIN_DISPLAYS)/camera_view.bob</file>
+        <file>$(TWIN_DISPLAYS=../../../../geecs-lume-twin/display)/camera_view.bob</file>
         <macros>
           <CAM>UC_VisaEBeam8</CAM>
           <XMIN>-3.58</XMIN>
@@ -3204,5 +3201,38 @@
     <y>967</y>
     <width>130</width>
     <height>26</height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>lpa_strip_status_label</name>
+    <text>Twin:</text>
+    <x>1288</x>
+    <y>968</y>
+    <width>45</width>
+    <height>24</height>
+    <font>
+      <font family="Liberation Sans" style="BOLD" size="12.0" />
+    </font>
+  </widget>
+  <widget type="led" version="2.0.0">
+    <name>lpa_strip_status_led</name>
+    <pv_name>pva://HTU:SIM:STATUS</pv_name>
+    <x>1336</x>
+    <y>970</y>
+    <width>20</width>
+    <height>20</height>
+    <off_color>
+      <color red="0" green="170" blue="0" />
+    </off_color>
+    <on_color>
+      <color red="255" green="150" blue="0" />
+    </on_color>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>lpa_strip_status_text</name>
+    <pv_name>pva://HTU:SIM:STATUS</pv_name>
+    <x>1362</x>
+    <y>968</y>
+    <width>90</width>
+    <height>24</height>
   </widget>
 </display>

@@ -5,7 +5,7 @@ served by `serve.py --twin`. All PVs are `pva://HTU:SIM:...`.
 
 | File | What it is |
 |---|---|
-| `htu_synoptic_lpa.bob` | The twin's synoptic with the LPA tied in: a bottom strip with the LPA run selector and the twin's source readbacks, and the `SRC` element opening `lpa_bunch.bob`. Generated; do not edit. |
+| `htu_synoptic_lpa.bob` | The twin's synoptic with the LPA tied in: a bottom strip with the LPA run selector, the twin's source readbacks and whether the twin is simulating, and the `SRC` element opening `lpa_bunch.bob`. Generated; do not edit. |
 | `lpa_bunch.bob` | The LPA bunch: run selector, the twin's `Source_*` readbacks, the 33 moment-descriptor scalars (covariance as a grid), run statistics. Generated; do not edit. |
 | `generate_linked_synoptic.py` | Builds `htu_synoptic_lpa.bob` from the twin's own `htu_synoptic.bob`, which is left untouched. |
 | `generate_lpa_display.py` | Builds `lpa_bunch.bob` from the descriptor action names. |
@@ -25,14 +25,21 @@ java -jar target/product-<version>.jar -resource <this directory>/htu_synoptic_l
 Start the server first, and restart Phoebus after any server restart. Phoebus restores your last
 session, so older windows may open too; use the one with the LPA strip along its bottom.
 
+- **Twin activity:** at the right end of the strip, a LED and the state's name from
+  `HTU:SIM:STATUS`: green and `Idle`, or amber and `Simulating` while the twin re-tracks (about
+  2 seconds after a put). The PV is lume-pva's, and read-only.
 - **Choose a run:** the "Run:" combo box in the strip (or on `lpa_bunch.bob`) selects the active
   archive. The descriptor values and the twin's source follow after the twin re-tracks, about
   2 seconds.
 - **`SRC` element:** opens `lpa_bunch.bob`.
 - **Other elements:** the twin's own control and camera displays, found through the `TWIN_DISPLAYS`
-  macro. It defaults to the directory the synoptic was generated from; set it when opening the
-  display if the twin's displays live elsewhere: `-resource "htu_synoptic_lpa.bob?TWIN_DISPLAYS=<twin display directory>"`.
-- **`lpa_bunch.bob` on its own** takes a `P` macro for the PV prefix (default `HTU:SIM:`).
+  macro. It defaults to the twin's `display` directory, written relative to `htu_synoptic_lpa.bob`
+  when the twin is in the same repository (as it is here), so the file works on any clone. To use
+  another directory, set the macro when opening the display, with a `file:` URL (a plain path takes
+  the `?` as part of the file name): `-resource "file:<this directory>/htu_synoptic_lpa.bob?TWIN_DISPLAYS=<twin display directory>"`.
+  Both `<...>` are absolute paths.
+- **`lpa_bunch.bob` on its own** takes a `P` macro for the PV prefix (default `HTU:SIM:`), set the
+  same way: `-resource "file:<this directory>/lpa_bunch.bob?P=OTHER:"`.
 
 ## Regenerate the displays
 
@@ -58,5 +65,8 @@ Run the second whenever the twin's synoptic changes. The twin's own files are on
   a re-track (about 3 s) made every write time out. That is why puts are acknowledged at once by
   default.
 - The tests in `tests/test_phoebus_displays.py` check the generators and that the committed
-  `lpa_bunch.bob` is up to date. `htu_synoptic_lpa.bob` depends on where the twin's display directory is, so
-  regenerate it on each machine.
+  `lpa_bunch.bob` is up to date. `htu_synoptic_lpa.bob` is built from the twin's own synoptic, so
+  regenerate it whenever that changes.
+- A macro that a display file defines itself overrides the one given when opening it, so the two
+  displays do not define `TWIN_DISPLAYS` and `P`: each reference to them has the default in it
+  (`$(P=HTU:SIM:)`).

@@ -20,7 +20,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pytest-mock"]
+# For docs/htu-twin/serving/serve.py. lume-pva is not on PyPI. Keep this commit in sync with the
+# lume-pva pinned in ../geecs-lume-twin/pyproject.toml, or the two installs replace each other's.
+serve = [
+    "lume-pva @ git+https://github.com/lume-science/lume-pva@ffd974c1be8d491b7bae9c38fdd190f92417fe2f",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

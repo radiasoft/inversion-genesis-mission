@@ -16,8 +16,8 @@ screen; the 5.2 cm to the first magnet is the twin's own `SrcToPMQ1` drift) rela
 simulation's `z` is not known, so no drift is applied unless you give one:
 `--plasma-exit-z <metres>` drifts the bunch from its mean `z` to that lab-frame plane first.
 
-The twin is not part of this package: it needs `htu` importable, for example
-`PYTHONPATH=<geecs-lume-twin checkout> python lpa_to_twin.py --run-dir <dir>`. Its magnets keep
+The twin needs `htu` (`geecs-lume-twin` in this repository) importable, for example
+`PYTHONPATH=<repository>/geecs-lume-twin python lpa_to_twin.py --run-dir <dir>`. Its magnets keep
 the settings they have for a 100 MeV beam, so a bunch of very different energy or large energy
 spread is mostly lost; this shows the hand-off, not a matched optics.
 """
@@ -60,7 +60,9 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--archive", type=Path, help="archive with the final particles")
-    source.add_argument("--run-dir", type=Path, help="working directory of a finished run")
+    source.add_argument(
+        "--run-dir", type=Path, help="working directory of a finished run"
+    )
     parser.add_argument("--uz-min", type=float, default=30.0)
     parser.add_argument("--central-fraction", type=float, default=0.95)
     parser.add_argument(
@@ -96,8 +98,12 @@ def main(argv: list[str] | None = None) -> None:
     if twin.drift_length is None:
         print("not drifted: injected where the snapshot has it")
     else:
-        print(f"drifted {twin.drift_length * 1e3:+.3f} mm to z = {args.plasma_exit_z * 1e3:.3f} mm")
-    print(f"Source_* are read-only: {chain.supported_variables['Source_Energy_MeV'].read_only}")
+        print(
+            f"drifted {twin.drift_length * 1e3:+.3f} mm to z = {args.plasma_exit_z * 1e3:.3f} mm"
+        )
+    print(
+        f"Source_* are read-only: {chain.supported_variables['Source_Energy_MeV'].read_only}"
+    )
     for name in SOURCE_READBACKS:
         print(f"  {name:26} {float(chain.get([name])[name]):.4g}")
     print("charge on each screen (pC, fraction of injected):")

@@ -18,24 +18,18 @@ import typing
 
 @attrs.define(kw_only=True, slots=False, frozen=True)
 class GeneralizedGaussianProfile(_DensityProfile):
-    """Generalized-normal (generalized Gaussian) density bump in z, wrapping
-    `inversion_fbpic.density_profiles.downramp_injection.build_generalized_gaussian_profile`
-    exactly: `dens_func(z, r) = gauss_peak * exp(-(|z - z0| / alpha) ** beta)`, independent
-    of r. `beta=2` is a standard Gaussian; `beta<2` is more sharply peaked with heavier
+    """Generalized-normal (generalized Gaussian) density bump in z, independent of r:
+    `dens_func(z, r) = gauss_peak * exp(-(|z - z0| / alpha) ** beta)`, built by
+    `inversion_fbpic.density_profiles.downramp_injection.build_generalized_gaussian_profile`.
+    `beta=2` is a standard Gaussian; `beta<2` is more sharply peaked with heavier
     tails, `beta>2` is flatter near the peak with a steeper falloff. This is the shape
     `runs/initial_sample/ionization_injection_template.py` uses for its He/N gas-jet
-    target -- no existing `inversion_fbpic.lib.density_profiles` class wraps this function
-    (only `AsymmetricSine`/`SmoothSineFlattop`/etc.'s sine-squared ramps do), so this
-    composes it the same way `LinearRampFlattop` composes the linear-ramp `dens_func`.
+    target.
 
-    `get_z_extent()` reports `z0 +/- z_extent_alphas * alpha` -- `z_extent_alphas` defaults
-    to 2.8, matching the exact constant `ionization_injection_template.py` itself uses for
-    its own `interaction_length = 2.8 * density_alpha_m + density_center_location_m`. Note
-    that upstream quantity is a one-sided offset from z=0 (the box's own right edge in that
-    script), not a symmetric span the way `get_z_extent()` returns here -- matching the
-    upstream run's total interaction length via `SimulationHyperparameters.right_buffer`
-    therefore requires accounting for that asymmetry (see the `lume-fbpic` conversion script
-    for the worked calculation), not just copying the "2.8" constant.
+    `get_z_extent()` reports the symmetric span `z0 +/- z_extent_alphas * alpha`;
+    `z_extent_alphas` defaults to 2.8, the constant `ionization_injection_template.py` uses for
+    its interaction length. A `Simulation` runs for that span plus
+    `SimulationHyperparameters.right_buffer`.
 
     Args:
         gauss_peak: (float) Peak relative-density multiplier at `z0`. Not itself normalized

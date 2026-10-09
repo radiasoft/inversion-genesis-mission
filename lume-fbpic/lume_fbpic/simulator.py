@@ -1,11 +1,13 @@
-"""Simulators for `LUMEFBPICModel`: a `BaseSimulator` and `FBPICSimulator`, its LWFA subclass.
+"""Simulators for `LUMEFBPICModel`: `BaseSimulator` and its subclasses `FBPICSimulator` (LWFA) and
+`PWFASimulator` (beam-driven PWFA).
 
 `BaseSimulator` is the abstract base of the simulators. It owns what does not depend on the kind
 of simulation: the lifecycle (`run()`, `reset()`), reading `final_particles` and `stats` back from
 fbpic's openPMD output, and the HDF5 archive. A subclass supplies its config
 (`config()`/`set_config()`/`from_config()`), the validation and the run itself.
 `FBPICSimulator` wraps `inversion_fbpic.lib.simulation.Simulation` for LWFA-type simulations
-(hyperparameters, laser, density profiles).
+(hyperparameters, laser, density profiles); `PWFASimulator` builds an fbpic `Simulation` directly,
+from a grid, a plasma density profile and electron bunches.
 """
 
 from __future__ import annotations

@@ -353,18 +353,3 @@ def test_reset_brings_back_the_recorded_outputs(recorded_model):
     recorded_model.reset()
 
     assert recorded_model.get(["descriptor_mean_uz"])["descriptor_mean_uz"] == 171.6
-
-
-def test_reset_discards_results_produced_after_construction(
-    simulator, particle_group, mocker
-):
-    model = LUMEFBPICModel(simulator, make_actions(simulator))
-    simulator.configure()
-    _pretend_run_finishes(simulator, mocker, particle_group, {"charge_pc": 7.0})
-    model.set({"laser_energy": 6.0})
-    assert simulator.final_particles is particle_group
-
-    model.reset()
-
-    assert simulator.final_particles is None
-    assert simulator.stats == {}

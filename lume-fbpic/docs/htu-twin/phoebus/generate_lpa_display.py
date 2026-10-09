@@ -2,9 +2,10 @@
 
 The display shows the twin's `Source_*` readbacks (the LPA bunch as injected),
 the 33 moment-descriptor scalars (the covariance as an upper-triangular grid) and the run
-statistics. Every PV is `pva://$(P)<name>`; `P` is a display macro, `HTU:SIM:` by default, the
-prefix `serve.py --twin` uses. Open it with a different prefix by setting the macro
-(`phoebus -resource lpa_bunch.bob?P=OTHER:`).
+statistics. Every PV is `pva://$(P=HTU:SIM:)<name>`: the display macro `P`, which is `HTU:SIM:`, the
+prefix `serve.py --twin` uses, unless it is set. The file does not define `P`, so opening it with
+another prefix works (`phoebus -resource "file:<absolute path>/lpa_bunch.bob?P=OTHER:"`; the
+`file:` URL is needed, since a plain path takes the `?` as part of the file name).
 
 A combo box selects among the archives `serve.py` was given (the `LPA_Archive` PV).
 A button opens `htu_synoptic_lpa.bob`, the twin's synoptic with the LPA tied in, which
@@ -28,6 +29,7 @@ SELECTOR = "LPA_Archive"  # the enum PV `serve.py` serves; its options are the a
 COORDS = ("x", "ux", "y", "uy", "z", "uz")
 COORD_LABELS = ("x [m]", "ux", "y [m]", "uy", "z [m]", "uz")
 PREFIX = "descriptor_"
+DEFAULT_PREFIX = "HTU:SIM:"  # the PV prefix `serve.py --twin` uses; the display macro `P` replaces it
 
 # Source readbacks that are counts, shown without decimals.
 INTEGER_SOURCE = ("Source_NumParticles",)
@@ -100,7 +102,7 @@ class _Display:
         self._widgets.append(
             f'  <widget type="textupdate" version="2.0.0">\n'
             f"    <name>{self._unique(name)}</name>\n"
-            f"    <pv_name>pva://$(P){pv}</pv_name>\n"
+            f"    <pv_name>pva://$(P={DEFAULT_PREFIX}){pv}</pv_name>\n"
             f"    <x>{x}</x><y>{y}</y><width>{w}</width><height>{h}</height>{fmt}\n"
             f"    <show_units>false</show_units>\n"
             f"  </widget>"
@@ -127,7 +129,7 @@ class _Display:
         self._widgets.append(
             f'  <widget type="combo" version="2.0.0">\n'
             f"    <name>{self._unique(name)}</name>\n"
-            f"    <pv_name>pva://$(P){pv}</pv_name>\n"
+            f"    <pv_name>pva://$(P={DEFAULT_PREFIX}){pv}</pv_name>\n"
             f"    <x>{x}</x><y>{y}</y><width>{w}</width><height>{h}</height>\n"
             f"    <items_from_pv>true</items_from_pv>\n"
             f"  </widget>"
@@ -148,7 +150,6 @@ class _Display:
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<display version="2.0.0">\n'
             "  <name>LPA bunch</name>\n"
-            "  <macros>\n    <P>HTU:SIM:</P>\n  </macros>\n"
             f"  <width>{self.width}</width>\n  <height>{self.height}</height>\n"
             + "\n".join(self._widgets)
             + "\n</display>\n"
