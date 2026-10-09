@@ -26,7 +26,7 @@ _LIB_MODULE_STEMS = (
     "laser",
     "simulation",
 )
-_CONFIG_PACKAGE_DIRS = ("_density_implementations",)
+_CONFIG_PACKAGE_DIRS = ("_density_implementations", "_laser_implementations")
 
 
 def lib_module_names(lib_dir: Path) -> tuple[str, ...]:

@@ -183,9 +183,7 @@ class AnalyticSpectralLongitudinalProfile:
         angular_frequency_offset = 2.0 * np.pi * np.fft.fftfreq(npoints, d=dt)
         physical_angular_frequency_offset = -angular_frequency_offset
         spectral_amplitude = np.exp(
-            -2.0
-            * np.log(2.0)
-            * (angular_frequency_offset / bandwidth_fwhm) ** 2
+            -2.0 * np.log(2.0) * (angular_frequency_offset / bandwidth_fwhm) ** 2
         )
         spectral_phase = (
             cep_phase
@@ -199,8 +197,12 @@ class AnalyticSpectralLongitudinalProfile:
 
     def evaluate(self, t: Array) -> Array:
         """Return the complex envelope, zero-padded outside the synthesis grid."""
-        real = np.interp(t, self.time_axis, self.temporal_field.real, left=0.0, right=0.0)
-        imag = np.interp(t, self.time_axis, self.temporal_field.imag, left=0.0, right=0.0)
+        real = np.interp(
+            t, self.time_axis, self.temporal_field.real, left=0.0, right=0.0
+        )
+        imag = np.interp(
+            t, self.time_axis, self.temporal_field.imag, left=0.0, right=0.0
+        )
         return real + 1j * imag
 
 
@@ -284,7 +286,9 @@ class HighOrderLasyLaser:
         self._validate_start_plane_grid()
 
     @staticmethod
-    def _validate_phase_parameter_sources(physical_parameters: Mapping[str, Any]) -> None:
+    def _validate_phase_parameter_sources(
+        physical_parameters: Mapping[str, Any],
+    ) -> None:
         """Reject ambiguous absolute and duration-relative phase controls."""
         for absolute_name, relative_name in (
             ("laser_gdd_s2", "laser_gdd_relative"),
@@ -382,12 +386,9 @@ class HighOrderLasyLaser:
 
     def _validate_spectral_phase_bandwidth(self) -> None:
         """Reject phase terms that the zero-bandwidth profile cannot represent."""
-        if (
-            self.physical_parameters["laser_spectral_bandwidth_rad_s"] == 0.0
-            and any(
-                self.physical_parameters[name] != 0.0
-                for name in ("laser_gdd_s2", "laser_tod_s3", "laser_fod_s4")
-            )
+        if self.physical_parameters["laser_spectral_bandwidth_rad_s"] == 0.0 and any(
+            self.physical_parameters[name] != 0.0
+            for name in ("laser_gdd_s2", "laser_tod_s3", "laser_fod_s4")
         ):
             raise ValueError(
                 "Nonzero GDD, TOD, or FOD requires a nonzero laser_spectral_bandwidth_rad_s."
@@ -470,7 +471,9 @@ class HighOrderLasyLaser:
             + dispersion_delay
         )
 
-    def _time_half_width_for_peak_delay(self, intrinsic_time_half_width: float) -> float:
+    def _time_half_width_for_peak_delay(
+        self, intrinsic_time_half_width: float
+    ) -> float:
         """Expand the grid to retain the requested post-peak temporal support."""
         peak_delay = self.hyperparameters["peak_delay_from_file_start_s"]
         if peak_delay is None:
@@ -1063,3 +1066,180 @@ class HTULasyLaser:
             plt.show()
 
         return fig
+
+
+def format_jones(polarization: tuple[float, float]) -> str:
+    """Return a human-readable label for a real Jones vector."""
+    return f"Jones ({polarization[0]:g}, {polarization[1]:g})"
+
+
+def plot_start_plane(
+    laser: Laser,
+    *,
+    z0: float = 0.0,
+    polarization: tuple[float, float] = (1.0, 0.0),
+    mode: str = "lineout_and_2d",
+    ax: Any = None,
+    num: int = 600,
+    output_path: Union[str, Path, None] = None,
+    show: bool = False,
+    label: Optional[str] = None,
+    title: str = "lasy",
+    a0_annotation: Optional[float] = None,
+) -> Figure:
+    """Plot a LASY pulse's on-axis envelope and, optionally, a face-on |E| map.
+
+    The on-axis envelope (in a0 units) is mapped from the LASY time axis to
+    ``z`` about ``z0`` with the peak at ``z0``.
+
+    Args:
+        laser: LASY ``Laser`` whose current grid (e.g. the simulation start
+            plane) is plotted.
+        z0: (float) [m] Position assigned to the on-axis intensity peak when the
+            time axis is mapped to ``z``.
+        polarization: (tuple[float, float]) Real Jones vector ``(Ex, Ey)``; used
+            for the panel labels and the quiver of ``Re(E) * polarization``.
+        mode: (str) ``"lineout"`` shows only the longitudinal envelope.
+            ``"lineout_and_2d"`` adds a face-on field-amplitude map at the peak
+            time with the polarization quiver, zoomed to where the azimuthally
+            averaged fluence exceeds 1e-3 of its peak.
+        ax: (matplotlib.axes.Axes|None) If provided, the longitudinal envelope
+            is also drawn on this external axes with ``z`` in mm (for combined
+            overlay figures).
+        num: (int) Number of points for the resampled longitudinal lineout.
+        output_path: (str|Path|None) If given, the figure is saved here; parent
+            directories are created.
+        show: (bool) Whether to call ``plt.show()``; otherwise the figure is
+            closed before returning.
+        label: (str|None) Label for the external *ax* lineout. Defaults to
+            ``"<title> (<polarization>)"``.
+        title: (str) Name used in the figure title and the default *ax* label.
+        a0_annotation: (float|None) If given, written on the face-on panel as
+            the pulse's a0 at focus.
+
+    Returns:
+        The created matplotlib Figure.
+    """
+    import matplotlib.pyplot as plt
+
+    _, time = laser.grid.axes
+    e_to_a0 = e / (m_e * c * laser.profile.omega0)
+    pol_label = format_jones(polarization)
+
+    # On-axis envelope vs. time, mapped to z about the nominal centroid z0.
+    on_axis = np.abs(polar_fields(laser, np.array([0.0]))[0, 0, :]) * e_to_a0
+    t_peak = time[int(np.argmax(on_axis))]
+    z_of_t = z0 - c * (time - t_peak)
+    order = np.argsort(z_of_t)
+    z_arr = np.linspace(z_of_t.min(), z_of_t.max(), num)
+    envelope = np.interp(z_arr, z_of_t[order], on_axis[order])
+
+    if ax is not None:
+        default_label = f"{title} ({pol_label})"
+        ax.plot(
+            z_arr * 1e3,
+            envelope,
+            lw=1.5,
+            label=label if label is not None else default_label,
+        )
+
+    if mode == "lineout":
+        fig, ax_z = plt.subplots(1, 1, figsize=(8, 4.5))
+    else:
+        fig, (ax_z, ax_xy) = plt.subplots(1, 2, figsize=(12, 4.5))
+
+    ax_z.plot(z_arr * 1e6, envelope, color="C0", lw=1.5)
+    ax_z.set_xlabel("z (um)")
+    ax_z.set_ylabel("On-axis envelope amplitude (a\u2080)")
+    ax_z.set_title(f"Longitudinal envelope at start plane\n{pol_label}")
+    ax_z.grid(True, alpha=0.3)
+
+    if mode == "lineout_and_2d":
+        radius, angles, fluence, peak_field = transverse_fluence(laser, 361)
+        amplitude = np.abs(peak_field)
+        # Explicit polar cell edges: the Cartesian mesh is not monotonic, so
+        # pcolormesh cannot infer them from cell centres.
+        d_theta = angles[1] - angles[0]
+        theta_edges = np.append(angles - d_theta / 2.0, angles[-1] + d_theta / 2.0)
+        r_edges = np.concatenate(
+            ([0.0], 0.5 * (radius[1:] + radius[:-1]), [radius[-1]])
+        )
+        theta_grid, r_grid = np.meshgrid(theta_edges, r_edges, indexing="ij")
+        x_um = r_grid * np.cos(theta_grid) * 1e6
+        y_um = r_grid * np.sin(theta_grid) * 1e6
+        im = ax_xy.pcolormesh(x_um, y_um, amplitude, cmap="inferno", shading="flat")
+        ax_xy.set_aspect("equal")
+
+        # Zoom to where the azimuthally averaged fluence is above 1e-3 of peak.
+        radial_fluence = fluence.mean(axis=0)
+        above = np.flatnonzero(radial_fluence > 1e-3 * radial_fluence.max())
+        r_view = radius[int(above[-1])] * 1e6 if above.size else radius[-1] * 1e6
+        ax_xy.set_xlim(-r_view, r_view)
+        ax_xy.set_ylim(-r_view, r_view)
+
+        ax_xy.set_xlabel(r"x ($\mu$m)")
+        ax_xy.set_ylabel(r"y ($\mu$m)")
+        ax_xy.set_title(f"Face-on |E| at start plane\n{pol_label}")
+        cbar = fig.colorbar(im, ax=ax_xy, fraction=0.046, pad=0.04)
+        cbar.set_label("|E| (V/m)")
+
+        # Quiver the polarization field: LASY stores a scalar envelope and
+        # applies the real Jones vector (px, py) as a fixed spatial
+        # scaling, so the local field vector is Re(peak_field) * (px, py).
+        # Its direction is always +/-(px, py), but the sign flips across
+        # the aberrated wavefront's phase structure, which a single static
+        # arrow cannot show.
+        px, py = polarization
+        theta_grid_c, r_grid_c = np.meshgrid(angles, radius, indexing="ij")
+        field_real = peak_field.real
+        ex_grid = field_real * px
+        ey_grid = field_real * py
+
+        stride_theta = max(1, len(angles) // 24)
+        stride_r = max(1, len(radius) // 10)
+        in_view = r_grid_c <= (r_view * 1e-6)
+        sl = (slice(None, None, stride_theta), slice(None, None, stride_r))
+        xs = (r_grid_c * np.cos(theta_grid_c))[sl] * 1e6
+        ys = (r_grid_c * np.sin(theta_grid_c))[sl] * 1e6
+        us = ex_grid[sl]
+        vs = ey_grid[sl]
+        view_mask = in_view[sl]
+        mag = np.hypot(us, vs)
+        mask = view_mask & (mag > 0.05 * np.max(mag))
+        if mask.any():
+            ax_xy.quiver(
+                xs[mask],
+                ys[mask],
+                us[mask] / mag[mask],
+                vs[mask] / mag[mask],
+                color="white",
+                alpha=0.6,
+                scale=25,
+                width=0.004,
+                headwidth=3,
+            )
+        if a0_annotation is not None:
+            ax_xy.text(
+                0.02,
+                0.98,
+                f"a\u2080 at focus = {a0_annotation:.3g}",
+                transform=ax_xy.transAxes,
+                color="white",
+                va="top",
+                fontsize=9,
+            )
+
+    fig.suptitle(f"{title}  \u2014  {pol_label}", fontsize=11)
+    fig.tight_layout()
+
+    if output_path is not None:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(output_path, dpi=150, bbox_inches="tight")
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+    return fig

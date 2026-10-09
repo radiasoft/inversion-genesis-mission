@@ -23,11 +23,23 @@ Two things differ from the Gaussian demos:
   build itself.
 - The laser is emitted by an antenna (`method="antenna"` is forced). FBPIC
   resets the LASY time axis to zero, so the peak leaves the antenna at
-  `t_start + 3 * tau_fwhm`. The script places the antenna 5 um inside the front
-  of the box and sizes the window so the full pulse fits behind it.
+  `t_start` plus the peak's delay from the start of the LASY time window. The
+  script pins that delay with `peak_delay_from_file_start` (set to
+  `3 * tau_fwhm`, matching the default transform-limited window), places the
+  antenna 5 um inside the front of the box, and sizes the window so the full
+  pulse fits behind it.
+- `LasyLaserPulse` is a thin, table-driven wrapper: each field maps onto one
+  `HighOrderLasyLaser` parameter with the same default, and the spectral-phase
+  controls (`spectral_bandwidth`, `cep`, `gdd`, `tod`, `fod`, `gdd_relative`,
+  `tod_relative`) are forwarded only when set. Physical validation happens in
+  `HighOrderLasyLaser` when the pulse is prepared.
+- The number of modes is increased to 5. The higher level of transverse detail 
+  in the laser profile necessitates using more orders to resolve.
 
 The LASY build takes roughly 20 s on the default (600, 900) grid with five
-azimuthal modes and runs on MPI rank 0 only; other ranks wait at a barrier.
+azimuthal modes and runs on MPI rank 0 only; the other ranks block until rank 0
+broadcasts the file path, or its error, so a bad configuration fails everywhere
+rather than hanging the allocation.
 
 ## File
 

@@ -53,14 +53,17 @@ if __name__ == "__main__":
     FLATTOP_PLASMA_DENSITY = 1.0e18 * 1e6  # m^-3
 
     # LASY pulses are emitted by an antenna. FBPIC resets the LASY time axis to
-    # zero, so the peak leaves the antenna at t = T_START + 3 * TAU_FWHM and the
-    # emitted pulse trails the antenna position by up to 6 * TAU_FWHM * c.
+    # zero, so the peak leaves the antenna at t = T_START + PEAK_DELAY, where
+    # PEAK_DELAY pins the peak's position in the LASY time window (3 * TAU_FWHM
+    # is also what the default transform-limited window gives). The emitted
+    # pulse trails the antenna position by the window length, 2 * PEAK_DELAY * c.
     Z0_ANTENNA = -5e-6  # m, just inside the front of the box
     T_START = 0.0  # s
-    LASER_CENTROID = Z0_ANTENNA - c * (T_START + 3 * TAU_FWHM)  # m, informational
+    PEAK_DELAY = 3 * TAU_FWHM  # s
+    LASER_CENTROID = Z0_ANTENNA - c * (T_START + PEAK_DELAY)  # m, informational
     WINDOW_SIZE = max(
         3.0 * calculate_plasma_wavelength(FLATTOP_PLASMA_DENSITY),
-        6 * TAU_FWHM * c + 2 * abs(Z0_ANTENNA),
+        2 * PEAK_DELAY * c + 2 * abs(Z0_ANTENNA),
     )  # m
 
     laser = ls.LasyLaserPulse(
@@ -74,6 +77,7 @@ if __name__ == "__main__":
         z0=LASER_CENTROID,
         z0_antenna=Z0_ANTENNA,
         t_start=T_START,
+        peak_delay_from_file_start=PEAK_DELAY,
         # The start-plane re-centering step interpolates the field on a polar
         # grid, which is not accurate enough for aberrated beams (it shifts the
         # measured focus a0 by several percent). The coma-induced centroid
@@ -132,10 +136,10 @@ if __name__ == "__main__":
         rmax=120e-6,
         nz=1024,
         nr=300,
-        nm=3,
+        nm=5,
         use_mpi=USE_MPI,
         number_dumps=100,
-        gamma_boost=2,
+        gamma_boost=3,
         field_diagnostics=["E", "B", "rho"],
     )
 

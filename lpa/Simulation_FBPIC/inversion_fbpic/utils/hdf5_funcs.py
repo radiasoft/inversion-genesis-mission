@@ -248,7 +248,8 @@ def extract_field_slice(
             # Find the iteration group (usually one per file)
             data_group = list(f["data"].keys())[0]
             group_path = f"data/{data_group}/fields/{field_name}"
-            group_component_path = f"{group_path}{"/" + cyl_component if cyl_component is not None else ""}"
+            component_suffix = "/" + cyl_component if cyl_component is not None else ""
+            group_component_path = f"{group_path}{component_suffix}"
             if group_component_path not in f:
                 print(f"{group_component_path} not found in {h5file}")
                 continue
@@ -338,9 +339,10 @@ def extract_field_slice(
             arr[-1, 0] = np.nan  # lower-left corner
 
             # Save as .npy file
+            component_suffix = "_" + component if component is not None else ""
             out_path = (
                 Path(destination_folder)
-                / f"{field_name}{"_" + component if component is not None else ""}_{data_group}.npy"
+                / f"{field_name}{component_suffix}_{data_group}.npy"
             )
             np.save(out_path, arr)
             if verbose:

@@ -104,12 +104,12 @@ def test_a_unit_given_to_an_action_is_kept(simulator):
     assert _unit(model, "charge") == "C"
 
 
-def test_a_zernike_coefficient_is_in_wavelengths():
+def test_a_zernike_coefficient_is_in_radians():
     import ionization_injection
 
     model = ionization_injection.build_model()
 
-    assert _unit(model, "zernike_coma_x") == "wavelengths"
+    assert _unit(model, "zernike_coma_x") == "rad"
     assert _unit(model, "nitrogen_dopant_fraction") == "1"
 
 
@@ -122,7 +122,7 @@ def test_the_derived_units_are_valid_and_survive_an_archive(model, tmp_path):
     for name, variable in model.supported_variables.items():
         unit = getattr(variable, "unit", None)
         assert _unit(loaded, name) == unit
-        if unit is not None and unit != "wavelengths":
+        if unit is not None:
             pmd_unit(unit)  # raises for an unknown unit
 
 

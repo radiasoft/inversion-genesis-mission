@@ -381,16 +381,60 @@ class TestLasyLaserPulse:
             ({"energy": None}, "energy must be provided"),
             ({"energy": -1.0}, "energy must be provided"),
             ({"zernike_coefficients": {"bogus": 1.0}}, "Unknown zernike_coefficients"),
-            ({"centering_angles": 3, "n_azimuthal_modes": 5}, "centering_angles"),
             ({"polarization": [1.0, 0.0, 0.0]}, "polarization"),
-            ({"polarization": [0.0, 0.0]}, "non-zero"),
             ({"num_points": [10]}, "num_points"),
-            ({"num_points": [1, 10]}, "at least 2"),
         ],
     )
     def test_invalid_inputs_raise(self, overrides: dict, match: str) -> None:
         with pytest.raises(ValueError, match=match):
             _make_lasy(**overrides)
+
+    def test_optional_spectral_fields_are_forwarded_only_when_set(self) -> None:
+        from inversion_fbpic.utils.laser import HighOrderLasyLaser
+
+        pulse = _make_lasy()
+        assert not (
+            set(pulse.physical_parameters)
+            & HighOrderLasyLaser.OPTIONAL_PHYSICAL_PARAMETER_KEYS
+        )
+
+        pulse = _make_lasy(
+            spectral_bandwidth="auto",
+            cep=0.3,
+            gdd_relative=0.5,
+            fod=1e-56,
+            peak_delay_from_file_start=100e-15,
+            maximum_pulse_duration_fwhm=200e-15,
+        )
+        physical = pulse.physical_parameters
+        assert physical["laser_spectral_bandwidth_rad_s"] == "auto"
+        assert physical["laser_cep_phase_rad"] == 0.3
+        assert physical["laser_gdd_relative"] == 0.5
+        assert physical["laser_fod_s4"] == 1e-56
+        assert "laser_gdd_s2" not in physical and "laser_tod_s3" not in physical
+        hyper = pulse.hyperparameters
+        assert hyper["peak_delay_from_file_start_s"] == 100e-15
+        assert hyper["maximum_pulse_duration_fwhm_s"] == 200e-15
+        assert hyper["spectral_time_window_factor"] == 6.0
+
+    @pytest.mark.parametrize(
+        ("overrides", "match"),
+        [
+            ({"centering_angles": 3, "n_azimuthal_modes": 5}, "centering_angles"),
+            (
+                {"gdd": 1e-28, "gdd_relative": 0.5},
+                "either laser_gdd_s2 or laser_gdd_relative",
+            ),
+            ({"gdd": 1e-28}, "requires a nonzero laser_spectral_bandwidth"),
+        ],
+    )
+    def test_physical_validation_is_delegated_to_high_order_laser(
+        self, tmp_path, overrides: dict, match: str
+    ) -> None:
+        """These are HighOrderLasyLaser's rules; the wrapper surfaces them at prepare()."""
+        pulse = _make_lasy(lasy_file=tmp_path / "x", **overrides)
+        with pytest.raises(ValueError, match=match):
+            pulse.prepare(None)
 
     def test_partial_zernike_dict_is_completed(self) -> None:
         from inversion_fbpic.utils.laser import ZERNIKE_OSA_INDICES
@@ -473,7 +517,7 @@ class TestLasyLaserPulse:
     def test_resolve_comm_accepts_none_fbpic_and_mpi4py_forms(self) -> None:
         from types import SimpleNamespace
 
-        from inversion_fbpic.lib.laser import _resolve_comm
+        from inversion_fbpic.lib._laser_implementations.lasy_laser import _resolve_comm
 
         assert _resolve_comm(None) == (0, None)
 
@@ -491,6 +535,25 @@ class TestLasyLaserPulse:
         pulse = _make_laser(energy=5.0)
         assert pulse.prepare(None) is None
         assert pulse.build_laser_profile() is not None
+
+
+class _FakeComm:
+    """mpi4py-shaped stand-in: records broadcasts; non-root ranks get ``incoming``."""
+
+    def __init__(self, rank: int = 0, incoming=None) -> None:
+        self.rank = rank
+        self.incoming = incoming
+        self.broadcasts: list = []
+
+    def Get_rank(self) -> int:
+        return self.rank
+
+    def Get_size(self) -> int:
+        return 2
+
+    def bcast(self, obj, root=0):
+        self.broadcasts.append((obj, root))
+        return obj if self.rank == root else self.incoming
 
 
 @pytest.mark.integration
@@ -561,32 +624,71 @@ class TestLasyLaserPulseBuild:
         assert pulse.resolve_lasy_file(tmp_path / "elsewhere") == tmp_path / "abs_laser"
 
     def test_prepare_with_mpi4py_like_comm(self, tmp_path) -> None:
-        """A raw mpi4py-style communicator drives the barrier and broadcast."""
-
-        class FakeComm:
-            def __init__(self) -> None:
-                self.barriers = 0
-                self.broadcasts: list = []
-
-            def Get_rank(self) -> int:
-                return 0
-
-            def Get_size(self) -> int:
-                return 1
-
-            def barrier(self) -> None:
-                self.barriers += 1
-
-            def bcast(self, obj, root=0):
-                self.broadcasts.append((obj, root))
-                return obj
-
-        comm = FakeComm()
+        """A raw mpi4py-style communicator receives (payload, error) by broadcast."""
+        comm = _FakeComm(rank=0)
         pulse = _make_lasy(lasy_file=tmp_path / "mpi", **LASY_TINY_GRID)
         pulse.prepare(comm)
         assert pulse.is_prepared and pulse.out_a0 > 0
-        assert comm.barriers == 1
-        assert comm.broadcasts == [((str(pulse.lasy_file_path), pulse.out_a0), 0)]
+        assert comm.broadcasts == [
+            (((str(pulse.lasy_file_path), pulse.out_a0), None), 0)
+        ]
+
+    def test_rank0_build_failure_is_broadcast_and_reraised(self, tmp_path) -> None:
+        """Rank 0 re-raises the original error after telling the other ranks."""
+        comm = _FakeComm(rank=0)
+        # GDD without a spectral bandwidth is rejected by HighOrderLasyLaser.
+        pulse = _make_lasy(lasy_file=tmp_path / "bad", gdd=1e-28, **LASY_TINY_GRID)
+        with pytest.raises(
+            ValueError, match="requires a nonzero laser_spectral_bandwidth"
+        ):
+            pulse.prepare(comm)
+        assert not pulse.is_prepared
+        assert len(comm.broadcasts) == 1
+        (payload, message), root = comm.broadcasts[0]
+        assert payload is None and root == 0
+        assert message.startswith("ValueError: ")
+        assert "laser_spectral_bandwidth" in message
+
+    def test_non_root_rank_raises_instead_of_hanging_on_rank0_failure(self) -> None:
+        """A non-root rank that receives an error payload raises immediately."""
+        comm = _FakeComm(rank=1, incoming=(None, "ValueError: bad grid"))
+        pulse = _make_lasy()
+        with pytest.raises(
+            RuntimeError, match="LASY build failed on rank 0: ValueError: bad grid"
+        ):
+            pulse.prepare(comm)
+        assert not pulse.is_prepared
+        assert comm.broadcasts == [((None, None), 0)]
+
+    def test_non_root_rank_adopts_broadcast_result(self, tmp_path) -> None:
+        """A non-root rank never builds; it takes the path and a0 from rank 0."""
+        existing = tmp_path / "from_rank0_00000.h5"
+        existing.write_bytes(b"")
+        comm = _FakeComm(rank=1, incoming=((str(existing), 1.23), None))
+        pulse = _make_lasy()
+        pulse.prepare(comm)
+        assert pulse.is_prepared
+        assert pulse.lasy_file_path == existing
+        assert pulse.a0 == pulse.out_a0 == 1.23
+        assert pulse._high_order_laser is None
+
+    def test_peak_delay_and_spectral_phase_reach_the_lasy_build(self, tmp_path) -> None:
+        pulse = _make_lasy(
+            lasy_file=tmp_path / "spectral",
+            spectral_bandwidth="auto",
+            gdd_relative=0.3,
+            peak_delay_from_file_start=120e-15,
+            center_and_remove_tilt=False,
+            **LASY_TINY_GRID,
+        )
+        pulse.prepare(None)
+        laser = pulse._high_order_laser
+        assert laser.hyperparameters["peak_delay_from_file_start_s"] == 120e-15
+        assert laser.physical_parameters["laser_gdd_s2"] != 0.0
+        time, intensity = laser._on_axis_intensity()
+        measured_delay = time[int(np.argmax(intensity))] - time[0]
+        assert measured_delay == pytest.approx(120e-15, abs=2 * (time[1] - time[0]))
+        assert pulse.out_a0 > 0
 
     def test_build_laser_profile_auto_prepares(self, tmp_path) -> None:
         from fbpic.lpa_utils.laser.laser_profiles import FromLasyFileLaser

@@ -43,9 +43,6 @@ _MC2_EV = m_e * c**2 / e
 # Units of the statistics a simulator keeps in `stats`, by name.
 STAT_UNITS = {"charge_pc": "pC", "energy_mean_mev": "MeV", "energy_std_mev": "MeV"}
 
-# Units that are not `pmd_unit` symbols but are tagged in a config field's documentation.
-_EXTRA_UNITS = {"wavelengths"}
-
 
 class BunchFieldAction(WritableActionMixin[PWFASimulator], ScalarVariable):
     """Writable scalar mapped onto one field of a PWFA simulator's `driver` or `witness` bunch."""
@@ -397,7 +394,7 @@ def _config_unit(config: typing.Any, field_name: str) -> str | None:
         return None
     text = " ".join(descriptions().get(field_name, []))
     for tag in re.findall(r"\[([^\]]+)\]", text):
-        if tag in _EXTRA_UNITS or _is_unit(tag):
+        if _is_unit(tag):
             return tag
     return None
 

@@ -247,8 +247,12 @@ def test_every_config_path_field_is_handled_or_listed():
         for cls in domain._CONCRETE_REGISTRY.values():
             for field in attrs.fields(cls):
                 key = (cls.__name__, field.name)
-                pathlike = re.search(r"\bPath\b", str(field.type)) or re.search(
-                    r"(^|_)(directory|file|filename|path)(_|$)", field.name
+                numeric = re.match(r"(float|int|bool)\b", str(field.type))  # not a path
+                pathlike = re.search(r"\bPath\b", str(field.type)) or (
+                    not numeric
+                    and re.search(
+                        r"(^|_)(directory|file|filename|path)(_|$)", field.name
+                    )
                 )
                 if (
                     not field.init

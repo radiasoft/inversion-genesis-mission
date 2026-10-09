@@ -333,7 +333,9 @@ def test_modified_density_profile_includes_list_default() -> None:
 def test_lasy_laser_pulse_init_fields() -> None:
     """Inherited base fields plus the LASY-specific ones; cache fields are excluded."""
     index = _index()
-    fields = index.init_fields(index.classes[("laser", "LasyLaserPulse")])
+    fields = index.init_fields(
+        index.classes[("_laser_implementations.lasy_laser", "LasyLaserPulse")]
+    )
     assert {field.name for field in fields} == {
         "energy",
         "a0",
@@ -347,12 +349,22 @@ def test_lasy_laser_pulse_init_fields() -> None:
         "focal_position",
         "super_gaussian_order",
         "zernike_coefficients",
+        "spectral_bandwidth",
+        "cep",
+        "gdd",
+        "tod",
+        "fod",
+        "gdd_relative",
+        "tod_relative",
         "polarization",
         "n_azimuthal_modes",
         "num_points",
         "hi_range",
         "center_and_remove_tilt",
         "centering_angles",
+        "spectral_time_window_factor",
+        "peak_delay_from_file_start",
+        "maximum_pulse_duration_fwhm",
         "lasy_file",
         "t_start",
     }

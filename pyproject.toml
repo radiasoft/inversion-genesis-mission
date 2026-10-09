@@ -25,6 +25,7 @@ exclude = [
     "*.ipynb",                  # Jupyter notebooks
     "**/notebooks/**/*.py",     # Jupytext paired .py files
 ]
+target-version = "py311"
 
 [tool.black]
 # Black uses a single regular expression string

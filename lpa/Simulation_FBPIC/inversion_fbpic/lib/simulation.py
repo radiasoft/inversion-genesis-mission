@@ -803,7 +803,8 @@ class Simulation(SerializableConfig):
 
         # Add the laser pulses
         # One-time (possibly collective) setup first, e.g. LasyLaserPulse writes
-        # its HDF5 file on rank 0 and the other ranks wait at a barrier.
+        # its HDF5 file on rank 0 and broadcasts the path (or the failure) to
+        # the other ranks.
         for laser in self.lasers:
             laser.prepare(self.simulation.comm, relative_to=self.working_directory)
         for laser in self.lasers:

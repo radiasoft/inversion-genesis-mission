@@ -183,7 +183,7 @@ def build_model(working_directory: str | None = None) -> LUMEFBPICModel:
             name="nitrogen_dopant_fraction", host_index=0, dopant_index=1
         ),
         # One action per Zernike coefficient, named like the dataset's `zernike_<name>` inputs
-        # (for example `zernike_astigmatism_4`, `zernike_coma_x`); phase amplitudes in wavelengths.
+        # (for example `zernike_astigmatism_4`, `zernike_coma_x`); phase amplitudes in radians.
         *[
             ZernikeCoefficientAction(
                 name=f"zernike_{coefficient}", coefficient=coefficient

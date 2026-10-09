@@ -25,6 +25,7 @@ setup(
         "opencv-python",
         "lasy",
         "periodictable",
+        "pyyaml",
     ],
     extras_require={
         "dev": ["pytest", "build>=1", "setuptools>=64", "wheel"],

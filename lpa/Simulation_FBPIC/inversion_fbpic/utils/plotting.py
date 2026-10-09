@@ -35,7 +35,8 @@ def _get_label_and_scale_from_field_name(
         label = r"$\rho$ (cm$^{-3}$)"
         field_scale = -1e-6 / e
     else:
-        label = f"${field_name}{f"_{{{component}}}" if component is not None else ""}$"
+        component_sub = f"_{{{component}}}" if component is not None else ""
+        label = f"${field_name}{component_sub}$"
         field_scale = 1.0
 
     return label, field_scale
@@ -150,7 +151,8 @@ def plot_from_npy(
     if vminmax is None and (vmin is not None or vmax is not None):
         vminmax = (vmin, vmax)
 
-    full_field_name = f"{field_name}{"_" + component if component is not None else ""}"
+    component_suffix = "_" + component if component is not None else ""
+    full_field_name = f"{field_name}{component_suffix}"
 
     # if a directory is provided, process all .npy files in the directory
     if data_path.is_dir():
@@ -205,8 +207,7 @@ def plot_from_npy(
         field_scale=field_scale,
         cmap=cmap,
         font_size=font_size,
-        save_path=save_path
-        / f"{field_name}{"_" + component if component is not None else ""}_{idx:06d}.png",
+        save_path=save_path / f"{full_field_name}_{idx:06d}.png",
     )
     plt.close(ax.figure)
 
@@ -251,7 +252,8 @@ def plot_from_hdf5_series(
 
     file_prefix = ""
     if field_name is not None and component not in ["eme", "abs", "sqr"]:
-        file_prefix = f"{field_name}{"_" + component if component is not None else ""}"
+        component_suffix = "_" + component if component is not None else ""
+        file_prefix = f"{field_name}{component_suffix}"
     elif component == "eme":
         file_prefix = "eme"
     else:
@@ -354,13 +356,17 @@ def _construct_title(
     d_zmin: float,
 ) -> str:
     title_str = ""
+
+    def sep() -> str:
+        return " | " if title_str else ""
+
     if title_prefix is not None:
         title_str += f"{title_prefix}"
     if quantity_label is not None:
-        title_str += f"{" | " if title_str else ""}{quantity_label}"
+        title_str += f"{sep()}{quantity_label}"
     if time is not None:
-        title_str += f"{" | " if title_str else ""}$t$ = {time*1e12:.2f} ps"
-    title_str += f"{" | " if title_str else ""}$z_0$ = {d_zmin*1e3:.2f} mm"
+        title_str += f"{sep()}$t$ = {time*1e12:.2f} ps"
+    title_str += f"{sep()}$z_0$ = {d_zmin*1e3:.2f} mm"
     return title_str
 
 

@@ -1,0 +1,47 @@
+name: pytest
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pytest-${{ github.ref }}
+  # only supersede runs on PRs; every push to main should run to completion
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0} # login shell so the conda env is active
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # FBPIC build provenance records the git hash
+      # ffmpeg is needed by the movie-making tests
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # mpi4py and openpmd-api come from conda-forge (binary MPI builds).
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: "3.11"
+          channels: conda-forge
+          channel-priority: strict
+          activate-environment: inv-genesis
+      # fbpic imports pyfftw (or MKL) for its CPU FFTs; neither is a pip dependency
+      - name: Install conda dependencies
+        run: conda install -y mpi4py "openpmd-api>=0.16.1,<0.17" h5py pyfftw
+      # Add a line here when a new package is added; tests are collected via
+      # the top-level pytest.ini.
+      - name: Install packages
+        run: |
+          pip install -e "lpa/Simulation_FBPIC[dev]"
+          pip install -e "lpa/Simulation_Fluid/postproc[dev]"
+      - name: Run pytest
+        run: pytest

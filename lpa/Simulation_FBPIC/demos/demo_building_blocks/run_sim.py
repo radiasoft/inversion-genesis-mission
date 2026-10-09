@@ -105,8 +105,9 @@ def create_movies() -> Path:
         dest_path = PLOTS_DIR / f"{file_prefix}.mp4"
         movie_path.rename(dest_path)
 
+        component_suffix = "_" + component if component is not None else ""
         print(
-            f"Created movie for {field} {component} in {PLOTS_DIR / f"{field}{"_" + component if component is not None else ""}"}"
+            f"Created movie for {field} {component} in {PLOTS_DIR / f'{field}{component_suffix}'}"
         )
 
     for file in (PLOTS_DIR / "stills").glob("*.png"):

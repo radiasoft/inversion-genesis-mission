@@ -16,7 +16,7 @@ repos:
         name: sync config docstring stubs
         entry: python lpa/Simulation_FBPIC/tools/sync_config_docstrings.py
         language: system
-        files: ^lpa/Simulation_FBPIC/(inversion_fbpic/lib/(_doc_management/.*|_density_implementations/.*\.py|(serializable_config|density_core|density_profiles|density_modifiers|laser|simulation)\.py)|tools/sync_config_docstrings\.py)$
+        files: ^lpa/Simulation_FBPIC/(inversion_fbpic/lib/(_doc_management/.*|_[a-z]+_implementations/.*\.py|(serializable_config|density_core|density_profiles|density_modifiers|laser|simulation)\.py)|tools/sync_config_docstrings\.py)$
         pass_filenames: false
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.11

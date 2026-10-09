@@ -71,11 +71,12 @@ def process_single_simulation(
         logger.warning("Path `%s` is not a valid hdf5 directory, skipping.", source)
         return None
 
+    component_suffix = "_" + component if component is not None else ""
     destination = (
         diags_path.parent
         / Path("analysis")
         / diags_path.name
-        / f"{field_name}{"_" + component if component is not None else ""}"
+        / f"{field_name}{component_suffix}"
     )
     destination.mkdir(parents=True, exist_ok=True)
 
@@ -109,11 +110,12 @@ def clean_single_simulation(
     """
     diags_path = Path(diags_folder)
     if diags_path.exists() and diags_path.is_dir():
+        component_suffix = "_" + component if component is not None else ""
         files_dir = (
             diags_path.parent
             / "analysis"
             / diags_path.name
-            / f"{field_name}{"_" + component if component is not None else ""}"
+            / f"{field_name}{component_suffix}"
         )
         if files_dir.exists() and files_dir.is_dir():
             for file in files_dir.glob(f"*.{file_extension}"):
